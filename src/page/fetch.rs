@@ -16,7 +16,7 @@ pub enum FetchingState {
     #[default]
     Idle,
     Fetching(FetchProgress),
-    Completed(Vec<crate::transactions::Transaction>), // 新增状态，表示获取完成
+    // Completed(Vec<crate::transactions::Transaction>), // 新增状态，表示获取完成
 }
 
 #[derive(Clone, Default, Debug)]
@@ -144,7 +144,12 @@ impl Page for Fetch {
         match &self.fetching_state {
             FetchingState::Idle => {
                 frame.render_widget(
-                    Text::raw("No data fetched yet.").style(Style::default().fg(Color::Gray)),
+                    Text::raw(format!(
+                        "Currently {} records locally stored. Fetch more?",
+                        self.local_db_cnt
+                    ))
+                    .style(Style::default().fg(Color::Gray))
+                    .centered(),
                     area[2],
                 );
             }
@@ -153,19 +158,25 @@ impl Page for Fetch {
                     "Fetching...\nCurrent Page: {}\nTotal Entries Fetched: {}\nOldest Date: {}",
                     progress.current_page,
                     progress.total_entries_fetched,
-                    progress.oldest_date.map_or("N/A".to_string(), |date| date.to_string())
+                    progress
+                        .oldest_date
+                        .map_or("N/A".to_string(), |date| date.to_string())
                 );
-                frame.render_widget(Text::raw(progress_text), area[2]);
-            }
-            FetchingState::Completed(transactions) => {
-                // 显示获取到的交易数据
-                let transaction_text = transactions
-                    .iter()
-                    .map(|t| format!("{:?}", t)) // 假设 Transaction 实现了 Debug
-                    .collect::<Vec<String>>()
-                    .join("\n");
-                frame.render_widget(Text::raw(transaction_text), area[2]);
-            }
+                frame.render_widget(
+                    Text::raw(progress_text)
+                        .centered()
+                        .style(Style::default().fg(Color::Gray)),
+                    area[2],
+                );
+            } // FetchingState::Completed(transactions) => {
+              //     // 显示获取到的交易数据
+              //     let transaction_text = transactions
+              //         .iter()
+              //         .map(|t| format!("{:?}", t)) // 假设 Transaction 实现了 Debug
+              //         .collect::<Vec<String>>()
+              //         .join("\n");
+              //     frame.render_widget(Text::raw(transaction_text), area[2]);
+              // }
         }
     }
 
@@ -216,8 +227,10 @@ impl Page for Fetch {
                             oldest_date: None,
                         });
                         let cookie = std::env::var("COOKIE").unwrap();
+                        let account = std::env::var("ACCOUNT").unwrap();
                         let records = crate::fetcher::fetch_transactions(
-                            cookie.as_str(),
+                            &cookie,
+                            &account,
                             date.timestamp(),
                             Some(Box::new(update_progress)),
                         )
@@ -225,7 +238,7 @@ impl Page for Fetch {
                         .unwrap();
                         assert!(!records.is_empty());
                         tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                            FetchingState::Completed(records.clone()), // 更新状态为 Completed
+                            FetchingState::Idle, // 更新状态为 Idle
                         )))
                         .unwrap();
                         tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
