@@ -43,7 +43,15 @@ impl App {
         Ok(())
     }
 
-    pub fn event2action(&self, event: tui::Event) -> Action {
+    /// Convert a [`tui::Event`] to an Action
+    ///
+    /// This function is responsible for converting a [`tui::Event`] to an Action.
+    ///
+    /// It handles some application-wide events like quitting the application
+    /// and switching between input modes,
+    /// and delegates the handling of page-specific events (remaining events, currently only key events)
+    /// to the current page.
+    fn event2action(&self, event: tui::Event) -> Action {
         match event {
             tui::Event::Tick => Action::Tick,
             tui::Event::Render => Action::Render,
@@ -60,6 +68,7 @@ impl App {
             tui::Event::Mouse(_) => Action::None,
 
             tui::Event::Key(key) => {
+                // if a input widget is focused, handle the key event in the input widget
                 if self.state.input_mode {
                     match key.code {
                         KeyCode::Esc => Action::SwitchInputMode(false),
@@ -93,7 +102,16 @@ impl App {
         }
     }
 
-    pub fn perform_action(&mut self, action: Action) {
+    /// Perform an action
+    ///
+    /// This function is responsible for performing an action (Changing the state of the application).
+    ///
+    /// This SHOULD be the only place where the state of the application is changed.
+    ///
+    /// It handles some application-wide actions like quitting the application
+    /// and switching between pages,
+    /// and delegates the handling of page-specific actions to the current page.
+    fn perform_action(&mut self, action: Action) {
         match action {
             Action::Quit => {
                 self.state.should_quit = true;
