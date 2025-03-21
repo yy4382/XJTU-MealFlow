@@ -1,8 +1,4 @@
-use crate::{
-    RootState,
-    actions::{Action, NavigateTarget},
-    tui::Event,
-};
+use crate::{RootState, actions::Action, tui::Event};
 
 use super::Page;
 use color_eyre::eyre::Result;
@@ -61,12 +57,12 @@ impl Page for Transactions {
             rects[1],
         );
     }
-    fn handle_events(&mut self, event: Option<Event>) -> Result<Action> {
+    fn handle_events(&self, event: Option<Event>) -> Result<Action> {
         if let Some(event) = event {
             match event {
                 Event::Key(key) => match (key.modifiers, key.code) {
                     // navigate to fetch page
-                    (_, KeyCode::Char('r')) => Ok(Action::NavigateTo(NavigateTarget::Fetch(
+                    (_, KeyCode::Char('r')) => Ok(Action::NavigateTo(Box::new(
                         crate::page::fetch::Fetch::default(),
                     ))),
                     (_, KeyCode::Char('l')) => {

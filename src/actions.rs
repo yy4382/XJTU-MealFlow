@@ -1,13 +1,8 @@
-use crate::page::{
-    fetch::{Fetch, FetchingAction},
-    home::Home,
-    transactions::{TransactionAction, Transactions},
-};
+use crate::page::{Page, fetch::FetchingAction, transactions::TransactionAction};
 
-#[derive(Clone)]
 pub enum Action {
     Tick,
-    NavigateTo(NavigateTarget),
+    NavigateTo(Box<dyn Page>),
     SwitchInputMode(bool),
 
     Transaction(TransactionAction),
@@ -16,11 +11,4 @@ pub enum Action {
     Quit,
     Render,
     None,
-}
-
-#[derive(Clone)]
-pub enum NavigateTarget {
-    Transaction(Transactions),
-    Fetch(Fetch),
-    Home(Home),
 }
