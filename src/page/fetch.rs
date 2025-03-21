@@ -10,6 +10,7 @@ use ratatui::{
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::actions::Action;
+use crate::libs::{fetcher, transactions};
 
 use super::Page;
 
@@ -32,7 +33,7 @@ pub struct FetchProgress {
 pub enum FetchingAction {
     StartFetching(DateTime<Local>),
     UpdateFetchStatus(FetchingState),
-    InsertTransaction(Vec<crate::transactions::Transaction>),
+    InsertTransaction(Vec<transactions::Transaction>),
 
     SubmitUserInput(String),
     HandleInputEvent(crossterm::event::KeyEvent),
@@ -250,7 +251,7 @@ impl Page for Fetch {
                         });
                         let cookie = std::env::var("COOKIE").unwrap();
                         let account = std::env::var("ACCOUNT").unwrap();
-                        let records = crate::fetcher::fetch_transactions(
+                        let records = fetcher::fetch_transactions(
                             &cookie,
                             &account,
                             date.timestamp(),

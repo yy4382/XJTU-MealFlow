@@ -10,7 +10,7 @@ pub struct RootState {
     pub should_quit: bool,
     pub action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
     pub action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
-    pub manager: crate::transactions::TransactionManager,
+    pub manager: crate::libs::transactions::TransactionManager,
     pub input_mode: bool,
 }
 pub struct App {

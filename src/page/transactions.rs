@@ -13,7 +13,7 @@ use ratatui::{
 
 #[derive(Default, Clone)]
 pub struct Transactions {
-    transactions: Vec<crate::transactions::Transaction>,
+    transactions: Vec<crate::libs::transactions::Transaction>,
 }
 
 #[derive(Clone)]
