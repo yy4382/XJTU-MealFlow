@@ -1,16 +1,15 @@
 mod actions;
 mod app;
 mod errors;
-mod fetcher;
+mod libs;
 mod page;
-mod transactions;
 mod tui;
 
 use app::{App, RootState};
 use color_eyre::eyre::Result;
 use dotenv::dotenv;
+use libs::transactions::TransactionManager;
 use tokio::sync::mpsc::{self};
-use transactions::TransactionManager;
 
 async fn run() -> Result<()> {
     let (action_tx, action_rx) = mpsc::unbounded_channel(); // new

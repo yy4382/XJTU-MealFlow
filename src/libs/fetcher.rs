@@ -4,7 +4,7 @@ use reqwest::{Client, header};
 use serde::Deserialize;
 use std::str;
 
-use crate::{page::fetch::FetchProgress, transactions::Transaction};
+use crate::{libs::transactions::Transaction, page::fetch::FetchProgress};
 
 #[derive(Deserialize, Debug)]
 struct ApiResponse {
@@ -199,7 +199,10 @@ mod tests {
 
     #[test]
     fn test_api_response_to_transactions() {
-        let response = include_str!("../test/mock-data/api-resp.json");
+        let response = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test/mock-data/api-resp.json"
+        ));
         let api_response = serde_json::from_str::<ApiResponse>(response).unwrap();
         let transactions = api_response_to_transactions(api_response);
         println!("{:?}", transactions);
