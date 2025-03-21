@@ -26,7 +26,7 @@ pub enum TransactionAction {
 }
 
 impl Page for Transactions {
-    fn render(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame, _app: &RootState) {
         let area = frame.area();
 
         let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);

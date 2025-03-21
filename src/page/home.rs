@@ -13,7 +13,7 @@ use ratatui::{
 pub struct Home {}
 
 impl Page for Home {
-    fn render(&self, frame: &mut Frame) {
+    fn render(&self, frame: &mut Frame, _app: &RootState) {
         let area = frame.area();
         frame.render_widget(
             Paragraph::new(

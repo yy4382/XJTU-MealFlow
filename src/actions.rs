@@ -8,6 +8,7 @@ use crate::page::{
 pub enum Action {
     Tick,
     NavigateTo(NavigateTarget),
+    SwitchInputMode(bool),
 
     Transaction(TransactionAction),
     Fetching(FetchingAction),
