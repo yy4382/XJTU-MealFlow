@@ -93,7 +93,7 @@ async fn fetch_transaction_one_page(
     headers.insert(header::USER_AGENT, "".parse().unwrap());
     headers.insert(header::COOKIE, cookie.parse().context("Invalid cookie")?);
 
-    let body = format!("account={}&page={}&json=true", account, page);
+    let body = format!("account={}&page={}&json=true&rows=50", account, page);
 
     // Attempt request with retry logic
     let mut attempts = 0;
