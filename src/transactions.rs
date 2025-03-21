@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use chrono::{DateTime, Local};
 use rusqlite::{Connection, params};
 
@@ -9,15 +11,17 @@ pub struct Transaction {
     pub merchant: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TransactionManager {
-    pub conn: Connection,
+    pub conn: Rc<Connection>,
 }
 
 impl TransactionManager {
     pub fn new() -> Result<Self, rusqlite::Error> {
         let conn = Connection::open("transactions.db")?;
-        Ok(TransactionManager { conn })
+        Ok(TransactionManager {
+            conn: Rc::new(conn),
+        })
     }
 
     pub fn init_db(&self) -> Result<(), rusqlite::Error> {
@@ -98,6 +102,16 @@ impl TransactionManager {
         Ok(result)
     }
 
+    pub fn fetch_count(&self) -> Result<u64, rusqlite::Error> {
+        let mut stmt = self.conn.prepare("SELECT COUNT(*) FROM transactions")?;
+        let count = stmt.query_map([], |row| row.get(0))?;
+        let mut result = 0;
+        for c in count {
+            result = c?;
+        }
+        Ok(result)
+    }
+
     #[allow(dead_code)]
     pub fn clear_db(&self) -> Result<(), rusqlite::Error> {
         self.conn.execute("DELETE FROM transactions", [])?;
@@ -112,7 +126,9 @@ mod tests {
     #[test]
     fn test_transaction_manager() {
         let conn = Connection::open_in_memory().unwrap();
-        let manager = TransactionManager { conn };
+        let manager = TransactionManager {
+            conn: Rc::new(conn),
+        };
 
         manager.init_db().unwrap();
 

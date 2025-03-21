@@ -1,8 +1,16 @@
+use crate::page::{
+    fetch::{Fetch, FetchingAction},
+    home::Home,
+    transactions::{TransactionAction, Transactions},
+};
+
 #[derive(Clone)]
 pub enum Action {
     Tick,
+    NavigateTo(NavigateTarget),
 
     Transaction(TransactionAction),
+    Fetching(FetchingAction),
 
     Quit,
     Render,
@@ -10,16 +18,8 @@ pub enum Action {
 }
 
 #[derive(Clone)]
-pub enum TransactionAction {
-    FetchTransactions,
-    UpdateFetchStatus(FetchingState),
-    InsertTransaction(Vec<crate::transactions::Transaction>),
-    LoadTransactions,
-}
-
-#[derive(Clone, Default)]
-pub enum FetchingState {
-    #[default]
-    Idle,
-    Fetching(String),
+pub enum NavigateTarget {
+    Transaction(Transactions),
+    Fetch(Fetch),
+    Home(Home),
 }
