@@ -11,8 +11,9 @@ use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
-    layout::Alignment,
+    layout::{Alignment, Constraint, Flex, Layout},
     style::{Color, Style},
+    text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
@@ -25,13 +26,17 @@ pub struct Transactions {
 impl Page for Transactions {
     fn render(&self, frame: &mut Frame) {
         let area = frame.area();
+
+        let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
+        let rects = vertical.split(area);
+
         frame.render_widget(
             {
-                let fetch_info = match &self.fetching_state {
-                    FetchingState::Idle => "Press r to fetch transactions".to_string(),
-                    FetchingState::Fetching(info) => format!("Fetching transactions: {}", &info),
-                };
-                Paragraph::new(format!("{}{}", fetch_info, self.transactions.len()))
+                let transactions_str = self
+                    .transactions
+                    .iter()
+                    .fold(String::new(), |acc, x| acc + &format!("{:?}\n", x));
+                Paragraph::new(transactions_str)
                     .block(
                         Block::default()
                             .title("Transactions")
@@ -42,7 +47,37 @@ impl Page for Transactions {
                     .style(Style::default().fg(Color::Cyan))
                     .alignment(Alignment::Center)
             },
-            area,
+            rects[0],
+        );
+
+        let bottom_rects = &Layout::horizontal([Constraint::Fill(2), Constraint::Fill(1)])
+            .flex(Flex::SpaceBetween)
+            .split(rects[1]);
+
+        frame.render_widget(
+            Paragraph::new(Text::raw("r: Refresh l: Load")).block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded),
+            ),
+            bottom_rects[0],
+        );
+
+        frame.render_widget(
+            {
+                let fetch_info = match &self.fetching_state {
+                    FetchingState::Idle => "Fetch State: Idle".to_string(),
+                    FetchingState::Fetching(info) => format!("Fetch State: {}", &info),
+                };
+                Paragraph::new(Text::raw(fetch_info))
+                    .alignment(Alignment::Right)
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Rounded),
+                    )
+            },
+            bottom_rects[1],
         );
     }
     fn handle_events(&mut self, event: Option<Event>) -> Result<Action> {
@@ -51,6 +86,9 @@ impl Page for Transactions {
                 Event::Key(key) => match (key.modifiers, key.code) {
                     (_, KeyCode::Char('r')) => {
                         Ok(Action::Transaction(TransactionAction::FetchTransactions))
+                    }
+                    (_, KeyCode::Char('l')) => {
+                        Ok(Action::Transaction(TransactionAction::LoadTransactions))
                     }
                     _ => Ok(Action::None),
                 },

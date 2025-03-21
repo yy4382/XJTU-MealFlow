@@ -17,12 +17,11 @@ impl Page for Home {
         let area = frame.area();
         frame.render_widget(
             Paragraph::new(format!(
-                "Press j or k to increment or decrement.\n\nCounter: {}",
-                1
+                "Welcome to XJTU MealFlow\n\nPress 'T' (Capitalized) to view transactions\nPress 'q' to quit"
             ))
             .block(
                 Block::default()
-                    .title("ratatui async counter app")
+                    .title("XJTU MealFlow")
                     .title_alignment(Alignment::Center)
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded),
