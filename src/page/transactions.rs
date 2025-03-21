@@ -82,7 +82,7 @@ impl Page for Transactions {
                         let records = fetcher::fetch_transactions(cookie.as_str(), end_timestamp)
                             .await
                             .unwrap();
-                        assert!(records.len() > 0);
+                        assert!(!records.is_empty());
                         tx.send(Action::Transaction(TransactionAction::UpdateFetchStatus(
                             FetchingState::Idle,
                         )))
