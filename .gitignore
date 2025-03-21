@@ -3,3 +3,7 @@
 .vscode/
 
 .DS_Store
+
+.env
+
+transactions.db
