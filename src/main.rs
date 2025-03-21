@@ -67,7 +67,9 @@ async fn run() -> Result<()> {
                     // check if the current page is not Transactions
                     if app.page.get_name() != "Transactions" {
                         app.page = Box::new(page::transactions::Transactions::default());
-                        action_tx.send(Action::Render)?;
+                        action_tx.send(Action::Transaction(
+                            actions::TransactionAction::LoadTransactions,
+                        ))?;
                     }
                 }
                 Char('q') => action_tx.send(Action::Quit)?,
