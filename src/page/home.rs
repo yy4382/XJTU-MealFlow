@@ -32,7 +32,7 @@ impl Page for Home {
         );
     }
 
-    fn handle_events(&mut self, _event: Option<crate::tui::Event>) -> Result<Action> {
+    fn handle_events(&self, _event: Option<crate::tui::Event>) -> Result<Action> {
         Ok(Action::None)
     }
 

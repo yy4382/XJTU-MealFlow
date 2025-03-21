@@ -8,10 +8,10 @@ use ratatui::Frame;
 pub mod fetch;
 pub mod home;
 pub mod transactions;
-pub trait Page {
+pub trait Page: Send + Sync {
     fn render(&self, frame: &mut Frame, app: &RootState);
-    fn handle_events(&mut self, event: Option<Event>) -> Result<Action>;
-    fn handle_input_mode_events(&mut self, _event: KeyEvent) -> Result<Action> {
+    fn handle_events(&self, event: Option<Event>) -> Result<Action>;
+    fn handle_input_mode_events(&self, _event: KeyEvent) -> Result<Action> {
         Ok(Action::None)
     }
     fn update(&mut self, app: &mut RootState, action: Action);

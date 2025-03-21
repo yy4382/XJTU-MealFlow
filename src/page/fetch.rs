@@ -35,6 +35,7 @@ pub enum FetchingAction {
     InsertTransaction(Vec<crate::transactions::Transaction>),
 
     SubmitUserInput(String),
+    HandleInputEvent(crossterm::event::KeyEvent),
 
     LoadDbCount,
     MoveFocus(Focus),
@@ -190,7 +191,7 @@ impl Page for Fetch {
     }
 
     fn handle_events(
-        &mut self,
+        &self,
         event: Option<crate::tui::Event>,
     ) -> color_eyre::eyre::Result<crate::actions::Action> {
         if let Some(event) = event {
@@ -217,18 +218,14 @@ impl Page for Fetch {
     }
 
     fn handle_input_mode_events(
-        &mut self,
+        &self,
         event: crossterm::event::KeyEvent,
     ) -> color_eyre::eyre::Result<Action> {
         match &event.code {
             KeyCode::Enter => Ok(Action::Fetching(FetchingAction::SubmitUserInput(
                 self.input.value().into(),
             ))),
-            _ => {
-                self.input
-                    .handle_event(&crossterm::event::Event::Key(event));
-                Ok(Action::Render)
-            }
+            _ => Ok(Action::Fetching(FetchingAction::HandleInputEvent(event))),
         }
     }
 
@@ -334,6 +331,11 @@ impl Page for Fetch {
                     } else {
                         app.action_tx.send(Action::None).unwrap();
                     }
+                }
+                FetchingAction::HandleInputEvent(event) => {
+                    self.input
+                        .handle_event(&crossterm::event::Event::Key(event));
+                    app.action_tx.send(Action::Render).unwrap();
                 }
             }
         }
