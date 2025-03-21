@@ -16,6 +16,7 @@ pub enum FetchingState {
     #[default]
     Idle,
     Fetching(FetchProgress),
+    Completed(Vec<crate::transactions::Transaction>), // 新增状态，表示获取完成
 }
 
 #[derive(Clone, Default, Debug)]
@@ -139,7 +140,33 @@ impl Page for Fetch {
             area[1],
         );
 
-        frame.render_widget(Text::raw(format!("{:?}", self)), area[2]);
+        // 修改这里：显示获取结果
+        match &self.fetching_state {
+            FetchingState::Idle => {
+                frame.render_widget(
+                    Text::raw("No data fetched yet.").style(Style::default().fg(Color::Gray)),
+                    area[2],
+                );
+            }
+            FetchingState::Fetching(progress) => {
+                let progress_text = format!(
+                    "Fetching...\nCurrent Page: {}\nTotal Entries Fetched: {}\nOldest Date: {}",
+                    progress.current_page,
+                    progress.total_entries_fetched,
+                    progress.oldest_date.map_or("N/A".to_string(), |date| date.to_string())
+                );
+                frame.render_widget(Text::raw(progress_text), area[2]);
+            }
+            FetchingState::Completed(transactions) => {
+                // 显示获取到的交易数据
+                let transaction_text = transactions
+                    .iter()
+                    .map(|t| format!("{:?}", t)) // 假设 Transaction 实现了 Debug
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                frame.render_widget(Text::raw(transaction_text), area[2]);
+            }
+        }
     }
 
     fn handle_events(
@@ -189,10 +216,8 @@ impl Page for Fetch {
                             oldest_date: None,
                         });
                         let cookie = std::env::var("COOKIE").unwrap();
-                        let account = std::env::var("ACCOUNT").unwrap();
                         let records = crate::fetcher::fetch_transactions(
-                            &cookie,
-                            &account,
+                            cookie.as_str(),
                             date.timestamp(),
                             Some(Box::new(update_progress)),
                         )
@@ -200,7 +225,7 @@ impl Page for Fetch {
                         .unwrap();
                         assert!(!records.is_empty());
                         tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                            FetchingState::Idle,
+                            FetchingState::Completed(records.clone()), // 更新状态为 Completed
                         )))
                         .unwrap();
                         tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
