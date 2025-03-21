@@ -7,6 +7,7 @@ mod tui;
 
 use actions::Action;
 use color_eyre::eyre::Result;
+use crossterm::event::KeyCode;
 use dotenv::dotenv;
 use page::Page;
 use ratatui::crossterm::event::KeyCode::Char;
@@ -17,6 +18,7 @@ pub struct RootState {
     should_quit: bool,
     action_tx: mpsc::UnboundedSender<Action>,
     manager: TransactionManager,
+    input_mode: bool,
 }
 pub struct App {
     page: Box<dyn Page>,
@@ -34,6 +36,7 @@ async fn run() -> Result<()> {
         should_quit: false,
         action_tx: action_tx.clone(),
         manager: TransactionManager::new().unwrap(),
+        input_mode: false,
     };
 
     root_state.manager.init_db()?;
@@ -54,32 +57,46 @@ async fn run() -> Result<()> {
             tui::Event::Resize(_, _) => action_tx.send(Action::Render)?,
             // TODO handle close
             // tui::Event::Closed => action_tx.send(Action::Quit)?,
-            tui::Event::Key(key) => match key.code {
-                Char('H') => {
-                    // check if the current page is not Home
-                    if app.page.get_name() != "Home" {
-                        action_tx.send(Action::NavigateTo(actions::NavigateTarget::Home(
-                            page::home::Home::default(),
-                        )))?;
+            tui::Event::Key(key) => {
+                if app.state.input_mode {
+                    match key.code {
+                        KeyCode::Esc => {
+                            action_tx.send(Action::SwitchInputMode(false))?;
+                        }
+                        _ => {
+                            let action: Action = app.page.handle_input_mode_events(key).unwrap();
+                            action_tx.send(action.clone())?;
+                        }
                     }
-                }
-                Char('T') => {
-                    // check if the current page is not Transactions
-                    if app.page.get_name() != "Transactions" {
-                        action_tx.send(Action::NavigateTo(
-                            actions::NavigateTarget::Transaction(
-                                page::transactions::Transactions::default(),
-                            ),
-                        ))?;
-                    }
-                }
-                Char('q') => action_tx.send(Action::Quit)?,
-                _ => {
-                    let action: Action = app.page.handle_events(Some(e)).unwrap();
+                } else {
+                    match key.code {
+                        Char('H') => {
+                            // check if the current page is not Home
+                            if app.page.get_name() != "Home" {
+                                action_tx.send(Action::NavigateTo(
+                                    actions::NavigateTarget::Home(page::home::Home::default()),
+                                ))?;
+                            }
+                        }
+                        Char('T') => {
+                            // check if the current page is not Transactions
+                            if app.page.get_name() != "Transactions" {
+                                action_tx.send(Action::NavigateTo(
+                                    actions::NavigateTarget::Transaction(
+                                        page::transactions::Transactions::default(),
+                                    ),
+                                ))?;
+                            }
+                        }
+                        Char('q') => action_tx.send(Action::Quit)?,
+                        _ => {
+                            let action: Action = app.page.handle_events(Some(e)).unwrap();
 
-                    action_tx.send(action.clone())?;
+                            action_tx.send(action.clone())?;
+                        }
+                    }
                 }
-            },
+            }
             _ => {}
         };
 
@@ -91,7 +108,7 @@ async fn run() -> Result<()> {
                 Action::None => {}
                 Action::Render => {
                     tui.draw(|f| {
-                        app.page.render(f);
+                        app.page.render(f, &app.state);
                     })?;
                 }
                 Action::NavigateTo(target) => match target {
@@ -108,6 +125,9 @@ async fn run() -> Result<()> {
                         app.page.init(&mut app.state);
                     }
                 },
+                Action::SwitchInputMode(mode) => {
+                    app.state.input_mode = mode;
+                }
                 _ => {
                     app.page.update(&mut app.state, action.clone());
                 }

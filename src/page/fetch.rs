@@ -1,13 +1,15 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, TimeZone};
 use crossterm::event::KeyCode;
 use ratatui::{
-    layout::{Constraint, Flex, Layout},
+    Frame,
+    layout::{Constraint, Flex, Layout, Rect},
     style::{Color, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
+use tui_input::{Input, backend::crossterm::EventHandler};
 
-use crate::{actions::Action, tui::Event};
+use crate::actions::Action;
 
 use super::Page;
 
@@ -32,6 +34,8 @@ pub enum FetchingAction {
     UpdateFetchStatus(FetchingState),
     InsertTransaction(Vec<crate::transactions::Transaction>),
 
+    SubmitUserInput(String),
+
     LoadDbCount,
     MoveFocus(Focus),
 }
@@ -42,6 +46,8 @@ pub struct Fetch {
     local_db_cnt: u64,
     fetch_start_date: Option<DateTime<Local>>,
     current_focus: Focus,
+
+    input: Input,
 }
 
 #[derive(Clone, Default, Debug)]
@@ -74,7 +80,7 @@ impl Focus {
 }
 
 impl Page for Fetch {
-    fn render(&self, frame: &mut ratatui::Frame) {
+    fn render(&self, frame: &mut ratatui::Frame, root_state: &crate::RootState) {
         let area = frame.area();
         let area = &Layout::default()
             .constraints([
@@ -129,24 +135,27 @@ impl Page for Fetch {
             top_areas[2],
         );
 
-        frame.render_widget(
-            Text::raw("UserInputPlaceholder").style(Style::default().fg(
-                if let Focus::UserInput = self.current_focus {
-                    Color::Cyan
-                } else {
-                    Color::Reset
-                },
-            )),
-            area[1],
-        );
+        // frame.render_widget(
+        //     Text::raw("UserInputPlaceholder").style(Style::default().fg(
+        //         if let Focus::UserInput = self.current_focus {
+        //             Color::Cyan
+        //         } else {
+        //             Color::Reset
+        //         },
+        //     )),
+        //     area[1],
+        // );
+
+        self.render_input(frame, area[1], root_state);
 
         // 修改这里：显示获取结果
         match &self.fetching_state {
             FetchingState::Idle => {
                 frame.render_widget(
                     Text::raw(format!(
-                        "Currently {} records locally stored. Fetch more?",
-                        self.local_db_cnt
+                        "Currently {} records locally stored.\n Press \"Enter\" to fetch transactions since {}",
+                        self.local_db_cnt,
+                        self.fetch_start_date.map_or("N/A".to_string(), |date| date.format("%Y-%m-%d").to_string()),
                     ))
                     .style(Style::default().fg(Color::Gray))
                     .centered(),
@@ -186,7 +195,7 @@ impl Page for Fetch {
     ) -> color_eyre::eyre::Result<crate::actions::Action> {
         if let Some(event) = event {
             match event {
-                Event::Key(key) => match (key.modifiers, key.code) {
+                crate::tui::Event::Key(key) => match (key.modifiers, key.code) {
                     (_, KeyCode::Enter) => match self.fetch_start_date {
                         Some(date) => Ok(Action::Fetching(FetchingAction::StartFetching(date))),
                         None => Ok(Action::None),
@@ -204,6 +213,22 @@ impl Page for Fetch {
             }
         } else {
             Ok(Action::None)
+        }
+    }
+
+    fn handle_input_mode_events(
+        &mut self,
+        event: crossterm::event::KeyEvent,
+    ) -> color_eyre::eyre::Result<Action> {
+        match &event.code {
+            KeyCode::Enter => Ok(Action::Fetching(FetchingAction::SubmitUserInput(
+                self.input.value().into(),
+            ))),
+            _ => {
+                self.input
+                    .handle_event(&crossterm::event::Event::Key(event));
+                Ok(Action::Render)
+            }
         }
     }
 
@@ -275,20 +300,40 @@ impl Page for Fetch {
                                 .checked_sub_signed(chrono::Duration::days(90))
                                 .unwrap(),
                         ),
-                        Focus::UserInput => {
-                            // FIXME
-                            Some(
-                                Local::now()
-                                    .checked_sub_signed(chrono::Duration::days(1))
-                                    .unwrap(),
-                            )
-                        }
+                        Focus::UserInput => None,
                     };
-                    app.action_tx.send(Action::Render).unwrap();
+
+                    if let Focus::UserInput = &self.current_focus {
+                        app.action_tx.send(Action::SwitchInputMode(true)).unwrap();
+                        app.action_tx.send(Action::Render).unwrap();
+                    } else {
+                        app.action_tx.send(Action::Render).unwrap();
+                    }
                 }
                 FetchingAction::LoadDbCount => {
                     self.local_db_cnt = app.manager.fetch_count().unwrap();
                     app.action_tx.send(Action::Render).unwrap();
+                }
+
+                FetchingAction::SubmitUserInput(input) => {
+                    self.fetch_start_date =
+                        match chrono::NaiveDate::parse_from_str(&input.trim(), "%Y-%m-%d") {
+                            Ok(dt) => {
+                                match chrono::Local::now()
+                                    .timezone()
+                                    .from_local_datetime(&dt.and_hms_opt(0, 0, 0).unwrap())
+                                {
+                                    chrono::LocalResult::Single(t) => Some(t),
+                                    _ => None,
+                                }
+                            }
+                            Err(_) => None,
+                        };
+                    if let Some(_) = self.fetch_start_date {
+                        app.action_tx.send(Action::SwitchInputMode(false)).unwrap();
+                    } else {
+                        app.action_tx.send(Action::None).unwrap();
+                    }
                 }
             }
         }
@@ -302,5 +347,38 @@ impl Page for Fetch {
         _app.action_tx
             .send(Action::Fetching(FetchingAction::LoadDbCount))
             .unwrap();
+    }
+}
+
+impl Fetch {
+    fn render_input(&self, frame: &mut Frame, area: Rect, root_state: &crate::RootState) {
+        // keep 2 for borders and 1 for cursor
+        let width = area.width.max(3) - 3;
+        let scroll = self.input.visual_scroll(width as usize);
+        let style = match root_state.input_mode {
+            false => match self.current_focus {
+                Focus::UserInput => Color::Cyan.into(),
+                _ => Style::default(),
+            },
+            true => Color::Yellow.into(),
+        };
+
+        let input = Paragraph::new(self.input.value())
+            .style(style)
+            .scroll((0, scroll as u16))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(BorderType::Rounded)
+                    .title("Custom Start Date (2025-03-02 style input) (Enter: Submit   Esc: exit input mode)"),
+            );
+        frame.render_widget(input, area);
+
+        if root_state.input_mode {
+            // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
+            // end of the input text and one line down from the border to the input line
+            let x = self.input.visual_cursor().max(scroll) - scroll + 1;
+            frame.set_cursor_position((area.x + x as u16, area.y + 1))
+        }
     }
 }
