@@ -55,7 +55,11 @@ fn api_response_to_transactions(api_response: ApiResponse) -> Vec<Transaction> {
 }
 
 /// Fetches a single page of transactions
-async fn fetch_transaction_one_page(cookie: &str, page: u32) -> Result<Vec<Transaction>> {
+async fn fetch_transaction_one_page(
+    cookie: &str,
+    account: &str,
+    page: u32,
+) -> Result<Vec<Transaction>> {
     let client = Client::new();
 
     let mut headers = header::HeaderMap::new();
@@ -89,7 +93,7 @@ async fn fetch_transaction_one_page(cookie: &str, page: u32) -> Result<Vec<Trans
     headers.insert(header::USER_AGENT, "".parse().unwrap());
     headers.insert(header::COOKIE, cookie.parse().context("Invalid cookie")?);
 
-    let body = format!("account=253079&page={}&json=true", page);
+    let body = format!("account={}&page={}&json=true", account, page);
 
     // Attempt request with retry logic
     let mut attempts = 0;
@@ -141,6 +145,7 @@ async fn fetch_transaction_one_page(cookie: &str, page: u32) -> Result<Vec<Trans
 /// Fetches all transactions until we reach transactions older than the provided timestamp
 pub async fn fetch_transactions(
     cookie: &str,
+    account: &str,
     end_timestamp: i64,
     progress_cb: Option<Box<dyn Fn(FetchProgress) + Send>>,
 ) -> Result<Vec<Transaction>> {
@@ -156,7 +161,7 @@ pub async fn fetch_transactions(
     }
 
     for page in 1..=max_pages {
-        let page_transactions = fetch_transaction_one_page(cookie, page).await?;
+        let page_transactions = fetch_transaction_one_page(cookie, account, page).await?;
 
         if page_transactions.is_empty() {
             break;
@@ -206,8 +211,9 @@ mod tests {
         dotenv::dotenv().ok();
 
         let cookie = std::env::var("COOKIE").unwrap();
+        let account = std::env::var("ACCOUNT").unwrap();
         let page = 1;
-        let transactions = fetch_transaction_one_page(cookie.as_str(), page)
+        let transactions = fetch_transaction_one_page(cookie.as_str(), &account, page)
             .await
             .unwrap();
         println!("{:?}", transactions);
@@ -220,10 +226,11 @@ mod tests {
         dotenv::dotenv().ok();
 
         let cookie = std::env::var("COOKIE").unwrap();
+        let account = std::env::var("ACCOUNT").unwrap();
         let end_timestamp = DateTime::parse_from_rfc3339("2025-03-01T00:00:00+08:00")
             .unwrap()
             .timestamp();
-        let transactions = fetch_transactions(cookie.as_str(), end_timestamp, None)
+        let transactions = fetch_transactions(cookie.as_str(), &account, end_timestamp, None)
             .await
             .unwrap();
         println!("{:?}", transactions);
