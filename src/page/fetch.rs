@@ -209,6 +209,9 @@ impl Page for Fetch {
                         self.current_focus.prev(),
                     ))),
                     (_, KeyCode::Char('l')) => Ok(Action::Fetching(FetchingAction::LoadDbCount)),
+                    (_, KeyCode::Esc) => Ok(Action::NavigateTo(Box::new(
+                        super::transactions::Transactions::default(),
+                    ))),
                     _ => Ok(Action::None),
                 },
                 _ => Ok(Action::None),
