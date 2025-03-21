@@ -189,8 +189,10 @@ impl Page for Fetch {
                             oldest_date: None,
                         });
                         let cookie = std::env::var("COOKIE").unwrap();
+                        let account = std::env::var("ACCOUNT").unwrap();
                         let records = crate::fetcher::fetch_transactions(
-                            cookie.as_str(),
+                            &cookie,
+                            &account,
                             date.timestamp(),
                             Some(Box::new(update_progress)),
                         )
