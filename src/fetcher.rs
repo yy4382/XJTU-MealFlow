@@ -4,7 +4,7 @@ use reqwest::{Client, header};
 use serde::Deserialize;
 use std::str;
 
-use crate::transactions::Transaction;
+use crate::{page::fetch::FetchProgress, transactions::Transaction};
 
 #[derive(Deserialize, Debug)]
 struct ApiResponse {
@@ -139,9 +139,21 @@ async fn fetch_transaction_one_page(cookie: &str, page: u32) -> Result<Vec<Trans
 }
 
 /// Fetches all transactions until we reach transactions older than the provided timestamp
-pub async fn fetch_transactions(cookie: &str, end_timestamp: i64) -> Result<Vec<Transaction>> {
+pub async fn fetch_transactions(
+    cookie: &str,
+    end_timestamp: i64,
+    progress_cb: Option<Box<dyn Fn(FetchProgress) + Send>>,
+) -> Result<Vec<Transaction>> {
     let mut all_transactions: Vec<Transaction> = Vec::new();
-    let max_pages = 5;
+    let max_pages = 200;
+
+    if let Some(cb) = &progress_cb {
+        cb(FetchProgress {
+            current_page: 0,
+            total_entries_fetched: 0,
+            oldest_date: None,
+        });
+    }
 
     for page in 1..=max_pages {
         let page_transactions = fetch_transaction_one_page(cookie, page).await?;
@@ -154,6 +166,14 @@ pub async fn fetch_transactions(cookie: &str, end_timestamp: i64) -> Result<Vec<
 
         // Check if we've reached transactions older than the end timestamp
         if let Some(last_transaction) = all_transactions.last() {
+            if let Some(cb) = &progress_cb {
+                cb(FetchProgress {
+                    current_page: page,
+                    total_entries_fetched: all_transactions.len() as u32,
+                    oldest_date: Some(last_transaction.time),
+                });
+            }
+
             let last_timestamp = last_transaction.time.timestamp();
             if last_timestamp <= end_timestamp {
                 // Filter out transactions older than the end timestamp
@@ -203,7 +223,7 @@ mod tests {
         let end_timestamp = DateTime::parse_from_rfc3339("2025-03-01T00:00:00+08:00")
             .unwrap()
             .timestamp();
-        let transactions = fetch_transactions(cookie.as_str(), end_timestamp)
+        let transactions = fetch_transactions(cookie.as_str(), end_timestamp, None)
             .await
             .unwrap();
         println!("{:?}", transactions);

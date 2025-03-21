@@ -26,16 +26,19 @@ use tokio_util::sync::CancellationToken;
 #[derive(Clone, Debug)]
 pub enum Event {
     Init,
-    Quit,
+    // Quit,
     Error,
-    Closed,
+    // Closed,
     Tick,
     Render,
     FocusGained,
     FocusLost,
+    #[allow(dead_code)]
     Paste(String),
     Key(KeyEvent),
+    #[allow(dead_code)]
     Mouse(MouseEvent),
+    #[allow(dead_code)]
     Resize(u16, u16),
 }
 
@@ -139,7 +142,7 @@ impl Tui {
                           },
                           CrosstermEvent::Paste(s) => {
                             _event_tx.send(Event::Paste(s)).unwrap();
-                          },
+                          }
                         }
                       }
                       Some(Err(_)) => {

@@ -47,28 +47,29 @@ async fn run() -> Result<()> {
     loop {
         let e = tui.next().await?;
         match e {
-            tui::Event::Quit => action_tx.send(Action::Quit)?,
+            // tui::Event::Quit => action_tx.send(Action::Quit)?,
             tui::Event::Tick => action_tx.send(Action::Tick)?,
             tui::Event::Render => action_tx.send(Action::Render)?,
             // TODO handle resize
             tui::Event::Resize(_, _) => action_tx.send(Action::Render)?,
             // TODO handle close
-            tui::Event::Closed => action_tx.send(Action::Quit)?,
-
+            // tui::Event::Closed => action_tx.send(Action::Quit)?,
             tui::Event::Key(key) => match key.code {
                 Char('H') => {
                     // check if the current page is not Home
                     if app.page.get_name() != "Home" {
-                        app.page = Box::new(page::home::Home::default());
-                        action_tx.send(Action::Render)?;
+                        action_tx.send(Action::NavigateTo(actions::NavigateTarget::Home(
+                            page::home::Home::default(),
+                        )))?;
                     }
                 }
                 Char('T') => {
                     // check if the current page is not Transactions
                     if app.page.get_name() != "Transactions" {
-                        app.page = Box::new(page::transactions::Transactions::default());
-                        action_tx.send(Action::Transaction(
-                            actions::TransactionAction::LoadTransactions,
+                        action_tx.send(Action::NavigateTo(
+                            actions::NavigateTarget::Transaction(
+                                page::transactions::Transactions::default(),
+                            ),
                         ))?;
                     }
                 }
@@ -93,6 +94,20 @@ async fn run() -> Result<()> {
                         app.page.render(f);
                     })?;
                 }
+                Action::NavigateTo(target) => match target {
+                    actions::NavigateTarget::Home(page) => {
+                        app.page = Box::new(page);
+                        app.page.init(&mut app.state);
+                    }
+                    actions::NavigateTarget::Transaction(page) => {
+                        app.page = Box::new(page);
+                        app.page.init(&mut app.state);
+                    }
+                    actions::NavigateTarget::Fetch(page) => {
+                        app.page = Box::new(page);
+                        app.page.init(&mut app.state);
+                    }
+                },
                 _ => {
                     app.page.update(&mut app.state, action.clone());
                 }
@@ -105,7 +120,6 @@ async fn run() -> Result<()> {
         }
     }
 
-    app.state.manager.conn.close().map_err(|e| e.1)?;
     tui.exit()?;
 
     Ok(())

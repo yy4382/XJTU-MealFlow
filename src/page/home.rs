@@ -9,16 +9,16 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Home {}
 
 impl Page for Home {
     fn render(&self, frame: &mut Frame) {
         let area = frame.area();
         frame.render_widget(
-            Paragraph::new(format!(
+            Paragraph::new(
                 "Welcome to XJTU MealFlow\n\nPress 'T' (Capitalized) to view transactions\nPress 'q' to quit"
-            ))
+            )
             .block(
                 Block::default()
                     .title("XJTU MealFlow")
