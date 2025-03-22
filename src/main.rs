@@ -5,6 +5,7 @@ mod errors;
 mod libs;
 mod page;
 mod tui;
+mod logging;
 
 use app::{App, RootState};
 use color_eyre::eyre::Result;
@@ -39,6 +40,7 @@ async fn run() -> Result<()> {
 async fn main() -> Result<()> {
     dotenv().ok();
     errors::init()?;
+    logging::init()?;
 
     let result = run().await;
 

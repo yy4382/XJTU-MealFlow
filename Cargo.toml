@@ -32,3 +32,5 @@ directories = "6.0.0"
 config = "0.15.11"
 json5 = "0.4.1"
 tempfile = "3.19.1"
+tracing-error = "0.2.1"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "serde"] }

@@ -7,6 +7,7 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
+use tracing::{info, instrument};
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::actions::Action;
@@ -318,19 +319,7 @@ impl Page for Fetch {
                 }
 
                 FetchingAction::SubmitUserInput(input) => {
-                    self.fetch_start_date =
-                        match chrono::NaiveDate::parse_from_str(input.trim(), "%Y-%m-%d") {
-                            Ok(dt) => {
-                                match chrono::Local::now()
-                                    .timezone()
-                                    .from_local_datetime(&dt.and_hms_opt(0, 0, 0).unwrap())
-                                {
-                                    chrono::LocalResult::Single(t) => Some(t),
-                                    _ => None,
-                                }
-                            }
-                            Err(_) => None,
-                        };
+                    self.fetch_start_date = Fetch::parse_user_input(&input);
                     if self.fetch_start_date.is_some() {
                         app.action_tx.send(Action::SwitchInputMode(false)).unwrap();
                     } else {
@@ -386,6 +375,28 @@ impl Fetch {
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
+        }
+    }
+
+    #[instrument]
+    fn parse_user_input(input: &str) -> Option<DateTime<Local>> {
+        match chrono::NaiveDate::parse_from_str(input.trim(), "%Y-%m-%d") {
+            Ok(dt) => {
+                match chrono::Local::now()
+                    .timezone()
+                    .from_local_datetime(&dt.and_hms_opt(0, 0, 0).unwrap())
+                {
+                    chrono::LocalResult::Single(t) => Some(t),
+                    _ => {
+                        info!("Invalid date input: {}", input);
+                        None
+                    }
+                }
+            }
+            Err(_) => {
+                info!("Invalid date input: {}", input);
+                None
+            }
         }
     }
 }
