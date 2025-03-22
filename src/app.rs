@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::{
     actions::Action,
     page::{self, Page},
@@ -12,6 +13,8 @@ pub struct RootState {
     pub action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
     pub manager: crate::libs::transactions::TransactionManager,
     pub input_mode: bool,
+
+    pub config: Config,
 }
 pub struct App {
     pub page: Box<dyn Page>,

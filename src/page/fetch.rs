@@ -239,6 +239,9 @@ impl Page for Fetch {
                 FetchingAction::StartFetching(date) => {
                     let tx = app.action_tx.clone();
                     let tx2 = app.action_tx.clone();
+
+                    let cookie = app.config.fetch.cookie.clone();
+                    let account = app.config.fetch.account.clone();
                     tokio::spawn(async move {
                         let update_progress = move |progress: FetchProgress| {
                             tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
@@ -252,8 +255,6 @@ impl Page for Fetch {
                             total_entries_fetched: 0,
                             oldest_date: None,
                         });
-                        let cookie = std::env::var("COOKIE").unwrap();
-                        let account = std::env::var("ACCOUNT").unwrap();
                         let records = fetcher::fetch_transactions(
                             &cookie,
                             &account,
@@ -318,7 +319,7 @@ impl Page for Fetch {
 
                 FetchingAction::SubmitUserInput(input) => {
                     self.fetch_start_date =
-                        match chrono::NaiveDate::parse_from_str(&input.trim(), "%Y-%m-%d") {
+                        match chrono::NaiveDate::parse_from_str(input.trim(), "%Y-%m-%d") {
                             Ok(dt) => {
                                 match chrono::Local::now()
                                     .timezone()
@@ -330,7 +331,7 @@ impl Page for Fetch {
                             }
                             Err(_) => None,
                         };
-                    if let Some(_) = self.fetch_start_date {
+                    if self.fetch_start_date.is_some() {
                         app.action_tx.send(Action::SwitchInputMode(false)).unwrap();
                     } else {
                         app.action_tx.send(Action::None).unwrap();
