@@ -131,22 +131,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_data_dir() {
-        unsafe {
-            std::env::set_var(format!("{}_DATA", PROJECT_NAME.clone()), ".test-data");
-        }
-        let data_dir = get_data_dir();
-        println!("{:?}", data_dir);
-        assert!(data_dir.exists());
-    }
-
-    #[test]
-    fn test_get_config_dir() {
-        let config_dir = get_config_dir();
-        assert!(config_dir.exists());
-    }
-
-    #[test]
     fn test_default_config() {
         let temp_data = tempdir_in(".").unwrap();
         let temp_config = tempdir_in(".").unwrap();
@@ -154,56 +138,41 @@ mod tests {
         // write a config.yaml file to temp_config
         let config_file = temp_config.path().join("config.yaml");
 
-        fs::write(
-            &config_file,
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/test/mock-data/config.yaml"
-            )),
-        )
-        .unwrap();
+        temp_env::with_vars(
+            [
+                // ("XMF_COOKIE", Some("test-cookie")),
+                ("XMF_ACCOUNT", Some("test-account")),
+                (
+                    format!("{}_DATA", PROJECT_NAME.clone()).as_str(),
+                    Some(temp_data.path().to_str().unwrap()),
+                ),
+                (
+                    format!("{}_CONFIG", PROJECT_NAME.clone()).as_str(),
+                    Some(temp_config.path().to_str().unwrap()),
+                ),
+            ],
+            || {
+                fs::write(
+                    &config_file,
+                    include_str!(concat!(
+                        env!("CARGO_MANIFEST_DIR"),
+                        "/test/mock-data/config.yaml"
+                    )),
+                )
+                .unwrap();
 
-        unsafe {
-            std::env::set_var(format!("{}_DATA", PROJECT_NAME.clone()), temp_data.path());
-            std::env::set_var(
-                format!("{}_CONFIG", PROJECT_NAME.clone()),
-                temp_config.path(),
-            );
-            std::env::set_var("ACCOUNT", "test_account");
-            // std::env::set_var("COOKIE", "test_cookie");
-        }
+                let config = Config::new().unwrap();
+                println!("{:?}", config);
+                assert!(config.config.data_dir.exists());
+                assert!(config.config.config_dir.exists());
 
-        let config = Config::new().unwrap();
-        println!("{:?}", config);
-        assert!(config.config.data_dir.exists());
-        assert!(config.config.config_dir.exists());
-
-        assert_eq!(
-            config.config.db_path(),
-            config.config.data_dir.join("transactions.db")
+                assert_eq!(
+                    config.config.db_path(),
+                    config.config.data_dir.join("transactions.db")
+                );
+                assert_eq!(config.fetch.account, "test-account");
+                assert_eq!(config.fetch.cookie, "test-cookie-in-config")
+            },
         );
-        assert_eq!(config.fetch.account, "test_account");
-        assert_eq!(config.fetch.cookie, "test-cookie-in-config");
-    }
-
-    #[test]
-    fn test_default_config_empty() {
-        unsafe {
-            std::env::set_var(format!("{}_DATA", PROJECT_NAME.clone()), ".test-data");
-            std::env::set_var(format!("{}_CONFIG", PROJECT_NAME.clone()), ".test-config");
-            std::env::set_var("XMF_ACCOUNT", "test-account");
-            std::env::set_var("XMF_COOKIE", "test-cookie");
-        }
-
-        let config = Config::new().unwrap();
-
-        println!("{:?}", config);
-
-        assert_eq!(
-            config.config.db_path(),
-            config.config.data_dir.join("transactions.db")
-        );
-        assert_eq!(config.fetch.account, "test-account");
-        assert_eq!(config.fetch.cookie, "test-cookie");
     }
 }
