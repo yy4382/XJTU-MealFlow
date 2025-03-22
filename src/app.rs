@@ -6,6 +6,7 @@ use crate::{
 };
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode::{self, Char};
+use tracing::debug;
 
 pub struct RootState {
     pub should_quit: bool,
@@ -128,6 +129,7 @@ impl App {
                     .unwrap();
             }
             Action::NavigateTo(target) => {
+                debug!("Navigating to {}", target.get_name());
                 self.page = target;
                 self.page.init(&mut self.state);
             }
