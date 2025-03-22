@@ -6,4 +6,5 @@
 
 .env
 
-transactions.db
+.data/
+.config/

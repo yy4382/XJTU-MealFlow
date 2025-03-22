@@ -1,6 +1,7 @@
-use std::rc::Rc;
+use std::{path::PathBuf, rc::Rc};
 
 use chrono::{DateTime, Local};
+use color_eyre::eyre::Result;
 use rusqlite::{Connection, params};
 
 #[derive(Debug, Clone)]
@@ -13,12 +14,19 @@ pub struct Transaction {
 
 #[derive(Debug, Clone)]
 pub struct TransactionManager {
-    pub conn: Rc<Connection>,
+    conn: Rc<Connection>,
 }
 
 impl TransactionManager {
-    pub fn new() -> Result<Self, rusqlite::Error> {
-        let conn = Connection::open("transactions.db")?;
+    pub fn new(db_path: Option<PathBuf>) -> Result<Self> {
+        let conn = match db_path {
+            Some(db_path) => {
+                std::fs::create_dir_all(db_path.parent().unwrap())?;
+                Connection::open(db_path)?
+            }
+            None => Connection::open_in_memory()?,
+        };
+
         Ok(TransactionManager {
             conn: Rc::new(conn),
         })
@@ -125,10 +133,7 @@ mod tests {
 
     #[test]
     fn test_transaction_manager() {
-        let conn = Connection::open_in_memory().unwrap();
-        let manager = TransactionManager {
-            conn: Rc::new(conn),
-        };
+        let manager = TransactionManager::new(None).unwrap();
 
         manager.init_db().unwrap();
 

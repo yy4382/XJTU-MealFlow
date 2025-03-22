@@ -1,0 +1,6 @@
+cookie: "test-cookie-in-config"
+account: "test-account-in-config"
+
+# data_dir: "./.data"
+# config_dir: "./.config"
+# db_path: "transactions.db" # is relative to data_dir
