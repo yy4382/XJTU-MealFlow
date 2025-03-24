@@ -2861,7 +2861,6 @@ dependencies = [
  "json5",
  "lazy_static",
  "libc",
- "log",
  "ratatui",
  "reqwest",
  "rusqlite",
