@@ -3,9 +3,9 @@ mod app;
 mod config;
 mod errors;
 mod libs;
+mod logging;
 mod page;
 mod tui;
-mod logging;
 
 use app::{App, RootState};
 use color_eyre::eyre::Result;
