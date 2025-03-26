@@ -140,9 +140,7 @@ impl super::Component for InputComp {
                             } else if self.control_keys.exit_keys.contains(key) {
                                 app.send_action(self.get_action(InputAction::Exit()))
                             } else {
-                                app.send_action(
-                                    self.get_action(InputAction::HandleKey(*key)),
-                                )
+                                app.send_action(self.get_action(InputAction::HandleKey(*key)))
                             }
                         }
                         Event::Paste(s) => {

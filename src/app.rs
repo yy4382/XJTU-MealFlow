@@ -31,8 +31,8 @@ impl RootState {
             input_mode: false,
         }
     }
-    pub fn send_action(&self, action: Action) {
-        let result = self.action_tx.send(action);
+    pub fn send_action<T: Into<Action>>(&self, action: T) {
+        let result = self.action_tx.send(action.into());
         if let Err(e) = result {
             warn!("Failed to send action: {:?}", e);
         }
@@ -72,7 +72,7 @@ impl App {
         Ok(())
     }
 
-    pub fn send_action(&self, action: Action) {
+    pub fn send_action<T: Into<Action>>(&self, action: T) {
         self.state.send_action(action);
     }
 
@@ -103,9 +103,7 @@ impl App {
                     Char('H') => {
                         // check if the current page is not Home
                         if self.page.get_name() != "Home" {
-                            self.send_action(Action::NavigateTo(crate::actions::NaviTarget::Home(
-                                page::home::Home::default(),
-                            )))
+                            self.send_action(page::home::Home::default())
                         } else {
                             self.send_action(Action::None)
                         }
@@ -113,11 +111,7 @@ impl App {
                     Char('T') => {
                         // check if the current page is not Transactions
                         if self.page.get_name() != "Transactions" {
-                            self.send_action(Action::NavigateTo(
-                                crate::actions::NaviTarget::Transaction(
-                                    page::transactions::Transactions::default(),
-                                ),
-                            ))
+                            self.send_action(page::transactions::Transactions::default())
                         } else {
                             self.send_action(Action::None)
                         }
@@ -156,7 +150,7 @@ impl App {
             }
             Action::NavigateTo(target) => {
                 // debug!("Navigating to {:?}", target);
-                match target {
+                match *target {
                     NaviTarget::Home(h) => self.page = Box::new(h),
                     NaviTarget::Fetch(fetch) => self.page = Box::new(fetch),
                     NaviTarget::Transaction(transactions) => self.page = Box::new(transactions),

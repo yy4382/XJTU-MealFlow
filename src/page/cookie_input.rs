@@ -63,6 +63,12 @@ pub(crate) enum CookieInputAction {
     ChangeState(CookieInputState),
 }
 
+impl Into<Action> for CookieInputAction {
+    fn into(self) -> Action {
+        Action::CookieInput(self)
+    }
+}
+
 impl Page for CookieInput {
     fn render(&self, frame: &mut ratatui::Frame, app: &crate::app::RootState) {
         // TODO add keybindings guide
@@ -84,15 +90,13 @@ impl Page for CookieInput {
             crate::tui::Event::Key(key) => {
                 if !app.input_mode {
                     match (key.modifiers, key.code) {
-                        (_, KeyCode::Char('k')) => app.send_action(Action::CookieInput(
-                            CookieInputAction::ChangeState(self.state.prev()),
-                        )),
-                        (_, KeyCode::Char('j')) => app.send_action(Action::CookieInput(
-                            CookieInputAction::ChangeState(self.state.next()),
-                        )),
-                        (_, KeyCode::Esc) => app.send_action(Action::NavigateTo(
-                            crate::actions::NaviTarget::Fetch(crate::page::fetch::Fetch::default()),
-                        )),
+                        (_, KeyCode::Char('k')) => {
+                            app.send_action(CookieInputAction::ChangeState(self.state.prev()))
+                        }
+                        (_, KeyCode::Char('j')) => {
+                            app.send_action(CookieInputAction::ChangeState(self.state.next()))
+                        }
+                        (_, KeyCode::Esc) => app.send_action(crate::page::fetch::Fetch::default()),
                         _ => (),
                     }
                 }
