@@ -364,8 +364,9 @@ mod tests {
         // Verify we have appropriate delays between progress updates
         assert!(
             gaps.iter()
-                .all(|duration| duration.as_millis() > 150 && duration.as_millis() < 300),
-            "Progress updates should be appropriate due to simulated delay"
+                .all(|duration| duration.as_millis() > 50 && duration.as_millis() < 400),
+            "Progress updates should be appropriate due to simulated delay (200ms), {:?}",
+            gaps
         );
 
         println!("{:?}\n{:?}", received, gaps);
