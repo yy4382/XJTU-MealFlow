@@ -30,8 +30,13 @@ impl CookieInput {
 
         Self {
             state: Default::default(),
-            cookie_input: InputComp::new(comp_ids[0], Some(account), "Cookie", Default::default()),
-            account_input: InputComp::new(comp_ids[1], Some(cookie), "Cookie", Default::default()),
+            cookie_input: InputComp::new(comp_ids[0], Some(cookie), "Cookie", Default::default()),
+            account_input: InputComp::new(
+                comp_ids[1],
+                Some(account),
+                "Account",
+                Default::default(),
+            ),
         }
     }
 }
@@ -147,5 +152,10 @@ impl Page for CookieInput {
         "Cookie Input".to_string()
     }
 
-    fn init(&mut self, _app: &mut crate::app::RootState) {}
+    fn init(&mut self, _app: &mut crate::app::RootState) {
+        _app.send_action(
+            self.account_input
+                .get_switch_mode_action(InputMode::Focused),
+        );
+    }
 }
