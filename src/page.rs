@@ -22,5 +22,5 @@ pub trait Page: Send + Sync {
     fn get_name(&self) -> String;
 
     /// Initialize the page
-    fn init(&mut self, _app: &mut RootState) {}
+    fn init(&mut self, _app: &RootState) {}
 }

@@ -317,7 +317,7 @@ impl Page for Fetch {
         "Fetch".to_string()
     }
 
-    fn init(&mut self, app: &mut crate::RootState) {
+    fn init(&mut self, app: &crate::RootState) {
         app.send_action(Action::Fetching(FetchingAction::LoadDbCount))
     }
 }

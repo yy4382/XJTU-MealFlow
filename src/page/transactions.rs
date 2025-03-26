@@ -91,7 +91,7 @@ impl Page for Transactions {
         "Transactions".to_string()
     }
 
-    fn init(&mut self, app: &mut RootState) {
+    fn init(&mut self, app: &RootState) {
         app.send_action(TransactionAction::LoadTransactions)
     }
 }
