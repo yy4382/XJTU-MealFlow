@@ -110,21 +110,13 @@ impl TransactionManager {
             })
         })?;
 
-        let mut result = Vec::new();
-        for transaction in transactions {
-            result.push(transaction?);
-        }
-        Ok(result)
+        Ok(transactions.filter_map(|t| t.ok()).collect())
     }
 
-    pub fn fetch_count(&self) -> Result<u64, rusqlite::Error> {
+    pub fn fetch_count(&self) -> Result<u64> {
         let mut stmt = self.conn.prepare("SELECT COUNT(*) FROM transactions")?;
-        let count = stmt.query_map([], |row| row.get(0))?;
-        let mut result = 0;
-        for c in count {
-            result = c?;
-        }
-        Ok(result)
+        let count: i64 = stmt.query_row([], |row| row.get(0))?;
+        Ok(count as u64)
     }
 
     #[allow(dead_code)]
