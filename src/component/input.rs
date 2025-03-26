@@ -340,7 +340,8 @@ pub mod test {
 
     fn get_test_page(auto_submit: bool) -> (TestInputPage, RootState) {
         let app = RootState::new(None);
-        let page = TestInputPage::new(auto_submit);
+        let mut page = TestInputPage::new(auto_submit);
+        page.init(&app);
         (page, app)
     }
 
@@ -348,21 +349,25 @@ pub mod test {
     fn test_input() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Enter)];
+            get_key_evt(KeyCode::Enter),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Left),
             get_char_evt('c'),
-            get_key_evt(KeyCode::Enter)];
+            get_key_evt(KeyCode::Enter),
+        ];
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
@@ -373,10 +378,12 @@ pub mod test {
     fn test_input_auto_submit() {
         let (mut page, mut app) = get_test_page(true);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b')];
+            get_char_evt('b'),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
@@ -394,21 +401,25 @@ pub mod test {
     fn test_input_paste() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Enter)];
+            get_key_evt(KeyCode::Enter),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Left),
             Event::Paste("ccc".into()),
-            get_key_evt(KeyCode::Enter)];
+            get_key_evt(KeyCode::Enter),
+        ];
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
@@ -419,10 +430,12 @@ pub mod test {
     fn test_input_paste_auto_submit() {
         let (mut page, mut app) = get_test_page(true);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b')];
+            get_char_evt('b'),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
@@ -441,11 +454,13 @@ pub mod test {
     fn test_input_quit() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Esc)];
+            get_key_evt(KeyCode::Esc),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
@@ -478,9 +493,11 @@ pub mod test {
         terminal.draw(|f| page.render(f, &app)).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
 
-        let seq = [get_key_evt(KeyCode::Enter),
+        let seq = [
+            get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b')];
+            get_char_evt('b'),
+        ];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));

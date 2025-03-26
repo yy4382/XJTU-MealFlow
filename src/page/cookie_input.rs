@@ -17,26 +17,12 @@ pub struct CookieInput {
 
 impl CookieInput {
     pub fn new(app: &RootState) -> Self {
-        let mut comp_ids = vec![rand::random::<u64>()];
-        loop {
-            let rand2 = rand::random::<u64>();
-            if !comp_ids.contains(&rand2) {
-                comp_ids.push(rand2);
-                break;
-            }
-        }
-
         let (account, cookie) = app.manager.get_account_cookie().unwrap_or_default();
 
         Self {
             state: Default::default(),
-            cookie_input: InputComp::new(comp_ids[0], Some(cookie), "Cookie", Default::default()),
-            account_input: InputComp::new(
-                comp_ids[1],
-                Some(account),
-                "Account",
-                Default::default(),
-            ),
+            cookie_input: InputComp::new(1, Some(cookie), "Cookie", Default::default()),
+            account_input: InputComp::new(2, Some(account), "Account", Default::default()),
         }
     }
 }
@@ -219,6 +205,7 @@ mod test {
         app.handle_event_and_update(&mut page, get_char_evt('a'));
         app.handle_event_and_update(&mut page, get_char_evt('j'));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Esc));
         assert_eq!(app.manager.get_account_cookie().unwrap().1, "aj");
     }
 }

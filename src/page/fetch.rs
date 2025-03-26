@@ -216,7 +216,11 @@ impl Page for Fetch {
         if let crate::tui::Event::Key(key) = event {
             if !app.input_mode() {
                 match (key.modifiers, key.code) {
-                    (_, KeyCode::Enter) => if let Some(date) = self.fetch_start_date { app.send_action(FetchingAction::StartFetching(date)) },
+                    (_, KeyCode::Enter) => {
+                        if let Some(date) = self.fetch_start_date {
+                            app.send_action(FetchingAction::StartFetching(date))
+                        }
+                    }
                     (_, KeyCode::Char('j')) => {
                         app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
                     }

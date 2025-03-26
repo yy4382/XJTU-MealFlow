@@ -5,6 +5,9 @@ authors = ["Yi Yang <yy4382@outlook.com>"]
 license = "MIT"
 edition = "2024"
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(tarpaulin_include)'] }
+
 [dependencies]
 crossterm = { version = "0.28.1", features = ["event-stream"] }
 ratatui = "0.29.0"
