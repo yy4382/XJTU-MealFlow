@@ -252,4 +252,58 @@ mod tests {
         assert_eq!(account, "test_account2");
         assert_eq!(cookie, "test_cookie");
     }
+
+    #[test]
+    fn test_fetch_count() {
+        let manager = TransactionManager::new(None).unwrap();
+        manager.init_db().unwrap();
+        manager.clear_db().unwrap();
+
+        // Initially should have zero transactions
+        let count = manager.fetch_count().unwrap();
+        assert_eq!(count, 0);
+
+        // Add some transactions
+        let transactions = vec![
+            Transaction {
+                id: 1,
+                time: Local::now(),
+                amount: -100.0,
+                merchant: "Amazon".to_string(),
+            },
+            Transaction {
+                id: 2,
+                time: Local::now(),
+                amount: -200.0,
+                merchant: "Google".to_string(),
+            },
+        ];
+
+        manager.insert(&transactions).unwrap();
+
+        // Should now have 2 transactions
+        let count = manager.fetch_count().unwrap();
+        assert_eq!(count, 2);
+
+        // Add more transactions
+        let more_transactions = vec![Transaction {
+            id: 3,
+            time: Local::now(),
+            amount: -300.0,
+            merchant: "Apple".to_string(),
+        }];
+
+        manager.insert(&more_transactions).unwrap();
+
+        // Should now have 3 transactions
+        let count = manager.fetch_count().unwrap();
+        assert_eq!(count, 3);
+
+        // Clear the database
+        manager.clear_db().unwrap();
+
+        // Should now have 0 transactions again
+        let count = manager.fetch_count().unwrap();
+        assert_eq!(count, 0);
+    }
 }
