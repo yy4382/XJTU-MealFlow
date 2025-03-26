@@ -163,7 +163,7 @@ impl App {
                     NaviTarget::Transaction(transactions) => self.page = Box::new(transactions),
                     NaviTarget::CookieInput(cookie_input) => self.page = Box::new(cookie_input),
                 }
-                self.page.init(&mut self.state);
+                self.page.init(&self.state);
             }
 
             _ => {}
@@ -180,10 +180,10 @@ impl RootState {
     }
 
     pub fn handle_event_and_update(&mut self, page: &mut dyn Page, evt: tui::Event) {
-        page.handle_events(&self, evt).unwrap();
+        page.handle_events(self, evt).unwrap();
         while let Ok(action) = self.try_recv() {
             self.update(&action).unwrap();
-            page.update(&self, action);
+            page.update(self, action);
         }
     }
 }

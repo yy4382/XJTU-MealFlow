@@ -156,14 +156,9 @@ impl super::Component for InputComp {
                         }
                         _ => (),
                     }
-                } else {
-                    match event {
-                        Event::Key(key) => {
-                            if self.control_keys.enter_keys.contains(&key) {
-                                app.send_action(Action::SwitchInputMode(true))
-                            }
-                        }
-                        _ => (),
+                } else if let Event::Key(key) = event {
+                    if self.control_keys.enter_keys.contains(key) {
+                        app.send_action(Action::SwitchInputMode(true))
                     }
                 }
             }
@@ -353,25 +348,21 @@ pub mod test {
     fn test_input() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Enter),
-        ];
+            get_key_evt(KeyCode::Enter)];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Left),
             get_char_evt('c'),
-            get_key_evt(KeyCode::Enter),
-        ];
+            get_key_evt(KeyCode::Enter)];
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
@@ -382,19 +373,17 @@ pub mod test {
     fn test_input_auto_submit() {
         let (mut page, mut app) = get_test_page(true);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b'),
-        ];
+            get_char_evt('b')];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = vec![get_key_evt(KeyCode::Left), get_char_evt('c')];
+        let seq = [get_key_evt(KeyCode::Left), get_char_evt('c')];
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
@@ -405,25 +394,21 @@ pub mod test {
     fn test_input_paste() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Enter),
-        ];
+            get_key_evt(KeyCode::Enter)];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Left),
             Event::Paste("ccc".into()),
-            get_key_evt(KeyCode::Enter),
-        ];
+            get_key_evt(KeyCode::Enter)];
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
@@ -434,19 +419,17 @@ pub mod test {
     fn test_input_paste_auto_submit() {
         let (mut page, mut app) = get_test_page(true);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b'),
-        ];
+            get_char_evt('b')];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
 
         assert_eq!(page.content, "ab");
 
-        let seq = vec![get_key_evt(KeyCode::Left), Event::Paste("ccc".into())];
+        let seq = [get_key_evt(KeyCode::Left), Event::Paste("ccc".into())];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
@@ -458,13 +441,11 @@ pub mod test {
     fn test_input_quit() {
         let (mut page, mut app) = get_test_page(false);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
             get_char_evt('b'),
-            get_key_evt(KeyCode::Esc),
-        ];
+            get_key_evt(KeyCode::Esc)];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
@@ -482,7 +463,7 @@ pub mod test {
             .find(|&c| c.symbol() == "I")
             .unwrap();
 
-        cell.fg.clone()
+        cell.fg
     }
 
     #[test]
@@ -497,11 +478,9 @@ pub mod test {
         terminal.draw(|f| page.render(f, &app)).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
 
-        let seq = vec![
-            get_key_evt(KeyCode::Enter),
+        let seq = [get_key_evt(KeyCode::Enter),
             get_char_evt('a'),
-            get_char_evt('b'),
-        ];
+            get_char_evt('b')];
 
         seq.iter()
             .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
