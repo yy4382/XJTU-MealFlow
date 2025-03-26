@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::{info, instrument};
+use tracing::{debug, info, instrument};
 
 use crate::{
     actions::Action,
@@ -74,7 +74,8 @@ impl Default for Fetch {
                 None::<String>,
                 "Custom Start Date (2025-03-02 style input)",
                 Default::default(),
-            ),
+            )
+            .set_auto_submit(true),
         }
     }
 }
@@ -251,7 +252,8 @@ impl Page for Fetch {
                     let tx = app.clone_sender();
 
                     if let Ok((account, cookie)) = app.manager.get_account_cookie() {
-                        tokio::spawn(Fetch::fetch(tx, cookie, account, *date));
+                        // TODO use another thread to run this
+                        Fetch::fetch(tx, cookie, account, *date);
                     } else {
                         app.send_action(crate::page::cookie_input::CookieInput::new(app))
                     }
@@ -303,9 +305,6 @@ impl Page for Fetch {
 
         if let Some(input) = self.input.parse_submit_action(&action) {
             self.fetch_start_date = Fetch::parse_user_input(&input);
-            if self.fetch_start_date.is_some() {
-                app.send_action(Action::SwitchInputMode(false));
-            }
         }
 
         self.input.update(&action, app).unwrap();
@@ -331,24 +330,19 @@ impl Fetch {
                 {
                     chrono::LocalResult::Single(t) => Some(t),
                     _ => {
-                        info!("Invalid date input: {}", input);
+                        debug!("Invalid date input: {}", input);
                         None
                     }
                 }
             }
             Err(_) => {
-                info!("Invalid date input: {}", input);
+                debug!("Invalid date input: {}", input);
                 None
             }
         }
     }
 
-    async fn fetch(
-        tx: UnboundedSender<Action>,
-        cookie: String,
-        account: String,
-        date: DateTime<Local>,
-    ) {
+    fn fetch(tx: UnboundedSender<Action>, cookie: String, account: String, date: DateTime<Local>) {
         let tx2 = tx.clone();
         let update_progress = move |progress: FetchProgress| {
             tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
@@ -357,25 +351,24 @@ impl Fetch {
             .unwrap();
             tx.send(Action::Render).unwrap();
         };
-        update_progress(FetchProgress {
-            current_page: 1,
-            total_entries_fetched: 0,
-            oldest_date: None,
+
+        tokio::task::spawn_blocking(move || {
+            let fetch_client = fetcher::RealMealFetcher::default()
+                .cookie(&cookie)
+                .account(&account);
+
+            info!("Start fetching with account {} cookie {}", account, cookie);
+
+            let records = fetcher::fetch(date, Box::new(fetch_client), update_progress).unwrap();
+
+            info!("Fetch stopped with {} records", records.len());
+
+            tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
+                FetchingState::Idle, // 更新状态为 Idle
+            )))
+            .unwrap();
+            tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
+                .unwrap()
         });
-        let records = fetcher::fetch_transactions(
-            &cookie,
-            &account,
-            date.timestamp(),
-            Some(Box::new(update_progress)),
-        )
-        .await
-        .unwrap();
-        assert!(!records.is_empty());
-        tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-            FetchingState::Idle, // 更新状态为 Idle
-        )))
-        .unwrap();
-        tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
-            .unwrap()
     }
 }

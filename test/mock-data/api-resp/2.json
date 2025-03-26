@@ -1,0 +1,124 @@
+{
+  "rows": [
+    {
+      "MERCNAME": "牛肉饭",
+      "OCCTIME": "2025-03-06 12:08:59",
+      "TRANAMT": -13.11,
+      "JNUM": 20
+    },
+    {
+      "MERCNAME": "梧晓桐便利店",
+      "OCCTIME": "2025-03-05 20:59:50",
+      "TRANAMT": -9.99,
+      "JNUM": 21
+    },
+    {
+      "MERCNAME": "七彩阁浴室",
+      "OCCTIME": "2025-03-04 16:30:29",
+      "TRANAMT": -0.17,
+      "JNUM": 22
+    },
+    {
+      "MERCNAME": "",
+      "OCCTIME": "2025-03-03 10:58:18",
+      "TRANAMT": 238.52,
+      "JNUM": 23
+    },
+    {
+      "MERCNAME": "荷叶饼夹馍组",
+      "OCCTIME": "2025-03-01 17:43:11",
+      "TRANAMT": -11.7,
+      "JNUM": 24
+    },
+    {
+      "MERCNAME": "时光水吧",
+      "OCCTIME": "2025-03-01 12:20:56",
+      "TRANAMT": -3.76,
+      "JNUM": 25
+    },
+    {
+      "MERCNAME": "牛肉饭",
+      "OCCTIME": "2025-03-01 11:07:16",
+      "TRANAMT": -17.31,
+      "JNUM": 26
+    },
+    {
+      "MERCNAME": "西14西15东12浴室",
+      "OCCTIME": "2025-02-27 14:58:11",
+      "TRANAMT": -0.46,
+      "JNUM": 27
+    },
+    {
+      "MERCNAME": "库迪咖啡",
+      "OCCTIME": "2025-02-26 10:25:12",
+      "TRANAMT": -3.82,
+      "JNUM": 28
+    },
+    {
+      "MERCNAME": "库迪咖啡",
+      "OCCTIME": "2025-02-25 17:29:44",
+      "TRANAMT": -4.79,
+      "JNUM": 29
+    },
+    {
+      "MERCNAME": "时光水吧",
+      "OCCTIME": "2025-02-25 07:03:56",
+      "TRANAMT": -3.03,
+      "JNUM": 30
+    },
+    {
+      "MERCNAME": "凉皮饸络组",
+      "OCCTIME": "2025-02-24 17:59:05",
+      "TRANAMT": -8.99,
+      "JNUM": 31
+    },
+    {
+      "MERCNAME": "西14西15东12浴室",
+      "OCCTIME": "2025-02-24 17:15:09",
+      "TRANAMT": -1.28,
+      "JNUM": 32
+    },
+    {
+      "MERCNAME": "崇实书院西侧浴室",
+      "OCCTIME": "2025-02-23 16:26:22",
+      "TRANAMT": -0.13,
+      "JNUM": 33
+    },
+    {
+      "MERCNAME": "",
+      "OCCTIME": "2025-02-22 12:11:38",
+      "TRANAMT": 209.5,
+      "JNUM": 34
+    },
+    {
+      "MERCNAME": "寿司",
+      "OCCTIME": "2025-02-22 11:46:49",
+      "TRANAMT": -16.26,
+      "JNUM": 35
+    },
+    {
+      "MERCNAME": "崇实书院西侧浴室",
+      "OCCTIME": "2025-02-21 16:39:56",
+      "TRANAMT": -0.64,
+      "JNUM": 36
+    },
+    {
+      "MERCNAME": "库迪咖啡",
+      "OCCTIME": "2025-02-21 12:50:19",
+      "TRANAMT": -9.68,
+      "JNUM": 37
+    },
+    {
+      "MERCNAME": "民族风味小吃",
+      "OCCTIME": "2025-02-19 07:24:35",
+      "TRANAMT": -4.81,
+      "JNUM": 38
+    },
+    {
+      "MERCNAME": "寿司",
+      "OCCTIME": "2025-02-18 17:56:46",
+      "TRANAMT": -16.63,
+      "JNUM": 39
+    }
+  ]
+}
