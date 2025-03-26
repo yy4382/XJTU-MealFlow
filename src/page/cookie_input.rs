@@ -162,11 +162,11 @@ impl Page for CookieInput {
 
 #[cfg(test)]
 mod test {
-    use crossterm::event::{KeyEvent, KeyModifiers};
-
-    use crate::tui::Event;
-
     use super::*;
+    use crate::app::RootState;
+    use crate::tui::Event;
+    use crate::tui::test_utils::{get_char_evt, get_key_evt};
+
     fn get_test_objs() -> (RootState, CookieInput) {
         let mut app = RootState::new(None);
         app.manager.init_db().unwrap();
@@ -178,37 +178,22 @@ mod test {
         (app, page)
     }
 
-    fn get_key_evt(key: KeyCode) -> Event {
-        Event::Key(KeyEvent::new(key, KeyModifiers::NONE))
-    }
-    fn get_char_evt(key: char) -> Event {
-        Event::Key(KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE))
-    }
-
-    fn handle_event_and_update(app: &mut RootState, page: &mut CookieInput, evt: Event) {
-        page.handle_events(&app, evt).unwrap();
-        while let Ok(action) = app.try_recv() {
-            app.update(&action).unwrap();
-            page.update(&app, action);
-        }
-    }
-
     #[test]
     fn test_navigation() {
         let (mut app, mut page) = get_test_objs();
         assert!(matches!(page.state, CookieInputState::Account));
         assert!(matches!(page.account_input.get_mode(), InputMode::Focused));
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Char('j')));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Char('j')));
         assert!(matches!(page.state, CookieInputState::Cookie));
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Char('j')));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Char('j')));
         assert!(matches!(page.state, CookieInputState::Account));
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Char('k')));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Char('k')));
         assert!(matches!(page.state, CookieInputState::Cookie));
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Char('k')));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Char('k')));
         assert!(matches!(page.state, CookieInputState::Account));
     }
 
@@ -216,17 +201,17 @@ mod test {
     fn test_account_input() {
         let (mut app, mut page) = get_test_objs();
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         assert!(app.input_mode());
-        handle_event_and_update(&mut app, &mut page, get_char_evt('a'));
-        handle_event_and_update(&mut app, &mut page, get_char_evt('j'));
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_char_evt('a'));
+        app.handle_event_and_update(&mut page, get_char_evt('j'));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         assert_eq!(app.manager.get_account_cookie().unwrap().0, "aj");
 
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Left));
-        handle_event_and_update(&mut app, &mut page, Event::Paste("kl".into()));
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Left));
+        app.handle_event_and_update(&mut page, Event::Paste("kl".into()));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         assert_eq!(app.manager.get_account_cookie().unwrap().0, "aklj");
     }
 
@@ -234,12 +219,12 @@ mod test {
     fn test_cookie_input() {
         let (mut app, mut page) = get_test_objs();
 
-        handle_event_and_update(&mut app, &mut page, get_char_evt('j'));
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_char_evt('j'));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         assert!(app.input_mode());
-        handle_event_and_update(&mut app, &mut page, get_char_evt('a'));
-        handle_event_and_update(&mut app, &mut page, get_char_evt('j'));
-        handle_event_and_update(&mut app, &mut page, get_key_evt(KeyCode::Enter));
+        app.handle_event_and_update(&mut page, get_char_evt('a'));
+        app.handle_event_and_update(&mut page, get_char_evt('j'));
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         assert_eq!(app.manager.get_account_cookie().unwrap().1, "aj");
     }
 }

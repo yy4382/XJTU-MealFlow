@@ -178,4 +178,12 @@ impl RootState {
     pub fn try_recv(&mut self) -> Result<Action> {
         Ok(self.action_rx.try_recv()?)
     }
+
+    pub fn handle_event_and_update(&mut self, page: &mut dyn Page, evt: tui::Event) {
+        page.handle_events(&self, evt).unwrap();
+        while let Ok(action) = self.try_recv() {
+            self.update(&action).unwrap();
+            page.update(&self, action);
+        }
+    }
 }

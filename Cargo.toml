@@ -35,3 +35,6 @@ tracing-subscriber = { version = "0.3.19", features = ["env-filter", "serde"] }
 human-panic = "2.0.2"
 temp-env = "0.3.6"
 rand = "0.9.0"
+
+[dev-dependencies]
+insta = "1.42.2"
