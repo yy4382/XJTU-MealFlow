@@ -42,3 +42,41 @@ impl Page for Home {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+    use ratatui::{Terminal, backend::TestBackend};
+
+    use super::*;
+    use crate::{app::RootState, tui::test_utils::get_char_evt};
+
+    fn get_test_page() -> (Home, RootState) {
+        let app = RootState::new(None);
+
+        let mut home = Home::default();
+        home.init(&app);
+        (home, app)
+    }
+
+    #[test]
+    fn test_render() {
+        let (page, app) = get_test_page();
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+        terminal.draw(|frame| page.render(frame, &app)).unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+
+    #[test]
+    fn test_events() {
+        let (mut page, mut app) = get_test_page();
+        app.handle_event_and_update(&mut page, get_char_evt('q'));
+        page.update(&app, Action::Tick);
+        // nothing should happen. No panic means success.
+    }
+
+    #[test]
+    fn test_name() {
+        assert_eq!(Home::default().get_name(), "Home");
+    }
+}
