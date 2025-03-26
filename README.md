@@ -1,5 +1,7 @@
 # XJTU MealFlow
 
+[![CI](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/yy4382/XJTU-MealFlow/graph/badge.svg?token=S3RCT5RFAW)](https://codecov.io/gh/yy4382/XJTU-MealFlow)
+
 你在西交吃了啥？
 
 ## 快速开始
@@ -12,19 +14,15 @@ TODO
 
 ### 运行
 
-从 Release 下载对应系统的二进制文件，打开终端, 设置环境变量 `XMF_ACCOUNT` 和 `XMF_COOKIE`，然后运行。
+从 Release 下载对应系统的二进制文件，即可从终端运行。
 
 ```bash
 # macOS, Linux
-export XMF_ACCOUNT=your_account
-export XMF_COOKIE="hallticket=your_hallticket"
 ./xjtu-mealflow
 ```
 
 ```powershell
 # Windows
-$env:XMF_ACCOUNT="your_account"
-$env:XMF_COOKIE="hallticket=your_hallticket"
 .\xjtu-mealflow.exe
 ```
 
