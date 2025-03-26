@@ -93,7 +93,7 @@ impl Page for CookieInput {
     ) -> color_eyre::eyre::Result<()> {
         match &event {
             crate::tui::Event::Key(key) => {
-                if !app.input_mode {
+                if !app.input_mode() {
                     match (key.modifiers, key.code) {
                         (_, KeyCode::Char('k')) => {
                             app.send_action(CookieInputAction::ChangeState(self.state.prev()))
