@@ -167,10 +167,15 @@ impl App {
             }
 
             _ => {}
-            }
-        self.state.update(&action).unwrap();
-                self.page.update(&self.state, action);
-            }
         }
+        self.state.update(&action).unwrap();
+        self.page.update(&self.state, action);
+    }
+}
+
+#[cfg(test)]
+impl RootState {
+    pub fn try_recv(&mut self) -> Result<Action> {
+        Ok(self.action_rx.try_recv()?)
     }
 }

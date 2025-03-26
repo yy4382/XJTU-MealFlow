@@ -128,7 +128,7 @@ impl super::Component for InputComp {
 
     fn handle_events(&self, event: &crate::tui::Event, app: &crate::app::RootState) -> Result<()> {
         match self.mode {
-            InputMode::Idle => app.send_action(Action::None),
+            InputMode::Idle => (),
             InputMode::Focused => {
                 if app.input_mode() {
                     match event {
@@ -242,5 +242,12 @@ impl super::Component for InputComp {
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
         }
+    }
+}
+
+#[cfg(test)]
+impl InputComp {
+    pub fn get_mode(&self) -> InputMode {
+        self.mode.clone()
     }
 }
