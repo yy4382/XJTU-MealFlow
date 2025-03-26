@@ -68,9 +68,9 @@ pub(crate) enum CookieInputAction {
     ChangeState(CookieInputState),
 }
 
-impl Into<Action> for CookieInputAction {
-    fn into(self) -> Action {
-        Action::CookieInput(self)
+impl From<CookieInputAction> for Action {
+    fn from(val: CookieInputAction) -> Self {
+        Action::CookieInput(val)
     }
 }
 
@@ -91,22 +91,19 @@ impl Page for CookieInput {
         app: &RootState,
         event: crate::tui::Event,
     ) -> color_eyre::eyre::Result<()> {
-        match &event {
-            crate::tui::Event::Key(key) => {
-                if !app.input_mode() {
-                    match (key.modifiers, key.code) {
-                        (_, KeyCode::Char('k')) => {
-                            app.send_action(CookieInputAction::ChangeState(self.state.prev()))
-                        }
-                        (_, KeyCode::Char('j')) => {
-                            app.send_action(CookieInputAction::ChangeState(self.state.next()))
-                        }
-                        (_, KeyCode::Esc) => app.send_action(crate::page::fetch::Fetch::default()),
-                        _ => (),
+        if let crate::tui::Event::Key(key) = &event {
+            if !app.input_mode() {
+                match (key.modifiers, key.code) {
+                    (_, KeyCode::Char('k')) => {
+                        app.send_action(CookieInputAction::ChangeState(self.state.prev()))
                     }
+                    (_, KeyCode::Char('j')) => {
+                        app.send_action(CookieInputAction::ChangeState(self.state.next()))
+                    }
+                    (_, KeyCode::Esc) => app.send_action(crate::page::fetch::Fetch::default()),
+                    _ => (),
                 }
             }
-            _ => (),
         };
         self.account_input.handle_events(&event, app)?;
         self.cookie_input.handle_events(&event, app)?;
@@ -114,27 +111,24 @@ impl Page for CookieInput {
     }
 
     fn update(&mut self, app: &crate::app::RootState, action: crate::actions::Action) {
-        match &action {
-            Action::CookieInput(CookieInputAction::ChangeState(next_state)) => {
-                self.state = next_state.clone();
+        if let Action::CookieInput(CookieInputAction::ChangeState(next_state)) = &action {
+            self.state = next_state.clone();
 
-                app.send_action(self.account_input.get_switch_mode_action(
-                    if matches!(self.state, CookieInputState::Account) {
-                        InputMode::Focused
-                    } else {
-                        InputMode::Idle
-                    },
-                ));
+            app.send_action(self.account_input.get_switch_mode_action(
+                if matches!(self.state, CookieInputState::Account) {
+                    InputMode::Focused
+                } else {
+                    InputMode::Idle
+                },
+            ));
 
-                app.send_action(self.cookie_input.get_switch_mode_action(
-                    if matches!(self.state, CookieInputState::Cookie) {
-                        InputMode::Focused
-                    } else {
-                        InputMode::Idle
-                    },
-                ));
-            }
-            _ => {}
+            app.send_action(self.cookie_input.get_switch_mode_action(
+                if matches!(self.state, CookieInputState::Cookie) {
+                    InputMode::Focused
+                } else {
+                    InputMode::Idle
+                },
+            ));
         }
 
         if let Some(string) = self.account_input.parse_submit_action(&action) {

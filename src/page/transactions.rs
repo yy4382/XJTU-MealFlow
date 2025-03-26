@@ -21,9 +21,9 @@ pub enum TransactionAction {
     LoadTransactions,
 }
 
-impl Into<Action> for TransactionAction {
-    fn into(self) -> Action {
-        Action::Transaction(self)
+impl From<TransactionAction> for Action {
+    fn from(val: TransactionAction) -> Self {
+        Action::Transaction(val)
     }
 }
 
@@ -64,15 +64,12 @@ impl Page for Transactions {
         );
     }
     fn handle_events(&self, app: &RootState, event: Event) -> Result<()> {
-        match event {
-            Event::Key(key) => match (key.modifiers, key.code) {
-                // navigate to fetch page
-                (_, KeyCode::Char('r')) => app.send_action(crate::page::fetch::Fetch::default()),
-                (_, KeyCode::Char('l')) => app.send_action(TransactionAction::LoadTransactions),
-                _ => (),
-            },
+        if let Event::Key(key) = event { match (key.modifiers, key.code) {
+            // navigate to fetch page
+            (_, KeyCode::Char('r')) => app.send_action(crate::page::fetch::Fetch::default()),
+            (_, KeyCode::Char('l')) => app.send_action(TransactionAction::LoadTransactions),
             _ => (),
-        };
+        } };
         Ok(())
     }
 

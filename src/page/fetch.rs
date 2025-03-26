@@ -45,9 +45,9 @@ pub enum FetchingAction {
     MoveFocus(Focus),
 }
 
-impl Into<Action> for FetchingAction {
-    fn into(self) -> Action {
-        Action::Fetching(self)
+impl From<FetchingAction> for Action {
+    fn from(val: FetchingAction) -> Self {
+        Action::Fetching(val)
     }
 }
 
@@ -213,33 +213,27 @@ impl Page for Fetch {
         app: &RootState,
         event: crate::tui::Event,
     ) -> color_eyre::eyre::Result<()> {
-        match event {
-            crate::tui::Event::Key(key) => {
-                if !app.input_mode() {
-                    match (key.modifiers, key.code) {
-                        (_, KeyCode::Enter) => match self.fetch_start_date {
-                            Some(date) => app.send_action(FetchingAction::StartFetching(date)),
-                            None => (),
-                        },
-                        (_, KeyCode::Char('j')) => {
-                            app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
-                        }
-                        (_, KeyCode::Char('k')) => {
-                            app.send_action(FetchingAction::MoveFocus(self.current_focus.prev()))
-                        }
-                        (_, KeyCode::Char('l')) => app.send_action(FetchingAction::LoadDbCount),
-                        (_, KeyCode::Char('e')) => {
-                            app.send_action(crate::page::cookie_input::CookieInput::new(app))
-                        }
-
-                        (_, KeyCode::Esc) => {
-                            app.send_action(super::transactions::Transactions::default())
-                        }
-                        _ => (),
+        if let crate::tui::Event::Key(key) = event {
+            if !app.input_mode() {
+                match (key.modifiers, key.code) {
+                    (_, KeyCode::Enter) => if let Some(date) = self.fetch_start_date { app.send_action(FetchingAction::StartFetching(date)) },
+                    (_, KeyCode::Char('j')) => {
+                        app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
                     }
+                    (_, KeyCode::Char('k')) => {
+                        app.send_action(FetchingAction::MoveFocus(self.current_focus.prev()))
+                    }
+                    (_, KeyCode::Char('l')) => app.send_action(FetchingAction::LoadDbCount),
+                    (_, KeyCode::Char('e')) => {
+                        app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                    }
+
+                    (_, KeyCode::Esc) => {
+                        app.send_action(super::transactions::Transactions::default())
+                    }
+                    _ => (),
                 }
             }
-            _ => (),
         };
         self.input.handle_events(&event, app)?;
         Ok(())
