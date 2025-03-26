@@ -59,6 +59,7 @@ pub(crate) enum InputAction {
     HandleKey(KeyEvent),
     HandlePaste(String),
     Exit(),
+    DirectExit(),
     SubmitExit(String),
 
     /// the event owner should pay attention to
@@ -119,6 +120,13 @@ impl InputComp {
             None
         }
     }
+
+    pub fn set_auto_submit(self, b: bool) -> Self {
+        Self {
+            auto_submit: b,
+            ..self
+        }
+    }
 }
 
 impl super::Component for InputComp {
@@ -138,7 +146,7 @@ impl super::Component for InputComp {
                                     self.input.value().to_string(),
                                 )))
                             } else if self.control_keys.exit_keys.contains(key) {
-                                app.send_action(self.get_action(InputAction::Exit()))
+                                app.send_action(self.get_action(InputAction::DirectExit()))
                             } else {
                                 app.send_action(self.get_action(InputAction::HandleKey(*key)))
                             }
@@ -203,6 +211,11 @@ impl super::Component for InputComp {
                 app.send_action(self.get_action(InputAction::Exit()));
                 Ok(())
             }
+            InputAction::DirectExit() => {
+                self.input.reset();
+                app.send_action(self.get_action(InputAction::Exit()));
+                Ok(())
+            }
             InputAction::Exit() => {
                 app.send_action(Action::SwitchInputMode(false));
                 Ok(())
@@ -249,5 +262,260 @@ impl super::Component for InputComp {
 impl InputComp {
     pub fn get_mode(&self) -> InputMode {
         self.mode.clone()
+    }
+    pub fn get_value(&self) -> &str {
+        self.input.value()
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+    use insta::assert_snapshot;
+    use ratatui::{Terminal, backend::TestBackend};
+
+    use crate::{
+        app::RootState,
+        component::Component,
+        page::Page,
+        tui::test_utils::{get_char_evt, get_key_evt},
+    };
+
+    use super::*;
+    struct TestInputPage {
+        content: String,
+        input: InputComp,
+    }
+
+    impl TestInputPage {
+        fn new(auto_submit: bool) -> Self {
+            Self {
+                content: Default::default(),
+                input: InputComp::new(1, None::<&str>, "Input Test", Default::default())
+                    .set_auto_submit(auto_submit),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    pub(crate) enum TestInputPageAction {
+        SetFocus(bool),
+    }
+
+    impl Page for TestInputPage {
+        fn render(&self, frame: &mut Frame, app: &RootState) {
+            self.input.draw(frame, &frame.area(), app);
+        }
+
+        fn handle_events(&self, app: &RootState, event: Event) -> Result<()> {
+            if !app.input_mode() {
+                if let Event::Key(key) = event {
+                    match key.code {
+                        KeyCode::Enter => {
+                            app.send_action(Action::TestPage(TestInputPageAction::SetFocus(true)));
+                        }
+                        KeyCode::Esc => {
+                            app.send_action(Action::TestPage(TestInputPageAction::SetFocus(false)));
+                        }
+                        _ => {}
+                    }
+                }
+            };
+            self.input.handle_events(&event, app)?;
+            Ok(())
+        }
+
+        fn update(&mut self, app: &RootState, action: Action) {
+            if let Action::TestPage(TestInputPageAction::SetFocus(focus)) = &action {
+                app.send_action(self.input.get_switch_mode_action(if *focus {
+                    InputMode::Focused
+                } else {
+                    InputMode::Idle
+                }));
+            };
+            if let Some(text) = self.input.parse_submit_action(&action) {
+                self.content = text;
+            };
+            self.input.update(&action, app).unwrap();
+        }
+
+        fn get_name(&self) -> String {
+            "Test Input Page".into()
+        }
+    }
+
+    fn get_test_page(auto_submit: bool) -> (TestInputPage, RootState) {
+        let app = RootState::new(None);
+        let page = TestInputPage::new(auto_submit);
+        (page, app)
+    }
+
+    #[test]
+    fn test_input() {
+        let (mut page, mut app) = get_test_page(false);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+            get_key_evt(KeyCode::Enter),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "ab");
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Left),
+            get_char_evt('c'),
+            get_key_evt(KeyCode::Enter),
+        ];
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "acb")
+    }
+
+    #[test]
+    fn test_input_auto_submit() {
+        let (mut page, mut app) = get_test_page(true);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "ab");
+
+        let seq = vec![get_key_evt(KeyCode::Left), get_char_evt('c')];
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "acb")
+    }
+
+    #[test]
+    fn test_input_paste() {
+        let (mut page, mut app) = get_test_page(false);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+            get_key_evt(KeyCode::Enter),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "ab");
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Left),
+            Event::Paste("ccc".into()),
+            get_key_evt(KeyCode::Enter),
+        ];
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "acccb")
+    }
+
+    #[test]
+    fn test_input_paste_auto_submit() {
+        let (mut page, mut app) = get_test_page(true);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "ab");
+
+        let seq = vec![get_key_evt(KeyCode::Left), Event::Paste("ccc".into())];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "acccb")
+    }
+
+    #[test]
+    fn test_input_quit() {
+        let (mut page, mut app) = get_test_page(false);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+            get_key_evt(KeyCode::Esc),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        assert_eq!(page.content, "");
+        assert_eq!(page.input.get_value(), "")
+    }
+
+    fn get_buffer_color(t: &Terminal<TestBackend>) -> Color {
+        let cell = t
+            .backend()
+            .buffer()
+            .content()
+            .iter()
+            .find(|&c| c.symbol() == "I")
+            .unwrap();
+
+        cell.fg.clone()
+    }
+
+    #[test]
+    fn test_render() {
+        let (mut page, mut app) = get_test_page(false);
+        let mut terminal = Terminal::new(TestBackend::new(40, 10)).unwrap();
+        terminal.draw(|frame| page.render(frame, &app)).unwrap();
+        assert_snapshot!(terminal.backend());
+        assert_eq!(get_buffer_color(&terminal), Color::Reset);
+
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        terminal.draw(|f| page.render(f, &app)).unwrap();
+        assert_eq!(get_buffer_color(&terminal), Color::Cyan);
+
+        let seq = vec![
+            get_key_evt(KeyCode::Enter),
+            get_char_evt('a'),
+            get_char_evt('b'),
+        ];
+
+        seq.iter()
+            .for_each(|e| app.handle_event_and_update(&mut page, e.clone()));
+
+        terminal.draw(|f| page.render(f, &app)).unwrap();
+        assert_eq!(get_buffer_color(&terminal), Color::Yellow);
+
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        terminal.draw(|f| page.render(f, &app)).unwrap();
+        assert_snapshot!(terminal.backend());
+        assert_eq!(get_buffer_color(&terminal), Color::Cyan);
+
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Esc));
+        terminal.draw(|f| page.render(f, &app)).unwrap();
+        assert_eq!(get_buffer_color(&terminal), Color::Reset);
     }
 }

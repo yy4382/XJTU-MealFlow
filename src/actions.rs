@@ -22,6 +22,9 @@ pub enum Action {
 
     Quit,
     Render,
+
+    #[cfg(test)]
+    TestPage(crate::component::input::test::TestInputPageAction),
 }
 #[derive(Clone, Debug)]
 pub enum NaviTarget {

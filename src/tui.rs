@@ -253,3 +253,16 @@ impl Drop for Tui {
         self.exit().unwrap();
     }
 }
+
+#[cfg(test)]
+pub mod test_utils {
+    use super::*;
+    use crossterm::event::{KeyCode, KeyModifiers};
+
+    pub fn get_key_evt(key: KeyCode) -> Event {
+        Event::Key(KeyEvent::new(key, KeyModifiers::NONE))
+    }
+    pub fn get_char_evt(key: char) -> Event {
+        Event::Key(KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE))
+    }
+}
