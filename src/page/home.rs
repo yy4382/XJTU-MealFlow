@@ -32,13 +32,13 @@ impl Page for Home {
         );
     }
 
-    fn handle_events(&self, _event: Option<crate::tui::Event>) -> Result<Action> {
-        Ok(Action::None)
-    }
-
-    fn update(&mut self, _root_state: &mut RootState, _action: Action) {}
+    fn update(&mut self, _root_state: &RootState, _action: Action) {}
 
     fn get_name(&self) -> String {
         "Home".to_string()
+    }
+
+    fn handle_events(&self, _app: &RootState, _event: crate::tui::Event) -> Result<()> {
+        Ok(())
     }
 }

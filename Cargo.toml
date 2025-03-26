@@ -34,3 +34,4 @@ tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "serde"] }
 human-panic = "2.0.2"
 temp-env = "0.3.6"
+rand = "0.9.0"
