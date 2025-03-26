@@ -1,7 +1,7 @@
 use std::{path::PathBuf, rc::Rc};
 
 use chrono::{DateTime, Local};
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Result, bail};
 use rusqlite::{Connection, params};
 
 #[derive(Debug, Clone)]
@@ -65,6 +65,13 @@ impl TransactionManager {
                 END;",
             [],
         )?;
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS cookies (
+            account TEXT PRIMARY KEY,
+            cookie TEXT NOT NULL
+        )",
+            [],
+        )?;
         Ok(())
     }
 
@@ -124,6 +131,64 @@ impl TransactionManager {
     pub fn clear_db(&self) -> Result<(), rusqlite::Error> {
         self.conn.execute("DELETE FROM transactions", [])?;
         Ok(())
+    }
+
+    /// Update account(optional) and cookie in cookies table
+    ///
+    /// If there is already a record, update it. Otherwise, insert a new record.
+    /// There should always be only one records in cookies table
+    pub fn update_account(&self, account: &str) -> Result<()> {
+        // Check if there are existing records
+        let existing = self
+            .conn
+            .query_row("SELECT cookie FROM cookies LIMIT 1", [], |row| {
+                row.get::<_, String>(0)
+            });
+
+        // Determine account value to use
+        let cookie = existing.unwrap_or_default();
+
+        // Replace the record
+        self.conn.execute("DELETE FROM cookies", [])?;
+        let mut stmt = self
+            .conn
+            .prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
+        stmt.execute(params![account, cookie])?;
+        Ok(())
+    }
+
+    pub fn update_cookie(&self, cookie: &str) -> Result<()> {
+        // Check if there are existing records
+        let existing = self
+            .conn
+            .query_row("SELECT account FROM cookies LIMIT 1", [], |row| {
+                row.get::<_, String>(0)
+            });
+
+        // Determine account value to use
+        let account = existing.unwrap_or_default();
+
+        // Replace the record
+        self.conn.execute("DELETE FROM cookies", [])?;
+        let mut stmt = self
+            .conn
+            .prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
+        stmt.execute(params![account, cookie])?;
+        Ok(())
+    }
+
+    pub fn get_account_cookie(&self) -> Result<(String, String)> {
+        let mut stmt = self.conn.prepare("SELECT account, cookie FROM cookies")?;
+        let mut rows = stmt.query([])?;
+        let row = rows.next()?;
+        match row {
+            Some(row) => {
+                let account = row.get(0)?;
+                let cookie = row.get(1)?;
+                Ok((account, cookie))
+            }
+            None => bail!("No account and cookie found"),
+        }
     }
 }
 

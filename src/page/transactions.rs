@@ -57,32 +57,29 @@ impl Page for Transactions {
             rects[1],
         );
     }
-    fn handle_events(&self, event: Option<Event>) -> Result<Action> {
-        if let Some(event) = event {
-            match event {
-                Event::Key(key) => match (key.modifiers, key.code) {
-                    // navigate to fetch page
-                    (_, KeyCode::Char('r')) => Ok(Action::NavigateTo(Box::new(
-                        crate::page::fetch::Fetch::default(),
-                    ))),
-                    (_, KeyCode::Char('l')) => {
-                        Ok(Action::Transaction(TransactionAction::LoadTransactions))
-                    }
-                    _ => Ok(Action::None),
-                },
-                _ => Ok(Action::None),
-            }
-        } else {
-            Ok(Action::None)
-        }
+    fn handle_events(&self, app: &RootState, event: Event) -> Result<()> {
+        match event {
+            Event::Key(key) => match (key.modifiers, key.code) {
+                // navigate to fetch page
+                (_, KeyCode::Char('r')) => app.send_action(Action::NavigateTo(
+                    crate::actions::NaviTarget::Fetch(crate::page::fetch::Fetch::default()),
+                )),
+                (_, KeyCode::Char('l')) => {
+                    app.send_action(Action::Transaction(TransactionAction::LoadTransactions))
+                }
+                _ => (),
+            },
+            _ => (),
+        };
+        Ok(())
     }
 
-    fn update(&mut self, root_state: &mut RootState, action: Action) {
+    fn update(&mut self, root_state: &RootState, action: Action) {
         if let Action::Transaction(action) = action {
             match action {
                 TransactionAction::LoadTransactions => {
                     self.transactions = root_state.manager.fetch_all().unwrap();
-                    root_state.action_tx.send(Action::Render).unwrap();
+                    root_state.send_action(Action::Render);
                 }
             }
         }
@@ -92,9 +89,7 @@ impl Page for Transactions {
         "Transactions".to_string()
     }
 
-    fn init(&mut self, _app: &mut RootState) {
-        _app.action_tx
-            .send(Action::Transaction(TransactionAction::LoadTransactions))
-            .unwrap();
+    fn init(&mut self, app: &mut RootState) {
+        app.send_action(Action::Transaction(TransactionAction::LoadTransactions))
     }
 }

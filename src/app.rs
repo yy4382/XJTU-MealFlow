@@ -1,23 +1,48 @@
-use crate::config::Config;
+// use crate::config::Config;
 use crate::{
-    actions::Action,
+    actions::{Action, NaviTarget},
+    config::Config,
+    libs::transactions::TransactionManager,
     page::{self, Page},
     tui,
 };
 use color_eyre::eyre::Result;
-use crossterm::event::KeyCode::{self, Char};
-use tracing::debug;
+use crossterm::event::KeyCode::Char;
+use tokio::sync::mpsc;
+use tracing::warn;
 
 pub struct RootState {
-    pub should_quit: bool,
-    pub action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
-    pub action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
+    should_quit: bool,
+    action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
+    action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
     pub manager: crate::libs::transactions::TransactionManager,
     pub input_mode: bool,
-
-    pub config: Config,
+    // pub config: Config,
 }
-pub struct App {
+
+impl RootState {
+    pub fn new(config: Config) -> Self {
+        let (action_tx, action_rx) = mpsc::unbounded_channel();
+        Self {
+            should_quit: false,
+            action_tx,
+            action_rx,
+            manager: TransactionManager::new(Some(config.config.db_path())).unwrap(),
+            input_mode: false,
+        }
+    }
+    pub fn send_action(&self, action: Action) {
+        let result = self.action_tx.send(action);
+        if let Err(e) = result {
+            warn!("Failed to send action: {:?}", e);
+        }
+    }
+    pub fn clone_sender(&self) -> tokio::sync::mpsc::UnboundedSender<Action> {
+        self.action_tx.clone()
+    }
+}
+
+pub(super) struct App {
     pub page: Box<dyn Page>,
     pub state: RootState,
     pub tui: tui::Tui,
@@ -31,7 +56,7 @@ impl App {
         loop {
             let e = self.tui.next().await?;
 
-            self.state.action_tx.send(self.event2action(e))?;
+            self.handle_event(e)?;
 
             while let Ok(action) = self.state.action_rx.try_recv() {
                 self.perform_action(action);
@@ -47,7 +72,11 @@ impl App {
         Ok(())
     }
 
-    /// Convert a [`tui::Event`] to an Action
+    pub fn send_action(&self, action: Action) {
+        self.state.send_action(action);
+    }
+
+    /// Convert a [`tui::Event`] to an Action and send to channel
     ///
     /// This function is responsible for converting a [`tui::Event`] to an Action.
     ///
@@ -55,55 +84,52 @@ impl App {
     /// and switching between input modes,
     /// and delegates the handling of page-specific events (remaining events, currently only key events)
     /// to the current page.
-    fn event2action(&self, event: tui::Event) -> Action {
+    fn handle_event(&self, event: tui::Event) -> Result<()> {
         match event {
-            tui::Event::Tick => Action::Tick,
-            tui::Event::Render => Action::Render,
+            tui::Event::Tick => self.send_action(Action::Tick),
+            tui::Event::Render => self.send_action(Action::Render),
 
             // TODO impl these events
-            tui::Event::Error => Action::Quit,
-            tui::Event::FocusGained => Action::None,
-            tui::Event::FocusLost => Action::None,
-            tui::Event::Init => Action::None,
+            tui::Event::Error => self.send_action(Action::Quit),
+            tui::Event::FocusGained => self.send_action(Action::None),
+            tui::Event::FocusLost => self.send_action(Action::None),
+            tui::Event::Init => self.send_action(Action::None),
             // tui::Event::Closed => action_tx.send(Action::Quit)?,
             // tui::Event::Quit => action_tx.send(Action::Quit)?,
-            tui::Event::Paste(_) => Action::None,
-            tui::Event::Resize(_, _) => Action::Render,
-            tui::Event::Mouse(_) => Action::None,
+            tui::Event::Resize(_, _) => self.send_action(Action::Render),
 
             tui::Event::Key(key) => {
-                // if a input widget is focused, handle the key event in the input widget
-                if self.state.input_mode {
-                    match key.code {
-                        KeyCode::Esc => Action::SwitchInputMode(false),
-                        _ => self.page.handle_input_mode_events(key).unwrap(),
-                    }
-                } else {
-                    match key.code {
-                        Char('H') => {
-                            // check if the current page is not Home
-                            if self.page.get_name() != "Home" {
-                                Action::NavigateTo(Box::new(page::home::Home::default()))
-                            } else {
-                                Action::None
-                            }
+                match key.code {
+                    Char('H') => {
+                        // check if the current page is not Home
+                        if self.page.get_name() != "Home" {
+                            self.send_action(Action::NavigateTo(crate::actions::NaviTarget::Home(
+                                page::home::Home::default(),
+                            )))
+                        } else {
+                            self.send_action(Action::None)
                         }
-                        Char('T') => {
-                            // check if the current page is not Transactions
-                            if self.page.get_name() != "Transactions" {
-                                Action::NavigateTo(Box::new(
+                    }
+                    Char('T') => {
+                        // check if the current page is not Transactions
+                        if self.page.get_name() != "Transactions" {
+                            self.send_action(Action::NavigateTo(
+                                crate::actions::NaviTarget::Transaction(
                                     page::transactions::Transactions::default(),
-                                ))
-                            } else {
-                                Action::None
-                            }
+                                ),
+                            ))
+                        } else {
+                            self.send_action(Action::None)
                         }
-                        Char('q') => Action::Quit,
-                        _ => self.page.handle_events(Some(event)).unwrap(),
                     }
+                    Char('q') => self.send_action(Action::Quit),
+                    _ => self.page.handle_events(&self.state, event).unwrap(),
                 }
             }
-        }
+
+            _ => self.page.handle_events(&self.state, event).unwrap(),
+        };
+        Ok(())
     }
 
     /// Perform an action
@@ -129,15 +155,20 @@ impl App {
                     .unwrap();
             }
             Action::NavigateTo(target) => {
-                debug!("Navigating to {}", target.get_name());
-                self.page = target;
+                // debug!("Navigating to {:?}", target);
+                match target {
+                    NaviTarget::Home(h) => self.page = Box::new(h),
+                    NaviTarget::Fetch(fetch) => self.page = Box::new(fetch),
+                    NaviTarget::Transaction(transactions) => self.page = Box::new(transactions),
+                    NaviTarget::CookieInput(cookie_input) => self.page = Box::new(cookie_input),
+                }
                 self.page.init(&mut self.state);
             }
             Action::SwitchInputMode(mode) => {
                 self.state.input_mode = mode;
             }
             _ => {
-                self.page.update(&mut self.state, action);
+                self.page.update(&self.state, action);
             }
         }
     }

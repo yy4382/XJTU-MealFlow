@@ -1,17 +1,23 @@
 use chrono::{DateTime, Local, TimeZone};
 use crossterm::event::KeyCode;
 use ratatui::{
-    Frame,
-    layout::{Constraint, Flex, Layout, Rect},
+    layout::{Constraint, Flex, Layout},
     style::{Color, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
+use tokio::sync::mpsc::UnboundedSender;
 use tracing::{info, instrument};
-use tui_input::{Input, backend::crossterm::EventHandler};
 
-use crate::actions::Action;
-use crate::libs::{fetcher, transactions};
+use crate::{
+    actions::Action,
+    app::RootState,
+    component::{Component, input::InputComp},
+};
+use crate::{
+    component::input::InputMode,
+    libs::{fetcher, transactions},
+};
 
 use super::Page;
 
@@ -20,7 +26,6 @@ pub enum FetchingState {
     #[default]
     Idle,
     Fetching(FetchProgress),
-    // Completed(Vec<crate::transactions::Transaction>), // 新增状态，表示获取完成
 }
 
 #[derive(Clone, Default, Debug)]
@@ -36,21 +41,36 @@ pub enum FetchingAction {
     UpdateFetchStatus(FetchingState),
     InsertTransaction(Vec<transactions::Transaction>),
 
-    SubmitUserInput(String),
-    HandleInputEvent(crossterm::event::KeyEvent),
-
     LoadDbCount,
     MoveFocus(Focus),
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Fetch {
     fetching_state: FetchingState,
     local_db_cnt: u64,
     fetch_start_date: Option<DateTime<Local>>,
     current_focus: Focus,
 
-    input: Input,
+    input: InputComp,
+}
+
+impl Default for Fetch {
+    fn default() -> Self {
+        Self {
+            fetching_state: Default::default(),
+            local_db_cnt: Default::default(),
+            fetch_start_date: Default::default(),
+            current_focus: Default::default(),
+
+            input: InputComp::new(
+                rand::random::<u64>(),
+                None::<String>,
+                "Custom Start Date (2025-03-02 style input)",
+                Default::default(),
+            ),
+        }
+    }
 }
 
 #[derive(Clone, Default, Debug)]
@@ -138,18 +158,7 @@ impl Page for Fetch {
             top_areas[2],
         );
 
-        // frame.render_widget(
-        //     Text::raw("UserInputPlaceholder").style(Style::default().fg(
-        //         if let Focus::UserInput = self.current_focus {
-        //             Color::Cyan
-        //         } else {
-        //             Color::Reset
-        //         },
-        //     )),
-        //     area[1],
-        // );
-
-        self.render_input(frame, area[1], root_state);
+        self.input.draw(frame, &area[1], root_state);
 
         // 修改这里：显示获取结果
         match &self.fetching_state {
@@ -194,99 +203,76 @@ impl Page for Fetch {
 
     fn handle_events(
         &self,
-        event: Option<crate::tui::Event>,
-    ) -> color_eyre::eyre::Result<crate::actions::Action> {
-        if let Some(event) = event {
-            match event {
-                crate::tui::Event::Key(key) => match (key.modifiers, key.code) {
-                    (_, KeyCode::Enter) => match self.fetch_start_date {
-                        Some(date) => Ok(Action::Fetching(FetchingAction::StartFetching(date))),
-                        None => Ok(Action::None),
-                    },
-                    (_, KeyCode::Char('j')) => Ok(Action::Fetching(FetchingAction::MoveFocus(
-                        self.current_focus.next(),
-                    ))),
-                    (_, KeyCode::Char('k')) => Ok(Action::Fetching(FetchingAction::MoveFocus(
-                        self.current_focus.prev(),
-                    ))),
-                    (_, KeyCode::Char('l')) => Ok(Action::Fetching(FetchingAction::LoadDbCount)),
-                    (_, KeyCode::Esc) => Ok(Action::NavigateTo(Box::new(
-                        super::transactions::Transactions::default(),
-                    ))),
-                    _ => Ok(Action::None),
-                },
-                _ => Ok(Action::None),
+        app: &RootState,
+        event: crate::tui::Event,
+    ) -> color_eyre::eyre::Result<()> {
+        match event {
+            crate::tui::Event::Key(key) => {
+                if !app.input_mode {
+                    match (key.modifiers, key.code) {
+                        (_, KeyCode::Enter) => match self.fetch_start_date {
+                            Some(date) => app
+                                .send_action(Action::Fetching(FetchingAction::StartFetching(date))),
+                            None => (),
+                        },
+                        (_, KeyCode::Char('j')) => app.send_action(Action::Fetching(
+                            FetchingAction::MoveFocus(self.current_focus.next()),
+                        )),
+                        (_, KeyCode::Char('k')) => app.send_action(Action::Fetching(
+                            FetchingAction::MoveFocus(self.current_focus.prev()),
+                        )),
+                        (_, KeyCode::Char('l')) => {
+                            app.send_action(Action::Fetching(FetchingAction::LoadDbCount))
+                        }
+                        (_, KeyCode::Char('e')) => app.send_action(Action::NavigateTo(
+                            crate::actions::NaviTarget::CookieInput(
+                                crate::page::cookie_input::CookieInput::new(app),
+                            ),
+                        )),
+                        (_, KeyCode::Esc) => app.send_action(Action::NavigateTo(
+                            crate::actions::NaviTarget::Transaction(
+                                super::transactions::Transactions::default(),
+                            ),
+                        )),
+                        _ => (),
+                    }
+                }
             }
-        } else {
-            Ok(Action::None)
-        }
+            _ => (),
+        };
+        self.input.handle_events(&event, app)?;
+        Ok(())
     }
 
-    fn handle_input_mode_events(
-        &self,
-        event: crossterm::event::KeyEvent,
-    ) -> color_eyre::eyre::Result<Action> {
-        match &event.code {
-            KeyCode::Enter => Ok(Action::Fetching(FetchingAction::SubmitUserInput(
-                self.input.value().into(),
-            ))),
-            _ => Ok(Action::Fetching(FetchingAction::HandleInputEvent(event))),
-        }
-    }
-
-    fn update(&mut self, app: &mut crate::RootState, action: crate::actions::Action) {
-        if let Action::Fetching(action) = action {
+    fn update(&mut self, app: &crate::RootState, action: crate::actions::Action) {
+        if let Action::Fetching(action) = &action {
             match action {
                 FetchingAction::StartFetching(date) => {
-                    let tx = app.action_tx.clone();
-                    let tx2 = app.action_tx.clone();
+                    let tx = app.clone_sender();
 
-                    let cookie = app.config.fetch.cookie.clone();
-                    let account = app.config.fetch.account.clone();
-                    tokio::spawn(async move {
-                        let update_progress = move |progress: FetchProgress| {
-                            tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                                FetchingState::Fetching(progress),
-                            )))
-                            .unwrap();
-                            tx.send(Action::Render).unwrap();
-                        };
-                        update_progress(FetchProgress {
-                            current_page: 1,
-                            total_entries_fetched: 0,
-                            oldest_date: None,
-                        });
-                        let records = fetcher::fetch_transactions(
-                            &cookie,
-                            &account,
-                            date.timestamp(),
-                            Some(Box::new(update_progress)),
-                        )
-                        .await
-                        .unwrap();
-                        assert!(!records.is_empty());
-                        tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                            FetchingState::Idle, // 更新状态为 Idle
-                        )))
-                        .unwrap();
-                        tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
-                    });
+                    if let Ok((account, cookie)) = app.manager.get_account_cookie() {
+                        tokio::spawn(Fetch::fetch(tx, cookie, account, *date));
+                    } else {
+                        app.send_action(Action::NavigateTo(
+                            crate::actions::NaviTarget::CookieInput(
+                                crate::page::cookie_input::CookieInput::new(app),
+                            ),
+                        ))
+                    }
                 }
 
                 FetchingAction::InsertTransaction(transactions) => {
-                    app.manager.insert(&transactions).unwrap();
-                    app.action_tx
-                        .send(Action::Fetching(FetchingAction::LoadDbCount))
-                        .unwrap();
+                    app.manager.insert(transactions).unwrap();
+                    app.send_action(Action::Fetching(FetchingAction::LoadDbCount));
                 }
 
                 FetchingAction::UpdateFetchStatus(state) => {
-                    self.fetching_state = state;
-                    app.action_tx.send(Action::Render).unwrap();
+                    self.fetching_state = state.clone();
+                    app.send_action(Action::Render);
                 }
 
                 FetchingAction::MoveFocus(focus) => {
-                    self.current_focus = focus;
+                    self.current_focus = focus.clone();
                     self.fetch_start_date = match &self.current_focus {
                         Focus::P1Year => Some(
                             Local::now()
@@ -307,77 +293,40 @@ impl Page for Fetch {
                     };
 
                     if let Focus::UserInput = &self.current_focus {
-                        app.action_tx.send(Action::SwitchInputMode(true)).unwrap();
-                        app.action_tx.send(Action::Render).unwrap();
+                        app.send_action(self.input.get_switch_mode_action(InputMode::Focused));
                     } else {
-                        app.action_tx.send(Action::Render).unwrap();
+                        app.send_action(self.input.get_switch_mode_action(InputMode::Idle));
                     }
                 }
                 FetchingAction::LoadDbCount => {
                     self.local_db_cnt = app.manager.fetch_count().unwrap();
-                    app.action_tx.send(Action::Render).unwrap();
-                }
-
-                FetchingAction::SubmitUserInput(input) => {
-                    self.fetch_start_date = Fetch::parse_user_input(&input);
-                    if self.fetch_start_date.is_some() {
-                        app.action_tx.send(Action::SwitchInputMode(false)).unwrap();
-                    } else {
-                        app.action_tx.send(Action::None).unwrap();
-                    }
-                }
-                FetchingAction::HandleInputEvent(event) => {
-                    self.input
-                        .handle_event(&crossterm::event::Event::Key(event));
-                    app.action_tx.send(Action::Render).unwrap();
+                    app.send_action(Action::Render);
                 }
             }
         }
+
+        if let Some(input) = self.input.parse_submit_action(&action) {
+            self.fetch_start_date = Fetch::parse_user_input(&input);
+            if self.fetch_start_date.is_some() {
+                app.send_action(Action::SwitchInputMode(false));
+            } else {
+                app.send_action(Action::None);
+            }
+        }
+
+        self.input.update(&action, app).unwrap();
     }
 
     fn get_name(&self) -> String {
         "Fetch".to_string()
     }
 
-    fn init(&mut self, _app: &mut crate::RootState) {
-        _app.action_tx
-            .send(Action::Fetching(FetchingAction::LoadDbCount))
-            .unwrap();
+    fn init(&mut self, app: &mut crate::RootState) {
+        app.send_action(Action::Fetching(FetchingAction::LoadDbCount))
     }
 }
 
 impl Fetch {
-    fn render_input(&self, frame: &mut Frame, area: Rect, root_state: &crate::RootState) {
-        // keep 2 for borders and 1 for cursor
-        let width = area.width.max(3) - 3;
-        let scroll = self.input.visual_scroll(width as usize);
-        let style = match root_state.input_mode {
-            false => match self.current_focus {
-                Focus::UserInput => Color::Cyan.into(),
-                _ => Style::default(),
-            },
-            true => Color::Yellow.into(),
-        };
-
-        let input = Paragraph::new(self.input.value())
-            .style(style)
-            .scroll((0, scroll as u16))
-            .block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
-                    .title("Custom Start Date (2025-03-02 style input) (Enter: Submit   Esc: exit input mode)"),
-            );
-        frame.render_widget(input, area);
-
-        if root_state.input_mode {
-            // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
-            // end of the input text and one line down from the border to the input line
-            let x = self.input.visual_cursor().max(scroll) - scroll + 1;
-            frame.set_cursor_position((area.x + x as u16, area.y + 1))
-        }
-    }
-
     #[instrument]
     fn parse_user_input(input: &str) -> Option<DateTime<Local>> {
         match chrono::NaiveDate::parse_from_str(input.trim(), "%Y-%m-%d") {
@@ -398,5 +347,41 @@ impl Fetch {
                 None
             }
         }
+    }
+
+    async fn fetch(
+        tx: UnboundedSender<Action>,
+        cookie: String,
+        account: String,
+        date: DateTime<Local>,
+    ) {
+        let tx2 = tx.clone();
+        let update_progress = move |progress: FetchProgress| {
+            tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
+                FetchingState::Fetching(progress),
+            )))
+            .unwrap();
+            tx.send(Action::Render).unwrap();
+        };
+        update_progress(FetchProgress {
+            current_page: 1,
+            total_entries_fetched: 0,
+            oldest_date: None,
+        });
+        let records = fetcher::fetch_transactions(
+            &cookie,
+            &account,
+            date.timestamp(),
+            Some(Box::new(update_progress)),
+        )
+        .await
+        .unwrap();
+        assert!(!records.is_empty());
+        tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
+            FetchingState::Idle, // 更新状态为 Idle
+        )))
+        .unwrap();
+        tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
+            .unwrap()
     }
 }

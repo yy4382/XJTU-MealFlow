@@ -25,18 +25,10 @@ impl AppConfig {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default)]
-pub struct FetchConfig {
-    pub cookie: String,
-    pub account: String,
-}
-
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub config: AppConfig,
-    #[serde(default, flatten)]
-    pub fetch: FetchConfig,
 }
 
 lazy_static! {
@@ -80,12 +72,6 @@ impl Config {
         if !found_config {
             error!("No configuration file found. Application may not behave as expected");
         }
-
-        builder = builder.add_source(
-            config::Environment::with_prefix("XMF")
-                .separator("_")
-                .convert_case(config::Case::Snake),
-        );
 
         let cfg: Self = builder.build()?.try_deserialize()?;
 
@@ -140,8 +126,6 @@ mod tests {
 
         temp_env::with_vars(
             [
-                // ("XMF_COOKIE", Some("test-cookie")),
-                ("XMF_ACCOUNT", Some("test-account")),
                 (
                     format!("{}_DATA", PROJECT_NAME.clone()).as_str(),
                     Some(temp_data.path().to_str().unwrap()),
@@ -170,8 +154,6 @@ mod tests {
                     config.config.db_path(),
                     config.config.data_dir.join("transactions.db")
                 );
-                assert_eq!(config.fetch.account, "test-account");
-                assert_eq!(config.fetch.cookie, "test-cookie-in-config")
             },
         );
     }
