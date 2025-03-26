@@ -305,8 +305,6 @@ impl Page for Fetch {
             self.fetch_start_date = Fetch::parse_user_input(&input);
             if self.fetch_start_date.is_some() {
                 app.send_action(Action::SwitchInputMode(false));
-            } else {
-                app.send_action(Action::None);
             }
         }
 

@@ -22,7 +22,6 @@ pub enum Action {
 
     Quit,
     Render,
-    None,
 }
 #[derive(Clone, Debug)]
 pub enum NaviTarget {
