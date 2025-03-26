@@ -16,7 +16,7 @@ async fn run() -> Result<()> {
     // application state
     let config = crate::config::Config::new()?;
     let mut app = App {
-        state: RootState::new(config),
+        state: RootState::new(Some(config.config.db_path())),
         page: Box::new(page::home::Home::default()),
         tui: tui::Tui::new()?.tick_rate(1.0).frame_rate(30.0),
     };
