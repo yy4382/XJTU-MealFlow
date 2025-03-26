@@ -35,7 +35,7 @@ pub struct FetchProgress {
     pub oldest_date: Option<DateTime<Local>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum FetchingAction {
     StartFetching(DateTime<Local>),
     UpdateFetchStatus(FetchingState),

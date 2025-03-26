@@ -11,12 +11,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Transactions {
     transactions: Vec<crate::libs::transactions::Transaction>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum TransactionAction {
     LoadTransactions,
 }

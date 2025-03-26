@@ -53,7 +53,7 @@ impl Default for InputCompCtrlKeys {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) enum InputAction {
     SwitchMode(InputMode),
     HandleKey(KeyEvent),
