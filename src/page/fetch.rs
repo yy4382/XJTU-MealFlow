@@ -45,6 +45,12 @@ pub enum FetchingAction {
     MoveFocus(Focus),
 }
 
+impl Into<Action> for FetchingAction {
+    fn into(self) -> Action {
+        Action::Fetching(self)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Fetch {
     fetching_state: FetchingState,
@@ -211,29 +217,23 @@ impl Page for Fetch {
                 if !app.input_mode {
                     match (key.modifiers, key.code) {
                         (_, KeyCode::Enter) => match self.fetch_start_date {
-                            Some(date) => app
-                                .send_action(Action::Fetching(FetchingAction::StartFetching(date))),
+                            Some(date) => app.send_action(FetchingAction::StartFetching(date)),
                             None => (),
                         },
-                        (_, KeyCode::Char('j')) => app.send_action(Action::Fetching(
-                            FetchingAction::MoveFocus(self.current_focus.next()),
-                        )),
-                        (_, KeyCode::Char('k')) => app.send_action(Action::Fetching(
-                            FetchingAction::MoveFocus(self.current_focus.prev()),
-                        )),
-                        (_, KeyCode::Char('l')) => {
-                            app.send_action(Action::Fetching(FetchingAction::LoadDbCount))
+                        (_, KeyCode::Char('j')) => {
+                            app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
                         }
-                        (_, KeyCode::Char('e')) => app.send_action(Action::NavigateTo(
-                            crate::actions::NaviTarget::CookieInput(
-                                crate::page::cookie_input::CookieInput::new(app),
-                            ),
-                        )),
-                        (_, KeyCode::Esc) => app.send_action(Action::NavigateTo(
-                            crate::actions::NaviTarget::Transaction(
-                                super::transactions::Transactions::default(),
-                            ),
-                        )),
+                        (_, KeyCode::Char('k')) => {
+                            app.send_action(FetchingAction::MoveFocus(self.current_focus.prev()))
+                        }
+                        (_, KeyCode::Char('l')) => app.send_action(FetchingAction::LoadDbCount),
+                        (_, KeyCode::Char('e')) => {
+                            app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                        }
+
+                        (_, KeyCode::Esc) => {
+                            app.send_action(super::transactions::Transactions::default())
+                        }
                         _ => (),
                     }
                 }
@@ -253,11 +253,7 @@ impl Page for Fetch {
                     if let Ok((account, cookie)) = app.manager.get_account_cookie() {
                         tokio::spawn(Fetch::fetch(tx, cookie, account, *date));
                     } else {
-                        app.send_action(Action::NavigateTo(
-                            crate::actions::NaviTarget::CookieInput(
-                                crate::page::cookie_input::CookieInput::new(app),
-                            ),
-                        ))
+                        app.send_action(crate::page::cookie_input::CookieInput::new(app))
                     }
                 }
 

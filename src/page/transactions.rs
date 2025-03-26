@@ -21,6 +21,12 @@ pub enum TransactionAction {
     LoadTransactions,
 }
 
+impl Into<Action> for TransactionAction {
+    fn into(self) -> Action {
+        Action::Transaction(self)
+    }
+}
+
 impl Page for Transactions {
     fn render(&self, frame: &mut Frame, _app: &RootState) {
         let area = frame.area();
@@ -61,12 +67,8 @@ impl Page for Transactions {
         match event {
             Event::Key(key) => match (key.modifiers, key.code) {
                 // navigate to fetch page
-                (_, KeyCode::Char('r')) => app.send_action(Action::NavigateTo(
-                    crate::actions::NaviTarget::Fetch(crate::page::fetch::Fetch::default()),
-                )),
-                (_, KeyCode::Char('l')) => {
-                    app.send_action(Action::Transaction(TransactionAction::LoadTransactions))
-                }
+                (_, KeyCode::Char('r')) => app.send_action(crate::page::fetch::Fetch::default()),
+                (_, KeyCode::Char('l')) => app.send_action(TransactionAction::LoadTransactions),
                 _ => (),
             },
             _ => (),
@@ -90,6 +92,6 @@ impl Page for Transactions {
     }
 
     fn init(&mut self, app: &mut RootState) {
-        app.send_action(Action::Transaction(TransactionAction::LoadTransactions))
+        app.send_action(TransactionAction::LoadTransactions)
     }
 }
