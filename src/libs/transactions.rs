@@ -231,4 +231,25 @@ mod tests {
         assert_eq!(fetched[1].amount, -200.0);
         assert_eq!(fetched[1].merchant, "Google");
     }
+
+    #[test]
+    fn test_account_cookie() {
+        let manager = TransactionManager::new(None).unwrap();
+        manager.init_db().unwrap();
+
+        manager.update_account("test_account").unwrap();
+        let (account, cookie) = manager.get_account_cookie().unwrap();
+        assert_eq!(account, "test_account");
+        assert_eq!(cookie, "");
+
+        manager.update_cookie("test_cookie").unwrap();
+        let (account, cookie) = manager.get_account_cookie().unwrap();
+        assert_eq!(account, "test_account");
+        assert_eq!(cookie, "test_cookie");
+
+        manager.update_account("test_account2").unwrap();
+        let (account, cookie) = manager.get_account_cookie().unwrap();
+        assert_eq!(account, "test_account2");
+        assert_eq!(cookie, "test_cookie");
+    }
 }
