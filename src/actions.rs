@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Action {
     Tick,
     NavigateTo(Box<NaviTarget>),
@@ -24,7 +24,7 @@ pub enum Action {
     Render,
     None,
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NaviTarget {
     Home(Home),
     Fetch(Fetch),
@@ -32,7 +32,7 @@ pub enum NaviTarget {
     CookieInput(CookieInput),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum CompAction {
     Input(InputAction),
     #[allow(dead_code)]

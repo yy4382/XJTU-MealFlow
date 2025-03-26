@@ -7,7 +7,7 @@ use crate::{actions::Action, app::RootState};
 
 use super::Page;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CookieInput {
     state: CookieInputState,
 
@@ -41,7 +41,7 @@ impl CookieInput {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub(crate) enum CookieInputState {
     #[default]
     Account,
@@ -63,7 +63,7 @@ impl CookieInputState {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) enum CookieInputAction {
     ChangeState(CookieInputState),
 }
