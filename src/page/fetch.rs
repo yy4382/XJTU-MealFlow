@@ -214,7 +214,7 @@ impl Page for Fetch {
     ) -> color_eyre::eyre::Result<()> {
         match event {
             crate::tui::Event::Key(key) => {
-                if !app.input_mode {
+                if !app.input_mode() {
                     match (key.modifiers, key.code) {
                         (_, KeyCode::Enter) => match self.fetch_start_date {
                             Some(date) => app.send_action(FetchingAction::StartFetching(date)),

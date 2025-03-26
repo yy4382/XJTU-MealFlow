@@ -130,7 +130,7 @@ impl super::Component for InputComp {
         match self.mode {
             InputMode::Idle => app.send_action(Action::None),
             InputMode::Focused => {
-                if app.input_mode {
+                if app.input_mode() {
                     match event {
                         Event::Key(key) => {
                             if self.control_keys.submit_keys.contains(key) {
@@ -216,7 +216,7 @@ impl super::Component for InputComp {
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.mode {
             InputMode::Focused => {
-                if app.input_mode {
+                if app.input_mode() {
                     Color::Yellow.into()
                 } else {
                     Color::Cyan.into()
@@ -236,7 +236,7 @@ impl super::Component for InputComp {
             );
         frame.render_widget(input_widget, *area);
 
-        if matches!(self.mode, InputMode::Focused) && app.input_mode {
+        if matches!(self.mode, InputMode::Focused) && app.input_mode() {
             // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;

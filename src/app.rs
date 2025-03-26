@@ -16,7 +16,7 @@ pub struct RootState {
     action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
     action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
     pub manager: crate::libs::transactions::TransactionManager,
-    pub input_mode: bool,
+    input_mode: bool,
     // pub config: Config,
 }
 
@@ -39,6 +39,9 @@ impl RootState {
     }
     pub fn clone_sender(&self) -> tokio::sync::mpsc::UnboundedSender<Action> {
         self.action_tx.clone()
+    }
+    pub fn input_mode(&self) -> bool {
+        self.input_mode
     }
 }
 
