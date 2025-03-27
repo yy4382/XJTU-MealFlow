@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local, TimeZone};
 use color_eyre::eyre::Context;
+use crossterm::event::KeyCode;
 use ratatui::{
     layout::{Constraint, Flex, Layout},
     style::{Color, Style},
@@ -13,6 +14,7 @@ use crate::{
     actions::Action,
     app::RootState,
     component::{Component, input::InputComp},
+    utils::help_msg::{HelpEntry, HelpMsg},
 };
 use crate::{
     component::input::InputMode,
@@ -80,6 +82,21 @@ impl Default for Fetch {
     }
 }
 
+impl Fetch {
+    fn get_help_msg(&self, app: &RootState) -> HelpMsg {
+        let mut help: HelpMsg = vec![
+            HelpEntry::new_plain("Move focus: hjkl"),
+            HelpEntry::new('e', "Edit accnout & cookie"),
+            HelpEntry::new('r', "Refresh local db count"),
+            HelpEntry::new(KeyCode::Esc, "Back"),
+            HelpEntry::new(' ', "Start fetch"),
+        ]
+        .into();
+        if let Focus::UserInput = self.current_focus { help.extend(&self.input.get_help_msg(app.input_mode())) }
+        help
+    }
+}
+
 #[derive(Clone, Default, Debug)]
 pub enum Focus {
     #[default]
@@ -117,8 +134,8 @@ impl Page for Fetch {
                 Constraint::Length(3),
                 Constraint::Length(4),
                 Constraint::Fill(1),
+                Constraint::Length(3),
             ])
-            .margin(1)
             .split(area);
 
         let top_areas = &Layout::horizontal([
@@ -126,7 +143,6 @@ impl Page for Fetch {
             Constraint::Fill(1),
             Constraint::Fill(1),
         ])
-        .horizontal_margin(1)
         .flex(Flex::SpaceAround)
         .split(area[0]);
 
@@ -172,7 +188,7 @@ impl Page for Fetch {
             FetchingState::Idle => {
                 frame.render_widget(
                     Text::raw(format!(
-                        "Currently {} records locally stored.\n Press \"Enter\" to fetch transactions since {}",
+                        "Currently {} records locally stored.\n Press \"Space\" to fetch transactions since {}",
                         self.local_db_cnt,
                         self.fetch_start_date.map_or("N/A".to_string(), |date| date.format("%Y-%m-%d").to_string()),
                     ))
@@ -206,6 +222,8 @@ impl Page for Fetch {
               //     frame.render_widget(Text::raw(transaction_text), area[2]);
               // }
         }
+
+        self.get_help_msg(root_state).render(frame, area[3]);
     }
 
     fn handle_events(
@@ -216,18 +234,18 @@ impl Page for Fetch {
         if let crate::tui::Event::Key(key) = event {
             if !app.input_mode() {
                 match (key.modifiers, key.code) {
-                    (_, KeyCode::Enter) => {
+                    (_, KeyCode::Char(' ')) => {
                         if let Some(date) = self.fetch_start_date {
                             app.send_action(FetchingAction::StartFetching(date))
                         }
                     }
-                    (_, KeyCode::Char('j')) => {
+                    (_, KeyCode::Char('j')) | (_, KeyCode::Char('l')) => {
                         app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
                     }
-                    (_, KeyCode::Char('k')) => {
+                    (_, KeyCode::Char('k')) | (_, KeyCode::Char('h')) => {
                         app.send_action(FetchingAction::MoveFocus(self.current_focus.prev()))
                     }
-                    (_, KeyCode::Char('l')) => app.send_action(FetchingAction::LoadDbCount),
+                    (_, KeyCode::Char('r')) => app.send_action(FetchingAction::LoadDbCount),
                     (_, KeyCode::Char('e')) => {
                         app.send_action(crate::page::cookie_input::CookieInput::new(app))
                     }

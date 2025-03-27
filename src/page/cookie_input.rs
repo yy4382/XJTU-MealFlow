@@ -3,6 +3,7 @@ use ratatui::layout::{Constraint, Layout};
 
 use crate::component::Component;
 use crate::component::input::{InputComp, InputMode};
+use crate::utils::help_msg::{HelpEntry, HelpMsg};
 use crate::{actions::Action, app::RootState};
 
 use super::Page;
@@ -23,6 +24,22 @@ impl CookieInput {
             state: Default::default(),
             cookie_input: InputComp::new(1, Some(cookie), "Cookie", Default::default()),
             account_input: InputComp::new(2, Some(account), "Account", Default::default()),
+        }
+    }
+
+    pub fn get_help_msg(&self, app: &RootState) -> crate::utils::help_msg::HelpMsg {
+        let help_msg: HelpMsg = vec![
+            HelpEntry::new_plain("Move focus: hjkl"),
+            HelpEntry::new(KeyCode::Esc, "Back"),
+        ]
+        .into();
+        match self.state {
+            CookieInputState::Account => {
+                help_msg.extend_ret(&self.account_input.get_help_msg(app.input_mode()))
+            }
+            CookieInputState::Cookie => {
+                help_msg.extend_ret(&self.cookie_input.get_help_msg(app.input_mode()))
+            }
         }
     }
 }
@@ -62,14 +79,19 @@ impl From<CookieInputAction> for Action {
 
 impl Page for CookieInput {
     fn render(&self, frame: &mut ratatui::Frame, app: &crate::app::RootState) {
-        // TODO add keybindings guide
         let chunks = &Layout::default()
-            .margin(1)
-            .constraints([Constraint::Length(5), Constraint::Length(5)])
+            .constraints([Constraint::Fill(1), Constraint::Length(3)])
             .split(frame.area());
 
-        self.account_input.draw(frame, &chunks[0], app);
-        self.cookie_input.draw(frame, &chunks[1], app);
+        let sub_chunks = &Layout::default()
+            .margin(1)
+            .constraints([Constraint::Length(5), Constraint::Length(5)])
+            .split(chunks[0]);
+
+        self.account_input.draw(frame, &sub_chunks[0], app);
+        self.cookie_input.draw(frame, &sub_chunks[1], app);
+
+        self.get_help_msg(app).render(frame, chunks[1]);
     }
 
     fn handle_events(
@@ -131,13 +153,6 @@ impl Page for CookieInput {
     fn get_name(&self) -> String {
         "Cookie Input".to_string()
     }
-
-    fn init(&mut self, app: &crate::app::RootState) {
-        app.send_action(
-            self.account_input
-                .get_switch_mode_action(InputMode::Focused),
-        );
-    }
 }
 
 #[cfg(test)]
@@ -145,7 +160,7 @@ mod test {
     use super::*;
     use crate::app::RootState;
     use crate::tui::Event;
-    use crate::tui::test_utils::{get_char_evt, get_key_evt};
+    use crate::utils::key_events::test_utils::{get_char_evt, get_key_evt};
 
     fn get_test_objs() -> (RootState, CookieInput) {
         let mut app = RootState::new(None);

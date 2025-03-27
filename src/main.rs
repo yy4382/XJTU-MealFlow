@@ -10,6 +10,7 @@ mod logging;
 mod page;
 #[cfg(not(tarpaulin_include))]
 mod tui;
+mod utils;
 
 use app::{App, RootState};
 use color_eyre::eyre::Result;
