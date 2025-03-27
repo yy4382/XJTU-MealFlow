@@ -197,6 +197,21 @@ impl TransactionManager {
             None => bail!("No account and cookie found"),
         }
     }
+
+    #[cfg(test)]
+    pub fn get_account_cookie_may_empty(&self) -> Result<(String, String)> {
+        let mut stmt = self.conn.prepare("SELECT account, cookie FROM cookies")?;
+        let mut rows = stmt.query([])?;
+        let row = rows.next()?;
+        match row {
+            Some(row) => {
+                let account: String = row.get(0)?;
+                let cookie: String = row.get(1)?;
+                Ok((account, cookie))
+            }
+            None => bail!("No account and cookie found"),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -245,7 +260,7 @@ mod tests {
         manager.init_db().unwrap();
 
         manager.update_account("test_account").unwrap();
-        let (account, cookie) = manager.get_account_cookie().unwrap();
+        let (account, cookie) = manager.get_account_cookie_may_empty().unwrap();
         assert_eq!(account, "test_account");
         assert_eq!(cookie, "");
 

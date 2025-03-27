@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crossterm::event::{KeyCode, KeyEvent as crosstermKeyEvent, KeyModifiers};
 
+#[cfg(not(tarpaulin_include))]
 pub fn key_event_to_string(key_event: &crosstermKeyEvent) -> String {
     let char;
     let key_code = match key_event.code {
