@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local, TimeZone};
-use crossterm::event::KeyCode;
+use color_eyre::eyre::Context;
 use ratatui::{
     layout::{Constraint, Flex, Layout},
     style::{Color, Style},
@@ -258,7 +258,10 @@ impl Page for Fetch {
                 }
 
                 FetchingAction::InsertTransaction(transactions) => {
-                    app.manager.insert(transactions).unwrap();
+                    app.manager
+                        .insert(transactions)
+                        .context("Error when inserting fetched transactions into database")
+                        .unwrap();
                     app.send_action(Action::Fetching(FetchingAction::LoadDbCount));
                 }
 
@@ -357,7 +360,9 @@ impl Fetch {
 
             info!("Start fetching with account {} cookie {}", account, cookie);
 
-            let records = fetcher::fetch(date, Box::new(fetch_client), update_progress).unwrap();
+            let records = fetcher::fetch(date, Box::new(fetch_client), update_progress)
+                .context("Error fetching in Fetch page")
+                .unwrap();
 
             info!("Fetch stopped with {} records", records.len());
 

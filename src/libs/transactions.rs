@@ -1,7 +1,7 @@
 use std::{path::PathBuf, rc::Rc};
 
 use chrono::{DateTime, Local};
-use color_eyre::eyre::{Result, bail};
+use color_eyre::eyre::{Context, Result, bail};
 use rusqlite::{Connection, params};
 
 #[derive(Debug, Clone)]
@@ -75,7 +75,7 @@ impl TransactionManager {
         Ok(())
     }
 
-    pub fn insert(&self, transactions: &Vec<Transaction>) -> Result<(), rusqlite::Error> {
+    pub fn insert(&self, transactions: &Vec<Transaction>) -> Result<()> {
         // insert at once
         let mut stmt = self
             .conn
@@ -87,7 +87,13 @@ impl TransactionManager {
                 transaction.time.to_rfc3339(),
                 transaction.amount,
                 transaction.merchant
-            ])?;
+            ])
+            .with_context(|| {
+                format!(
+                    "Error when inserting transactions into Database, transaction: {:?}",
+                    transaction
+                )
+            })?;
         }
         Ok(())
     }
