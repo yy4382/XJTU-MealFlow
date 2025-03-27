@@ -216,7 +216,10 @@ mod test {
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Left));
         app.handle_event_and_update(&mut page, Event::Paste("kl".into()));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
-        assert_eq!(app.manager.get_account_cookie_may_empty().unwrap().0, "aklj");
+        assert_eq!(
+            app.manager.get_account_cookie_may_empty().unwrap().0,
+            "aklj"
+        );
     }
 
     #[test]
