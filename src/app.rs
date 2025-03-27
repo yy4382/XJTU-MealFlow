@@ -4,7 +4,7 @@ use crate::{
     page::{self, Page},
     tui,
 };
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Context, Result};
 use crossterm::event::KeyCode::Char;
 use std::path::PathBuf;
 use tokio::sync::mpsc;
@@ -26,7 +26,9 @@ impl RootState {
             should_quit: false,
             action_tx,
             action_rx,
-            manager: TransactionManager::new(db_path).unwrap(),
+            manager: TransactionManager::new(db_path)
+                .context("Error when creating local cache db manager")
+                .unwrap(),
             input_mode: false,
         }
     }
@@ -71,7 +73,8 @@ impl App {
         loop {
             let e = self.tui.next().await?;
 
-            self.handle_event(e)?;
+            self.handle_event(e)
+                .with_context(|| format!("failed to handle event"))?;
 
             while let Ok(action) = self.state.action_rx.try_recv() {
                 self.perform_action(action);

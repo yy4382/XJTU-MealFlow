@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local, TimeZone};
 use color_eyre::{
-    Result,
-    eyre::{WrapErr, eyre, bail},
+    Result, Section, SectionExt,
+    eyre::{WrapErr, bail, eyre},
 };
 use reqwest::{blocking::Client, header};
 use serde::Deserialize;
@@ -149,15 +149,12 @@ impl MealFetcher for RealMealFetcher {
                                 return Ok(api_response);
                             }
                             Err(e) => {
-                                last_error =
-                                    Some(eyre!("Failed to parse response: {}", e));
+                                last_error = Some(eyre!("Failed to parse response: {}", e));
                             }
                         }
                     } else {
-                        last_error = Some(eyre!(
-                            "Request failed with status: {}",
-                            response.status()
-                        ));
+                        last_error =
+                            Some(eyre!("Request failed with status: {}", response.status()));
                     }
                 }
                 Err(e) => {
@@ -176,7 +173,16 @@ impl MealFetcher for RealMealFetcher {
 }
 
 fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
-    let api_response: ApiResponse = serde_json::from_str(s)?;
+    let api_response = serde_json::from_str::<ApiResponse>(s).map_err(|e| {
+        if e.is_data() && format!("{}", e).contains("missing field `rows`") {
+            eyre!("{}. This may indicate that your cookie has expired.", e).with_note(
+                || "Consider re-logging in to card.xjtu.edu.cn and updating your cookie.",
+            )
+        } else {
+            eyre!("Failed to parse API response: {}", e)
+        }
+        .with_section(|| format!("{}", s).header("Incorrect API response:"))
+    })?;
 
     let row_map = |row: TransactionRow| {
         // Parse the date
@@ -227,8 +233,16 @@ where
     });
 
     for page in 1..=max_pages {
-        let page_transactions = client.fetch_transaction_one_page(page)?;
-        let page_transactions = api_response_to_transactions(&page_transactions)?;
+        let page_transactions = client
+            .fetch_transaction_one_page(page)
+            .with_context(|| format!("Error when fetching on page {}", page))?;
+        let page_transactions =
+            api_response_to_transactions(&page_transactions).with_context(|| {
+                format!(
+                    "Error when parsing data returned from XJTU server on page {}",
+                    page
+                )
+            })?;
         if page_transactions.is_empty() {
             break;
         }

@@ -92,7 +92,9 @@ impl Fetch {
             HelpEntry::new(' ', "Start fetch"),
         ]
         .into();
-        if let Focus::UserInput = self.current_focus { help.extend(&self.input.get_help_msg(app.input_mode())) }
+        if let Focus::UserInput = self.current_focus {
+            help.extend(&self.input.get_help_msg(app.input_mode()))
+        }
         help
     }
 }
@@ -268,7 +270,6 @@ impl Page for Fetch {
                     let tx = app.clone_sender();
 
                     if let Ok((account, cookie)) = app.manager.get_account_cookie() {
-                        // TODO use another thread to run this
                         Fetch::fetch(tx, cookie, account, *date);
                     } else {
                         app.send_action(crate::page::cookie_input::CookieInput::new(app))
