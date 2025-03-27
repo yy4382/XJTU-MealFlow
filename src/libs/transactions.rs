@@ -21,8 +21,14 @@ impl TransactionManager {
     pub fn new(db_path: Option<PathBuf>) -> Result<Self> {
         let conn = match db_path {
             Some(db_path) => {
-                std::fs::create_dir_all(db_path.parent().unwrap())?;
-                Connection::open(db_path)?
+                std::fs::create_dir_all(db_path.parent().unwrap())
+                    .context("Failed to create dir for local cache DB")?;
+                Connection::open(db_path.clone()).with_context(|| {
+                    format!(
+                        "Failed to open local cache DB at {}",
+                        db_path.to_str().unwrap_or("INVALID PATH")
+                    )
+                })?
             }
             None => Connection::open_in_memory()?,
         };
@@ -181,8 +187,11 @@ impl TransactionManager {
         let row = rows.next()?;
         match row {
             Some(row) => {
-                let account = row.get(0)?;
-                let cookie = row.get(1)?;
+                let account: String = row.get(0)?;
+                let cookie: String = row.get(1)?;
+                if account.is_empty() || cookie.is_empty() {
+                    bail!("Account or cookie is empty");
+                }
                 Ok((account, cookie))
             }
             None => bail!("No account and cookie found"),
