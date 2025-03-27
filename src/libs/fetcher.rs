@@ -271,6 +271,7 @@ pub struct MockMealFetcher {
 }
 
 impl MockMealFetcher {
+    #[allow(dead_code)]
     fn new(duration: Option<Duration>) -> Self {
         Self {
             sim_delay: duration,

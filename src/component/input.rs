@@ -1,5 +1,5 @@
 use color_eyre::Result;
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     style::{Color, Style},
@@ -10,6 +10,8 @@ use tui_input::{Input, backend::crossterm::EventHandler};
 use crate::{
     actions::{Action, CompAction},
     tui::Event,
+    utils::help_msg::{HelpEntry, HelpMsg},
+    utils::key_events::KeyEvent,
 };
 
 #[derive(Clone, Debug)]
@@ -46,10 +48,28 @@ pub(crate) struct InputCompCtrlKeys {
 impl Default for InputCompCtrlKeys {
     fn default() -> Self {
         Self {
-            enter_keys: vec![KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)],
-            submit_keys: vec![KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)],
-            exit_keys: vec![KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)],
+            enter_keys: vec![KeyCode::Enter.into()],
+            submit_keys: vec![KeyCode::Enter.into()],
+            exit_keys: vec![KeyCode::Esc.into()],
         }
+    }
+}
+
+impl InputCompCtrlKeys {
+    #[allow(dead_code)]
+    pub fn with_enter_keys(mut self, enter_keys: Vec<KeyEvent>) -> Self {
+        self.enter_keys = enter_keys;
+        self
+    }
+    #[allow(dead_code)]
+    pub fn with_submit_keys(mut self, submit_keys: Vec<KeyEvent>) -> Self {
+        self.submit_keys = submit_keys;
+        self
+    }
+    #[allow(dead_code)]
+    pub fn with_exit_keys(mut self, exit_keys: Vec<KeyEvent>) -> Self {
+        self.exit_keys = exit_keys;
+        self
     }
 }
 
@@ -71,7 +91,7 @@ impl InputComp {
         id: u64,
         from: Option<T>,
         title: K,
-        ctrl_keys: Option<InputCompCtrlKeys>,
+        ctrl_keys: InputCompCtrlKeys,
     ) -> Self {
         Self {
             id,
@@ -83,7 +103,7 @@ impl InputComp {
             mode: InputMode::default(),
             title: title.into(),
             auto_submit: false,
-            control_keys: ctrl_keys.unwrap_or_default(),
+            control_keys: ctrl_keys,
         }
     }
 
@@ -127,6 +147,35 @@ impl InputComp {
             ..self
         }
     }
+
+    pub fn get_help_msg(&self, inputing: bool) -> HelpMsg {
+        let mut msg = HelpMsg::default();
+        if matches!(self.mode, InputMode::Focused) {
+            if inputing {
+                if self.auto_submit {
+                    msg.push(HelpEntry::new(
+                        self.control_keys.submit_keys[0].clone(),
+                        "quit input",
+                    ));
+                } else {
+                    msg.push(HelpEntry::new(
+                        self.control_keys.exit_keys[0].clone(),
+                        "quit input",
+                    ));
+                    msg.push(HelpEntry::new(
+                        self.control_keys.submit_keys[0].clone(),
+                        "submit input",
+                    ));
+                }
+            } else {
+                msg.push(HelpEntry::new(
+                    self.control_keys.enter_keys[0].clone(),
+                    "Start input",
+                ));
+            }
+        }
+        msg
+    }
 }
 
 impl super::Component for InputComp {
@@ -141,14 +190,16 @@ impl super::Component for InputComp {
                 if app.input_mode() {
                     match event {
                         Event::Key(key) => {
-                            if self.control_keys.submit_keys.contains(key) {
+                            if self.control_keys.submit_keys.contains(&(*key).into()) {
                                 app.send_action(self.get_action(InputAction::SubmitExit(
                                     self.input.value().to_string(),
                                 )))
-                            } else if self.control_keys.exit_keys.contains(key) {
+                            } else if self.control_keys.exit_keys.contains(&(*key).into()) {
                                 app.send_action(self.get_action(InputAction::DirectExit()))
                             } else {
-                                app.send_action(self.get_action(InputAction::HandleKey(*key)))
+                                app.send_action(
+                                    self.get_action(InputAction::HandleKey((*key).into())),
+                                )
                             }
                         }
                         Event::Paste(s) => {
@@ -157,7 +208,7 @@ impl super::Component for InputComp {
                         _ => (),
                     }
                 } else if let Event::Key(key) = event {
-                    if self.control_keys.enter_keys.contains(key) {
+                    if self.control_keys.enter_keys.contains(&(*key).into()) {
                         app.send_action(Action::SwitchInputMode(true))
                     }
                 }
@@ -182,7 +233,7 @@ impl super::Component for InputComp {
             }
             InputAction::HandleKey(key_event) => {
                 self.input
-                    .handle_event(&crossterm::event::Event::Key(key_event));
+                    .handle_event(&crossterm::event::Event::Key(key_event.into()));
                 if self.auto_submit {
                     app.send_action(
                         self.get_action(InputAction::Submit(self.input.value().to_string())),
@@ -272,7 +323,7 @@ pub mod test {
         app::RootState,
         component::Component,
         page::Page,
-        tui::test_utils::{get_char_evt, get_key_evt},
+        utils::key_events::test_utils::{get_char_evt, get_key_evt},
     };
 
     use super::*;

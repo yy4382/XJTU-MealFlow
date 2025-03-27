@@ -1,12 +1,18 @@
-use crate::{RootState, actions::Action};
+use std::vec;
+
+use crate::{
+    RootState,
+    actions::Action,
+    utils::help_msg::{HelpEntry, HelpMsg},
+};
 
 use super::Page;
 use color_eyre::eyre::Result;
 use ratatui::{
     Frame,
-    layout::Alignment,
+    layout::{Alignment, Constraint, Flex, Layout},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::Paragraph,
 };
 
 #[derive(Default, Clone, Debug)]
@@ -14,22 +20,31 @@ pub struct Home {}
 
 impl Page for Home {
     fn render(&self, frame: &mut Frame, _app: &RootState) {
-        let area = frame.area();
+        let area = &Layout::default()
+            .constraints([Constraint::Fill(1), Constraint::Length(3)])
+            .split(frame.area());
+
+        // TODO use different ascii art for different screen sizes
+        let ascii_art = include_str!("../../ascii-arts/mealflow.txt");
+        let height = ascii_art.lines().count() as u16;
+        let [v_align_area] = &Layout::vertical([Constraint::Length(height + 1)])
+            .flex(Flex::Center)
+            .areas(area[0]);
+
         frame.render_widget(
-            Paragraph::new(
-                "Welcome to XJTU MealFlow\n\nPress 'T' (Capitalized) to view transactions\nPress 'q' to quit"
-            )
-            .block(
-                Block::default()
-                    .title("XJTU MealFlow")
-                    .title_alignment(Alignment::Center)
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded),
-            )
-            .style(Style::default().fg(Color::Cyan))
-            .alignment(Alignment::Center),
-            area,
+            Paragraph::new(include_str!("../../ascii-arts/mealflow.txt"))
+                .style(Style::default().fg(Color::Cyan))
+                .alignment(Alignment::Center),
+            *v_align_area,
         );
+
+        let help_msg: HelpMsg = vec![
+            HelpEntry::new('T', "Go to transactions page"),
+            HelpEntry::new('q', "Quit"),
+        ]
+        .into();
+
+        help_msg.render(frame, area[1]);
     }
 
     fn update(&mut self, _root_state: &RootState, _action: Action) {}
@@ -49,7 +64,7 @@ mod tests {
     use ratatui::{Terminal, backend::TestBackend};
 
     use super::*;
-    use crate::{app::RootState, tui::test_utils::get_char_evt};
+    use crate::{app::RootState, utils::key_events::test_utils::get_char_evt};
 
     fn get_test_page() -> (Home, RootState) {
         let app = RootState::new(None);

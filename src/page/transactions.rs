@@ -1,4 +1,9 @@
-use crate::{RootState, actions::Action, tui::Event};
+use crate::{
+    RootState,
+    actions::Action,
+    tui::Event,
+    utils::help_msg::{HelpEntry, HelpMsg},
+};
 
 use super::Page;
 use color_eyre::eyre::Result;
@@ -7,13 +12,24 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout},
     style::{Color, Style},
-    text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
 #[derive(Default, Clone, Debug)]
 pub struct Transactions {
     transactions: Vec<crate::libs::transactions::Transaction>,
+}
+
+impl Transactions {
+    fn get_help_msg(&self) -> HelpMsg {
+        let help_msg: HelpMsg = vec![
+            HelpEntry::new_plain("Move focus: hjkl"),
+            HelpEntry::new('f', "Fetch"),
+            HelpEntry::new('l', "Load from local cache"),
+        ]
+        .into();
+        help_msg
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -54,20 +70,13 @@ impl Page for Transactions {
             rects[0],
         );
 
-        frame.render_widget(
-            Paragraph::new(Text::raw("r: Refresh l: Load")).block(
-                Block::default()
-                    .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded),
-            ),
-            rects[1],
-        );
+        self.get_help_msg().render(frame, rects[1]);
     }
     fn handle_events(&self, app: &RootState, event: Event) -> Result<()> {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
                 // navigate to fetch page
-                (_, KeyCode::Char('r')) => app.send_action(crate::page::fetch::Fetch::default()),
+                (_, KeyCode::Char('f')) => app.send_action(crate::page::fetch::Fetch::default()),
                 (_, KeyCode::Char('l')) => app.send_action(TransactionAction::LoadTransactions),
                 _ => (),
             }
