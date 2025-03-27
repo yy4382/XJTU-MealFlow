@@ -1,5 +1,8 @@
-use anyhow::{Context, Result, bail};
 use chrono::{DateTime, Local, TimeZone};
+use color_eyre::{
+    Result,
+    eyre::{WrapErr, eyre, bail},
+};
 use reqwest::{blocking::Client, header};
 use serde::Deserialize;
 use std::{
@@ -88,14 +91,8 @@ impl MealFetcher for RealMealFetcher {
     fn fetch_transaction_one_page(&self, page: u32) -> Result<String> {
         let client = Client::new();
 
-        let cookie = self
-            .cookie
-            .clone()
-            .ok_or(anyhow::anyhow!("Cookie not set"))?;
-        let account = self
-            .account
-            .clone()
-            .ok_or(anyhow::anyhow!("Account not set"))?;
+        let cookie = self.cookie.clone().ok_or(eyre!("Cookie not set"))?;
+        let account = self.account.clone().ok_or(eyre!("Account not set"))?;
 
         let mut headers = header::HeaderMap::new();
         headers.insert(header::HOST, "card.xjtu.edu.cn".parse().unwrap());
@@ -153,18 +150,18 @@ impl MealFetcher for RealMealFetcher {
                             }
                             Err(e) => {
                                 last_error =
-                                    Some(anyhow::anyhow!("Failed to parse response: {}", e));
+                                    Some(eyre!("Failed to parse response: {}", e));
                             }
                         }
                     } else {
-                        last_error = Some(anyhow::anyhow!(
+                        last_error = Some(eyre!(
                             "Request failed with status: {}",
                             response.status()
                         ));
                     }
                 }
                 Err(e) => {
-                    last_error = Some(anyhow::anyhow!("Request error: {}", e));
+                    last_error = Some(eyre!("Request error: {}", e));
                 }
             }
 
@@ -174,7 +171,7 @@ impl MealFetcher for RealMealFetcher {
         }
 
         // If we get here, all attempts failed
-        bail!(last_error.unwrap_or_else(|| anyhow::anyhow!("Failed to fetch transactions")))
+        bail!(last_error.unwrap_or_else(|| eyre!("Failed to fetch transactions")))
     }
 }
 
