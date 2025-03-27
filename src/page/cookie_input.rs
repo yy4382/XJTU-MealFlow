@@ -153,6 +153,12 @@ impl Page for CookieInput {
     fn get_name(&self) -> String {
         "Cookie Input".to_string()
     }
+    fn init(&mut self, app: &crate::app::RootState) {
+        app.send_action(
+            self.account_input
+                .get_switch_mode_action(InputMode::Focused),
+        );
+    }
 }
 
 #[cfg(test)]
