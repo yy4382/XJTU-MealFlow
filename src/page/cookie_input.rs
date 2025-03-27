@@ -163,6 +163,9 @@ impl Page for CookieInput {
 
 #[cfg(test)]
 mod test {
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+
     use super::*;
     use crate::app::RootState;
     use crate::tui::Event;
@@ -207,13 +210,13 @@ mod test {
         app.handle_event_and_update(&mut page, get_char_evt('a'));
         app.handle_event_and_update(&mut page, get_char_evt('j'));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
-        assert_eq!(app.manager.get_account_cookie().unwrap().0, "aj");
+        assert_eq!(app.manager.get_account_cookie_may_empty().unwrap().0, "aj");
 
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Left));
         app.handle_event_and_update(&mut page, Event::Paste("kl".into()));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
-        assert_eq!(app.manager.get_account_cookie().unwrap().0, "aklj");
+        assert_eq!(app.manager.get_account_cookie_may_empty().unwrap().0, "aklj");
     }
 
     #[test]
@@ -227,6 +230,20 @@ mod test {
         app.handle_event_and_update(&mut page, get_char_evt('j'));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
         app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Esc));
-        assert_eq!(app.manager.get_account_cookie().unwrap().1, "aj");
+        assert_eq!(app.manager.get_account_cookie_may_empty().unwrap().1, "aj");
+    }
+
+    #[test]
+    fn test_cookie_input_render() {
+        let (app, page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+
+        terminal
+            .draw(|f| {
+                page.render(f, &app);
+            })
+            .unwrap();
+
+        assert_snapshot!(terminal.backend())
     }
 }

@@ -565,4 +565,33 @@ pub mod test {
         terminal.draw(|f| page.render(f, &app)).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Reset);
     }
+
+    #[test]
+    fn test_help_msg() {
+        let (mut page, mut app) = get_test_page(false);
+        fn get_help_msg(page: &TestInputPage, input: bool) -> String {
+            <HelpMsg as Into<String>>::into(page.input.get_help_msg(input))
+        }
+        assert_eq!(get_help_msg(&page, false), "");
+        assert_eq!(get_help_msg(&page, true), "");
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        assert_eq!(get_help_msg(&page, false), "Start input: enter");
+        assert_eq!(
+            get_help_msg(&page, true),
+            "quit input: esc | submit input: enter"
+        );
+    }
+
+    #[test]
+    fn test_help_msg_auto_commit() {
+        let (mut page, mut app) = get_test_page(true);
+        fn get_help_msg(page: &TestInputPage, input: bool) -> String {
+            <HelpMsg as Into<String>>::into(page.input.get_help_msg(input))
+        }
+        assert_eq!(get_help_msg(&page, false), "");
+        assert_eq!(get_help_msg(&page, true), "");
+        app.handle_event_and_update(&mut page, get_key_evt(KeyCode::Enter));
+        assert_eq!(get_help_msg(&page, false), "Start input: enter");
+        assert_eq!(get_help_msg(&page, true), "quit input: enter");
+    }
 }
