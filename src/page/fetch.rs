@@ -14,6 +14,7 @@ use crate::{
     actions::Action,
     app::RootState,
     component::{Component, input::InputComp},
+    libs::fetcher::MealFetcher,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 use crate::{
@@ -61,6 +62,8 @@ pub struct Fetch {
     current_focus: Focus,
 
     input: InputComp,
+
+    client: MealFetcher,
 }
 
 impl Default for Fetch {
@@ -78,6 +81,8 @@ impl Default for Fetch {
                 Default::default(),
             )
             .set_auto_submit(true),
+
+            client: Default::default(),
         }
     }
 }
@@ -96,6 +101,14 @@ impl Fetch {
             help.extend(&self.input.get_help_msg(app.input_mode()))
         }
         help
+    }
+
+    #[allow(dead_code)]
+    fn client<T: Into<MealFetcher>>(self, client: T) -> Self {
+        Self {
+            client: client.into(),
+            ..self
+        }
     }
 }
 
@@ -269,10 +282,17 @@ impl Page for Fetch {
                 FetchingAction::StartFetching(date) => {
                     let tx = app.clone_sender();
 
-                    if let Ok((account, cookie)) = app.manager.get_account_cookie() {
-                        Fetch::fetch(tx, cookie, account, *date);
-                    } else {
-                        app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                    match &self.client {
+                        MealFetcher::Real(c) => {
+                            if let Ok((account, cookie)) = app.manager.get_account_cookie() {
+                                Fetch::fetch(tx, c.clone().account(account).cookie(cookie), *date);
+                            } else {
+                                app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                            }
+                        }
+                        MealFetcher::Mock(c) => {
+                            Fetch::fetch(tx, c.clone(), *date);
+                        }
                     }
                 }
 
@@ -335,7 +355,10 @@ impl Page for Fetch {
     }
 
     fn init(&mut self, app: &crate::RootState) {
-        app.send_action(Action::Fetching(FetchingAction::LoadDbCount))
+        app.send_action(Action::Fetching(FetchingAction::LoadDbCount));
+
+        // make sure to load start_fetch_date
+        app.send_action(FetchingAction::MoveFocus(self.current_focus.clone()));
     }
 }
 
@@ -362,7 +385,9 @@ impl Fetch {
         }
     }
 
-    fn fetch(tx: UnboundedSender<Action>, cookie: String, account: String, date: DateTime<Local>) {
+    fn fetch<T: Into<MealFetcher>>(tx: UnboundedSender<Action>, client: T, date: DateTime<Local>) {
+        let client = client.into();
+
         let tx2 = tx.clone();
         let update_progress = move |progress: FetchProgress| {
             tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
@@ -373,13 +398,9 @@ impl Fetch {
         };
 
         tokio::task::spawn_blocking(move || {
-            let fetch_client = fetcher::RealMealFetcher::default()
-                .cookie(&cookie)
-                .account(&account);
+            info!("Start fetching with client {:?}", client);
 
-            info!("Start fetching with account {} cookie {}", account, cookie);
-
-            let records = fetcher::fetch(date, Box::new(fetch_client), update_progress)
+            let records = fetcher::fetch(date, client, update_progress)
                 .context("Error fetching in Fetch page")
                 .unwrap();
 
@@ -392,5 +413,177 @@ impl Fetch {
             tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
                 .unwrap()
         });
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+
+    use crate::{tui::Event, utils::key_events::KeyEvent};
+
+    use super::*;
+    fn get_test_objs() -> (RootState, Fetch) {
+        let mut app = RootState::new(None);
+        app.manager.init_db().unwrap();
+        let mut page = Fetch::default();
+        page.init(&app);
+        while let Ok(action) = app.try_recv() {
+            page.update(&app, action);
+        }
+        (app, page)
+    }
+
+    #[test]
+    fn test_navigation() {
+        let (mut app, mut page) = get_test_objs();
+        assert!(matches!(page.current_focus, Focus::P1Year));
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('j').into()));
+        assert!(matches!(page.current_focus, Focus::P3Months));
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
+        assert!(matches!(page.current_focus, Focus::P1Year));
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('h').into()));
+        assert!(matches!(page.current_focus, Focus::UserInput));
+    }
+
+    #[test]
+    fn test_user_input() {
+        let (mut app, mut page) = get_test_objs();
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
+        assert!(matches!(page.current_focus, Focus::UserInput));
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
+        assert!(app.input_mode());
+        let seq = "2025-03-02";
+        seq.chars().for_each(|c| {
+            app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(c).into()));
+        });
+        assert_eq!(
+            page.fetch_start_date.unwrap(),
+            Local.with_ymd_and_hms(2025, 3, 2, 0, 0, 0).unwrap()
+        );
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
+        assert!(!app.input_mode());
+    }
+    #[test]
+    fn test_render() {
+        let (mut app, mut page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(120, 20)).unwrap();
+        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
+        terminal
+            .draw(|f| {
+                page.render(f, &app);
+            })
+            .unwrap();
+
+        assert_snapshot!(terminal.backend());
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_fetch() {
+        // FIXME : This test is not working
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Action>();
+
+        let client = MealFetcher::Mock(fetcher::MockMealFetcher::default());
+        let date = Local::now()
+            .checked_sub_signed(chrono::Duration::days(30))
+            .unwrap();
+
+        Fetch::fetch(tx, client, date);
+
+        let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
+        tokio::pin!(timeout);
+
+        loop {
+            tokio::select! {
+                Some(action) = rx.recv() => {
+                    match action {
+                        Action::Fetching(FetchingAction::UpdateFetchStatus(state)) => {
+                            match state {
+                                FetchingState::Fetching(prog) => {
+                                    println!("Fetching... Current Page: {}", prog.current_page);
+                                    assert_eq!(prog.current_page, 0);
+                                }
+                                FetchingState::Idle => {
+                                    ()
+                                }
+                            }
+                        }
+                        Action::Fetching(FetchingAction::InsertTransaction(_)) => {
+                            ()
+                        }
+                        _ => {}
+                    }
+                }
+                _ = &mut timeout => {
+                    println!("Timeout reached");
+                    break;
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_fetch_progress() {
+        // FIXME : This test is not working
+        let (mut app, mut page) = get_test_objs();
+
+        app.manager.update_account("abc").unwrap();
+        app.manager.update_cookie("123").unwrap();
+
+        page = page.client(fetcher::MealFetcher::default());
+
+        page.handle_events(&app, Event::Key(KeyEvent::from(' ').into()))
+            .unwrap();
+
+        let mut cur_count: i32 = -1;
+        let mut received_final_idle = false;
+        let mut received_insert = false;
+
+        let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
+        tokio::pin!(timeout);
+
+        loop {
+            tokio::select! {
+                Some(action) = app.recv() => {
+                    println!("Action: {:?}", action);
+                    app.update(&action).unwrap();
+                    println!("app updated");
+                    page.update(&app, action.clone());
+                    println!("page updated");
+                    match action {
+                        Action::Fetching(FetchingAction::UpdateFetchStatus(state)) => {
+                            match state {
+                                FetchingState::Fetching(prog) => {
+                                    assert_eq!(prog.current_page as i32, cur_count + 1);
+                                    cur_count = cur_count + 1;
+                                }
+                                FetchingState::Idle => {
+                                    received_final_idle = true;
+                                }
+                            }
+                        }
+                        Action::Fetching(FetchingAction::InsertTransaction(_)) => {
+                            received_insert = true;
+                        }
+                        _ => {}
+                    }
+
+                    // Exit loop when we've received both the Idle state and Insert action
+                    if received_final_idle && received_insert {
+                        break;
+                    }
+                }
+                _ = &mut timeout => {
+                    println!("Timeout reached");
+                    break;
+                }
+            }
+        }
+        assert_ne!(cur_count, -1, "No action received");
+        assert!(matches!(page.fetching_state, FetchingState::Idle)); // Need to unwrap
     }
 }

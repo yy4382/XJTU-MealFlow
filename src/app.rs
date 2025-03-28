@@ -189,4 +189,8 @@ impl RootState {
             page.update(self, action);
         }
     }
+
+    pub async fn recv(&mut self) -> Option<Action> {
+        self.action_rx.recv().await
+    }
 }

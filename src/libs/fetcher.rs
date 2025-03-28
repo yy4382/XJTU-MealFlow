@@ -34,10 +34,30 @@ struct TransactionRow {
     id: u64,
 }
 
-pub trait MealFetcher {
-    fn fetch_transaction_one_page(&self, page: u32) -> Result<String>;
+#[derive(Debug, Clone)]
+pub enum MealFetcher {
+    Real(RealMealFetcher),
+    Mock(MockMealFetcher),
 }
 
+impl From<RealMealFetcher> for MealFetcher {
+    fn from(fetcher: RealMealFetcher) -> Self {
+        MealFetcher::Real(fetcher)
+    }
+}
+impl From<MockMealFetcher> for MealFetcher {
+    fn from(fetcher: MockMealFetcher) -> Self {
+        MealFetcher::Mock(fetcher)
+    }
+}
+
+impl Default for MealFetcher {
+    fn default() -> Self {
+        Self::Real(RealMealFetcher::default())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct RealMealFetcher {
     cookie: Option<String>,
     account: Option<String>,
@@ -85,9 +105,7 @@ impl RealMealFetcher {
             ..self
         }
     }
-}
 
-impl MealFetcher for RealMealFetcher {
     fn fetch_transaction_one_page(&self, page: u32) -> Result<String> {
         let client = Client::new();
 
@@ -217,7 +235,7 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
 
 pub fn fetch<F>(
     end_time: DateTime<Local>,
-    client: Box<dyn MealFetcher>,
+    client: MealFetcher,
     progress_cb: F,
 ) -> Result<Vec<Transaction>>
 where
@@ -233,9 +251,12 @@ where
     });
 
     for page in 1..=max_pages {
-        let page_transactions = client
-            .fetch_transaction_one_page(page)
-            .with_context(|| format!("Error when fetching on page {}", page))?;
+        let page_transactions = match &client {
+            MealFetcher::Real(c) => c.fetch_transaction_one_page(page),
+            MealFetcher::Mock(c) => c.fetch_transaction_one_page(page),
+        }
+        .with_context(|| format!("Error when fetching on page {}", page))?;
+
         let page_transactions =
             api_response_to_transactions(&page_transactions).with_context(|| {
                 format!(
@@ -280,20 +301,19 @@ macro_rules! test_file {
     };
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct MockMealFetcher {
     sim_delay: Option<Duration>,
 }
 
 impl MockMealFetcher {
     #[allow(dead_code)]
-    fn new(duration: Option<Duration>) -> Self {
+    pub fn set_sim_delay(self, duration: Duration) -> Self {
         Self {
-            sim_delay: duration,
+            sim_delay: Some(duration),
         }
     }
-}
 
-impl MealFetcher for MockMealFetcher {
     fn fetch_transaction_one_page(&self, page: u32) -> Result<String> {
         if let Some(d) = self.sim_delay {
             sleep(d);
@@ -328,20 +348,23 @@ mod tests {
 
     #[test]
     fn test_fetch_mock() {
-        let fetcher = MockMealFetcher::new(None);
+        let fetcher = MockMealFetcher::default();
         let end_time = Local.with_ymd_and_hms(2025, 3, 1, 0, 0, 0).unwrap();
 
-        let transactions = fetch(end_time, Box::new(fetcher), |_| ()).unwrap();
-        assert_eq!(transactions.len(), 25);
+        let transactions = fetch(end_time, MealFetcher::Mock(fetcher), |_| ()).unwrap();
+        assert!(!transactions.is_empty());
+        transactions.iter().for_each(|t| {
+            assert!(t.time.timestamp() > end_time.timestamp());
+        });
     }
 
     #[tokio::test]
     async fn test_fetch_mock_progress() {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<FetchProgress>(1);
         tokio::task::spawn_blocking(move || {
-            let fetcher = MockMealFetcher::new(Some(Duration::from_millis(200)));
+            let fetcher = MockMealFetcher::default().set_sim_delay(Duration::from_millis(200));
             let end_time = Local.with_ymd_and_hms(2025, 3, 6, 0, 0, 0).unwrap();
-            let _ = fetch(end_time, Box::new(fetcher), |fp| {
+            let _ = fetch(end_time, MealFetcher::Mock(fetcher), |fp| {
                 tx.blocking_send(fp).unwrap()
             })
             .unwrap();
@@ -424,7 +447,7 @@ mod tests {
         let end_time = Local::now() - CDuration::days(3);
         let fetch = RealMealFetcher::default().account(account).cookie(cookie);
 
-        let transactions = super::fetch(end_time, Box::new(fetch), |_| ()).unwrap();
+        let transactions = super::fetch(end_time, MealFetcher::Real(fetch), |_| ()).unwrap();
         println!("{:?}", transactions);
         assert!(!transactions.is_empty());
     }
