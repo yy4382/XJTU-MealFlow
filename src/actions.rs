@@ -1,17 +1,16 @@
+use color_eyre::eyre::Context;
+
 use crate::{
     component::input::InputAction,
     page::{
-        cookie_input::{CookieInput, CookieInputAction},
-        fetch::{Fetch, FetchingAction},
-        home::Home,
-        transactions::{TransactionAction, Transactions},
+        cookie_input::CookieInputAction, fetch::FetchingAction, transactions::TransactionAction,
     },
 };
 
 #[derive(Clone, Debug)]
 pub enum Action {
     Tick,
-    NavigateTo(Box<NaviTarget>),
+    NavigateTo(NaviTarget),
     SwitchInputMode(bool),
 
     Transaction(TransactionAction),
@@ -28,10 +27,10 @@ pub enum Action {
 }
 #[derive(Clone, Debug)]
 pub enum NaviTarget {
-    Home(Home),
-    Fetch(Fetch),
-    Transaction(Transactions),
-    CookieInput(CookieInput),
+    Home,
+    Fetch,
+    Transaction,
+    CookieInput,
 }
 
 #[derive(Clone, Debug)]
@@ -41,26 +40,16 @@ pub enum CompAction {
     Placeholder,
 }
 
-impl From<Home> for Action {
-    fn from(value: Home) -> Self {
-        Action::NavigateTo(Box::new(NaviTarget::Home(value)))
+#[derive(Clone, Debug)]
+pub struct ActionSender(pub tokio::sync::mpsc::UnboundedSender<Action>);
+
+impl ActionSender {
+    pub fn send<T: Into<Action>>(&self, action: T) {
+        self.0.send(action.into()).with_context(||"Action Receiver is dropped or closed, which should not happen if app is still running.").unwrap();
     }
 }
-
-impl From<Fetch> for Action {
-    fn from(value: Fetch) -> Self {
-        Action::NavigateTo(Box::new(NaviTarget::Fetch(value)))
-    }
-}
-
-impl From<Transactions> for Action {
-    fn from(value: Transactions) -> Self {
-        Action::NavigateTo(Box::new(NaviTarget::Transaction(value)))
-    }
-}
-
-impl From<CookieInput> for Action {
-    fn from(value: CookieInput) -> Self {
-        Action::NavigateTo(Box::new(NaviTarget::CookieInput(value)))
+impl From<tokio::sync::mpsc::UnboundedSender<Action>> for ActionSender {
+    fn from(value: tokio::sync::mpsc::UnboundedSender<Action>) -> Self {
+        ActionSender(value)
     }
 }

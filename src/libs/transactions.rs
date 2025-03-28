@@ -1,4 +1,7 @@
-use std::{path::PathBuf, rc::Rc};
+use std::{
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 
 use chrono::{DateTime, Local};
 use color_eyre::eyre::{Context, Result, bail};
@@ -14,12 +17,12 @@ pub struct Transaction {
 
 #[derive(Debug, Clone)]
 pub struct TransactionManager {
-    conn: Rc<Connection>,
+    conn: Arc<Mutex<Connection>>,
 }
 
 impl TransactionManager {
     pub fn new(db_path: Option<PathBuf>) -> Result<Self> {
-        let conn = match db_path {
+        let conn = match db_path.as_ref() {
             Some(db_path) => {
                 std::fs::create_dir_all(db_path.parent().unwrap())
                     .context("Failed to create dir for local cache DB")?;
@@ -33,13 +36,17 @@ impl TransactionManager {
             None => Connection::open_in_memory()?,
         };
 
+        // Initialize the database
+        TransactionManager::init_db(&conn)
+            .with_context(|| "Failed to initialize local cache DB")?;
+
         Ok(TransactionManager {
-            conn: Rc::new(conn),
+            conn: Arc::new(Mutex::new(conn)),
         })
     }
 
-    pub fn init_db(&self) -> Result<(), rusqlite::Error> {
-        self.conn.execute(
+    fn init_db(conn: &Connection) -> Result<(), rusqlite::Error> {
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY,
                 time TEXT NOT NULL,
@@ -48,7 +55,7 @@ impl TransactionManager {
             )",
             [],
         )?;
-        self.conn.execute(
+        conn.execute(
             "CREATE TRIGGER IF NOT EXISTS prevent_transaction_conflict 
                 BEFORE INSERT ON transactions
                 FOR EACH ROW
@@ -71,7 +78,7 @@ impl TransactionManager {
                 END;",
             [],
         )?;
-        self.conn.execute(
+        conn.execute(
             "CREATE TABLE IF NOT EXISTS cookies (
             account TEXT PRIMARY KEY,
             cookie TEXT NOT NULL
@@ -82,9 +89,10 @@ impl TransactionManager {
     }
 
     pub fn insert(&self, transactions: &Vec<Transaction>) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+
         // insert at once
-        let mut stmt = self
-            .conn
+        let mut stmt = conn
             .prepare("INSERT INTO transactions (id, time, amount, merchant) VALUES (?, ?, ?, ?)")?;
 
         for transaction in transactions {
@@ -105,9 +113,8 @@ impl TransactionManager {
     }
 
     pub fn fetch_all(&self) -> Result<Vec<Transaction>, rusqlite::Error> {
-        let mut stmt = self
-            .conn
-            .prepare("SELECT id, time, amount, merchant FROM transactions")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id, time, amount, merchant FROM transactions")?;
         let transactions = stmt.query_map([], |row| {
             let time_str: String = row.get(1)?;
             let time = chrono::DateTime::parse_from_rfc3339(&time_str)
@@ -126,14 +133,16 @@ impl TransactionManager {
     }
 
     pub fn fetch_count(&self) -> Result<u64> {
-        let mut stmt = self.conn.prepare("SELECT COUNT(*) FROM transactions")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT COUNT(*) FROM transactions")?;
         let count: i64 = stmt.query_row([], |row| row.get(0))?;
         Ok(count as u64)
     }
 
     #[allow(dead_code)]
     pub fn clear_db(&self) -> Result<(), rusqlite::Error> {
-        self.conn.execute("DELETE FROM transactions", [])?;
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM transactions", [])?;
         Ok(())
     }
 
@@ -142,47 +151,44 @@ impl TransactionManager {
     /// If there is already a record, update it. Otherwise, insert a new record.
     /// There should always be only one records in cookies table
     pub fn update_account(&self, account: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+
         // Check if there are existing records
-        let existing = self
-            .conn
-            .query_row("SELECT cookie FROM cookies LIMIT 1", [], |row| {
-                row.get::<_, String>(0)
-            });
+        let existing = conn.query_row("SELECT cookie FROM cookies LIMIT 1", [], |row| {
+            row.get::<_, String>(0)
+        });
 
         // Determine account value to use
         let cookie = existing.unwrap_or_default();
 
         // Replace the record
-        self.conn.execute("DELETE FROM cookies", [])?;
-        let mut stmt = self
-            .conn
-            .prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
+        conn.execute("DELETE FROM cookies", [])?;
+        let mut stmt = conn.prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
         stmt.execute(params![account, cookie])?;
         Ok(())
     }
 
     pub fn update_cookie(&self, cookie: &str) -> Result<()> {
+        let conn = self.conn.lock().unwrap();
+
         // Check if there are existing records
-        let existing = self
-            .conn
-            .query_row("SELECT account FROM cookies LIMIT 1", [], |row| {
-                row.get::<_, String>(0)
-            });
+        let existing = conn.query_row("SELECT account FROM cookies LIMIT 1", [], |row| {
+            row.get::<_, String>(0)
+        });
 
         // Determine account value to use
         let account = existing.unwrap_or_default();
 
         // Replace the record
-        self.conn.execute("DELETE FROM cookies", [])?;
-        let mut stmt = self
-            .conn
-            .prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
+        conn.execute("DELETE FROM cookies", [])?;
+        let mut stmt = conn.prepare("INSERT INTO cookies (account, cookie) VALUES (?, ?)")?;
         stmt.execute(params![account, cookie])?;
         Ok(())
     }
 
     pub fn get_account_cookie(&self) -> Result<(String, String)> {
-        let mut stmt = self.conn.prepare("SELECT account, cookie FROM cookies")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT account, cookie FROM cookies")?;
         let mut rows = stmt.query([])?;
         let row = rows.next()?;
         match row {
@@ -200,7 +206,8 @@ impl TransactionManager {
 
     #[cfg(test)]
     pub fn get_account_cookie_may_empty(&self) -> Result<(String, String)> {
-        let mut stmt = self.conn.prepare("SELECT account, cookie FROM cookies")?;
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT account, cookie FROM cookies")?;
         let mut rows = stmt.query([])?;
         let row = rows.next()?;
         match row {
@@ -221,8 +228,6 @@ mod tests {
     #[test]
     fn test_transaction_manager() {
         let manager = TransactionManager::new(None).unwrap();
-
-        manager.init_db().unwrap();
 
         manager.clear_db().unwrap();
 
@@ -257,7 +262,6 @@ mod tests {
     #[test]
     fn test_account_cookie() {
         let manager = TransactionManager::new(None).unwrap();
-        manager.init_db().unwrap();
 
         manager.update_account("test_account").unwrap();
         let (account, cookie) = manager.get_account_cookie_may_empty().unwrap();
@@ -278,7 +282,6 @@ mod tests {
     #[test]
     fn test_fetch_count() {
         let manager = TransactionManager::new(None).unwrap();
-        manager.init_db().unwrap();
         manager.clear_db().unwrap();
 
         // Initially should have zero transactions
@@ -327,5 +330,36 @@ mod tests {
         // Should now have 0 transactions again
         let count = manager.fetch_count().unwrap();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn multithread_access() {
+        let manager = TransactionManager::new(None).unwrap();
+
+        let transactions = vec![
+            Transaction {
+                id: 1,
+                time: Local::now(),
+                amount: -100.0,
+                merchant: "Amazon".to_string(),
+            },
+            Transaction {
+                id: 2,
+                time: Local::now(),
+                amount: -200.0,
+                merchant: "Google".to_string(),
+            },
+        ];
+
+        let manager_clone = manager.clone();
+        std::thread::spawn(move || {
+            manager_clone.insert(&transactions).unwrap();
+        })
+        .join()
+        .unwrap();
+
+        let fetched = manager.fetch_all().unwrap();
+        assert_eq!(fetched.len(), 2);
+        assert_eq!(fetched[0].id, 1);
     }
 }

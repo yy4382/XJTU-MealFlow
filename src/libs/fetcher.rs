@@ -199,7 +199,7 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
         } else {
             eyre!("Failed to parse API response: {}", e)
         }
-        .with_section(|| format!("{}", s).header("Incorrect API response:"))
+        .with_section(|| s.to_string().header("Incorrect API response:"))
     })?;
 
     let row_map = |row: TransactionRow| {
