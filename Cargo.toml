@@ -38,6 +38,14 @@ human-panic = "2.0.2"
 temp-env = "0.3.6"
 rand = "0.9.0"
 mockito = "1.7.0"
+clap = { version = "4.5.34", features = [
+    "derive",
+    "cargo",
+    "wrap_help",
+    "unicode",
+    "string",
+    "unstable-styles",
+] }
 
 [dev-dependencies]
 insta = "1.42.2"
