@@ -7,12 +7,10 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
-use tokio::sync::mpsc::UnboundedSender;
 use tracing::{debug, info, instrument};
 
 use crate::{
-    actions::Action,
-    app::RootState,
+    actions::{Action, ActionSender, NaviTarget},
     component::{Component, input::InputComp},
     libs::fetcher::MealFetcher,
     utils::help_msg::{HelpEntry, HelpMsg},
@@ -62,25 +60,31 @@ pub struct Fetch {
     current_focus: Focus,
 
     input: InputComp,
+    input_mode: bool,
+    tx: ActionSender,
+    manager: transactions::TransactionManager,
 
     client: MealFetcher,
 }
 
-impl Default for Fetch {
-    fn default() -> Self {
+impl Fetch {
+    pub fn new(
+        tx: ActionSender,
+        manager: transactions::TransactionManager,
+        input_mode: bool,
+    ) -> Self {
         Self {
             fetching_state: Default::default(),
             local_db_cnt: Default::default(),
             fetch_start_date: Default::default(),
             current_focus: Default::default(),
 
-            input: InputComp::new(
-                rand::random::<u64>(),
-                None::<String>,
-                "Custom Start Date (2025-03-02 style input)",
-                Default::default(),
-            )
-            .set_auto_submit(true),
+            input: InputComp::new(rand::random::<u64>(), input_mode, tx.clone())
+                .title("Custom Start Date (2025-03-02 style input)")
+                .auto_submit(true),
+            input_mode,
+            tx,
+            manager,
 
             client: Default::default(),
         }
@@ -88,7 +92,7 @@ impl Default for Fetch {
 }
 
 impl Fetch {
-    fn get_help_msg(&self, app: &RootState) -> HelpMsg {
+    fn get_help_msg(&self) -> HelpMsg {
         let mut help: HelpMsg = vec![
             HelpEntry::new_plain("Move focus: hjkl"),
             HelpEntry::new('e', "Edit accnout & cookie"),
@@ -98,17 +102,15 @@ impl Fetch {
         ]
         .into();
         if let Focus::UserInput = self.current_focus {
-            help.extend(&self.input.get_help_msg(app.input_mode()))
+            help.extend(&self.input.get_help_msg())
         }
         help
     }
 
     #[allow(dead_code)]
-    fn client<T: Into<MealFetcher>>(self, client: T) -> Self {
-        Self {
-            client: client.into(),
-            ..self
-        }
+    fn client<T: Into<MealFetcher>>(mut self, client: T) -> Self {
+        self.client = client.into();
+        self
     }
 }
 
@@ -142,7 +144,7 @@ impl Focus {
 }
 
 impl Page for Fetch {
-    fn render(&self, frame: &mut ratatui::Frame, root_state: &crate::RootState) {
+    fn render(&self, frame: &mut ratatui::Frame) {
         let area = frame.area();
         let area = &Layout::default()
             .constraints([
@@ -196,7 +198,7 @@ impl Page for Fetch {
             top_areas[2],
         );
 
-        self.input.draw(frame, &area[1], root_state);
+        self.input.draw(frame, &area[1]);
 
         // 修改这里：显示获取结果
         match &self.fetching_state {
@@ -227,67 +229,56 @@ impl Page for Fetch {
                         .style(Style::default().fg(Color::Gray)),
                     area[2],
                 );
-            } // FetchingState::Completed(transactions) => {
-              //     // 显示获取到的交易数据
-              //     let transaction_text = transactions
-              //         .iter()
-              //         .map(|t| format!("{:?}", t)) // 假设 Transaction 实现了 Debug
-              //         .collect::<Vec<String>>()
-              //         .join("\n");
-              //     frame.render_widget(Text::raw(transaction_text), area[2]);
-              // }
+            }
         }
 
-        self.get_help_msg(root_state).render(frame, area[3]);
+        self.get_help_msg().render(frame, area[3]);
     }
 
-    fn handle_events(
-        &self,
-        app: &RootState,
-        event: crate::tui::Event,
-    ) -> color_eyre::eyre::Result<()> {
+    fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
         if let crate::tui::Event::Key(key) = event {
-            if !app.input_mode() {
+            if !self.input_mode {
                 match (key.modifiers, key.code) {
                     (_, KeyCode::Char(' ')) => {
                         if let Some(date) = self.fetch_start_date {
-                            app.send_action(FetchingAction::StartFetching(date))
+                            self.tx.send(FetchingAction::StartFetching(date))
                         }
                     }
-                    (_, KeyCode::Char('j')) | (_, KeyCode::Char('l')) => {
-                        app.send_action(FetchingAction::MoveFocus(self.current_focus.next()))
-                    }
-                    (_, KeyCode::Char('k')) | (_, KeyCode::Char('h')) => {
-                        app.send_action(FetchingAction::MoveFocus(self.current_focus.prev()))
-                    }
-                    (_, KeyCode::Char('r')) => app.send_action(FetchingAction::LoadDbCount),
+                    (_, KeyCode::Char('j')) | (_, KeyCode::Char('l')) => self
+                        .tx
+                        .send(FetchingAction::MoveFocus(self.current_focus.next())),
+                    (_, KeyCode::Char('k')) | (_, KeyCode::Char('h')) => self
+                        .tx
+                        .send(FetchingAction::MoveFocus(self.current_focus.prev())),
+                    (_, KeyCode::Char('r')) => self.tx.send(FetchingAction::LoadDbCount),
                     (_, KeyCode::Char('e')) => {
-                        app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                        self.tx.send(Action::NavigateTo(NaviTarget::CookieInput))
                     }
 
-                    (_, KeyCode::Esc) => {
-                        app.send_action(super::transactions::Transactions::default())
-                    }
+                    (_, KeyCode::Esc) => self.tx.send(Action::NavigateTo(NaviTarget::Transaction)),
                     _ => (),
                 }
             }
         };
-        self.input.handle_events(&event, app)?;
+        self.input.handle_events(&event)?;
         Ok(())
     }
 
-    fn update(&mut self, app: &crate::RootState, action: crate::actions::Action) {
+    fn update(&mut self, action: crate::actions::Action) {
+        if let Action::SwitchInputMode(mode) = &action {
+            self.input_mode = *mode;
+        }
         if let Action::Fetching(action) = &action {
             match action {
                 FetchingAction::StartFetching(date) => {
-                    let tx = app.clone_sender();
+                    let tx = self.tx.clone();
 
                     match &self.client {
                         MealFetcher::Real(c) => {
-                            if let Ok((account, cookie)) = app.manager.get_account_cookie() {
+                            if let Ok((account, cookie)) = self.manager.get_account_cookie() {
                                 Fetch::fetch(tx, c.clone().account(account).cookie(cookie), *date);
                             } else {
-                                app.send_action(crate::page::cookie_input::CookieInput::new(app))
+                                self.tx.send(Action::NavigateTo(NaviTarget::CookieInput));
                             }
                         }
                         MealFetcher::Mock(c) => {
@@ -297,16 +288,16 @@ impl Page for Fetch {
                 }
 
                 FetchingAction::InsertTransaction(transactions) => {
-                    app.manager
+                    self.manager
                         .insert(transactions)
                         .context("Error when inserting fetched transactions into database")
                         .unwrap();
-                    app.send_action(Action::Fetching(FetchingAction::LoadDbCount));
+                    self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
                 }
 
                 FetchingAction::UpdateFetchStatus(state) => {
                     self.fetching_state = state.clone();
-                    app.send_action(Action::Render);
+                    self.tx.send(Action::Render);
                 }
 
                 FetchingAction::MoveFocus(focus) => {
@@ -331,14 +322,16 @@ impl Page for Fetch {
                     };
 
                     if let Focus::UserInput = &self.current_focus {
-                        app.send_action(self.input.get_switch_mode_action(InputMode::Focused));
+                        self.tx
+                            .send(self.input.get_switch_mode_action(InputMode::Focused));
                     } else {
-                        app.send_action(self.input.get_switch_mode_action(InputMode::Idle));
+                        self.tx
+                            .send(self.input.get_switch_mode_action(InputMode::Idle));
                     }
                 }
                 FetchingAction::LoadDbCount => {
-                    self.local_db_cnt = app.manager.fetch_count().unwrap();
-                    app.send_action(Action::Render);
+                    self.local_db_cnt = self.manager.fetch_count().unwrap();
+                    self.tx.send(Action::Render);
                 }
             }
         }
@@ -347,18 +340,19 @@ impl Page for Fetch {
             self.fetch_start_date = Fetch::parse_user_input(&input);
         }
 
-        self.input.update(&action, app).unwrap();
+        self.input.update(&action).unwrap();
     }
 
     fn get_name(&self) -> String {
         "Fetch".to_string()
     }
 
-    fn init(&mut self, app: &crate::RootState) {
-        app.send_action(Action::Fetching(FetchingAction::LoadDbCount));
+    fn init(&mut self) {
+        self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
 
         // make sure to load start_fetch_date
-        app.send_action(FetchingAction::MoveFocus(self.current_focus.clone()));
+        self.tx
+            .send(FetchingAction::MoveFocus(self.current_focus.clone()));
     }
 }
 
@@ -385,16 +379,15 @@ impl Fetch {
         }
     }
 
-    fn fetch<T: Into<MealFetcher>>(tx: UnboundedSender<Action>, client: T, date: DateTime<Local>) {
+    fn fetch<T: Into<MealFetcher>>(tx: ActionSender, client: T, date: DateTime<Local>) {
         let client = client.into();
 
         let tx2 = tx.clone();
         let update_progress = move |progress: FetchProgress| {
             tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
                 FetchingState::Fetching(progress),
-            )))
-            .unwrap();
-            tx.send(Action::Render).unwrap();
+            )));
+            tx.send(Action::Render);
         };
 
         tokio::task::spawn_blocking(move || {
@@ -408,10 +401,8 @@ impl Fetch {
 
             tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
                 FetchingState::Idle, // 更新状态为 Idle
-            )))
-            .unwrap();
-            tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)))
-                .unwrap()
+            )));
+            tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)));
         });
     }
 }
@@ -421,59 +412,73 @@ mod test {
 
     use insta::assert_snapshot;
     use ratatui::backend::TestBackend;
+    use tokio::sync::mpsc::{self, UnboundedReceiver};
 
-    use crate::{tui::Event, utils::key_events::KeyEvent};
+    use crate::{libs::transactions::TransactionManager, tui::Event, utils::key_events::KeyEvent};
 
     use super::*;
-    fn get_test_objs() -> (RootState, Fetch) {
-        let mut app = RootState::new(None);
-        app.manager.init_db().unwrap();
-        let mut page = Fetch::default();
-        page.init(&app);
-        while let Ok(action) = app.try_recv() {
-            page.update(&app, action);
+    fn get_test_objs() -> (UnboundedReceiver<Action>, Fetch) {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let mut page = Fetch::new(
+            tx.clone().into(),
+            TransactionManager::new(None).unwrap(),
+            false,
+        );
+        page.init();
+        while let Ok(action) = rx.try_recv() {
+            page.update(action);
         }
-        (app, page)
+        (rx, page)
     }
 
     #[test]
     fn test_navigation() {
-        let (mut app, mut page) = get_test_objs();
+        let (mut rx, mut page) = get_test_objs();
         assert!(matches!(page.current_focus, Focus::P1Year));
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('j').into()));
+        page.event_loop_once(&mut rx, 'j'.into());
         assert!(matches!(page.current_focus, Focus::P3Months));
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
-        assert!(matches!(page.current_focus, Focus::P1Year));
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('h').into()));
+        page.event_loop_once(&mut rx, 'j'.into());
+        assert!(matches!(page.current_focus, Focus::P1Month));
+        page.event_loop_once(&mut rx, 'l'.into());
         assert!(matches!(page.current_focus, Focus::UserInput));
+        page.event_loop_once(&mut rx, 'l'.into());
+        assert!(matches!(page.current_focus, Focus::P1Year));
+        page.event_loop_once(&mut rx, 'k'.into());
+        assert!(matches!(page.current_focus, Focus::UserInput));
+        page.event_loop_once(&mut rx, 'k'.into());
+        assert!(matches!(page.current_focus, Focus::P1Month));
+        page.event_loop_once(&mut rx, 'h'.into());
+        assert!(matches!(page.current_focus, Focus::P3Months));
+        page.event_loop_once(&mut rx, 'h'.into());
+        assert!(matches!(page.current_focus, Focus::P1Year));
     }
 
     #[test]
     fn test_user_input() {
-        let (mut app, mut page) = get_test_objs();
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
+        let (mut rx, mut page) = get_test_objs();
+        page.event_loop_once(&mut rx, Event::Key(KeyEvent::from('k').into()));
         assert!(matches!(page.current_focus, Focus::UserInput));
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
-        assert!(app.input_mode());
+        page.event_loop_once(&mut rx, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
+        assert!(page.input_mode);
         let seq = "2025-03-02";
         seq.chars().for_each(|c| {
-            app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(c).into()));
+            page.event_loop_once(&mut rx, Event::Key(KeyEvent::from(c).into()));
         });
         assert_eq!(
             page.fetch_start_date.unwrap(),
             Local.with_ymd_and_hms(2025, 3, 2, 0, 0, 0).unwrap()
         );
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
-        assert!(!app.input_mode());
+        page.event_loop_once(&mut rx, KeyCode::Enter.into());
+        assert!(!page.input_mode);
     }
     #[test]
     fn test_render() {
-        let (mut app, mut page) = get_test_objs();
+        let (mut rx, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(120, 20)).unwrap();
-        app.handle_event_and_update(&mut page, Event::Key(KeyEvent::from('k').into()));
+        page.event_loop_once(&mut rx, 'h'.into());
         terminal
             .draw(|f| {
-                page.render(f, &app);
+                page.render(f);
             })
             .unwrap();
 
@@ -481,20 +486,21 @@ mod test {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_fetch() {
-        // FIXME : This test is not working
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Action>();
 
         let client = MealFetcher::Mock(fetcher::MockMealFetcher::default());
-        let date = Local::now()
-            .checked_sub_signed(chrono::Duration::days(30))
-            .unwrap();
+        let date = Local.with_ymd_and_hms(2025, 03, 1, 0, 0, 0).unwrap();
 
-        Fetch::fetch(tx, client, date);
+        Fetch::fetch(tx.into(), client, date);
 
         let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
         tokio::pin!(timeout);
+
+        let mut received_fetching = false;
+        let mut received_idle = false;
+        let mut received_insert = false;
+        let mut progress_count = 0;
 
         loop {
             tokio::select! {
@@ -504,76 +510,24 @@ mod test {
                             match state {
                                 FetchingState::Fetching(prog) => {
                                     println!("Fetching... Current Page: {}", prog.current_page);
-                                    assert_eq!(prog.current_page, 0);
+                                    assert_eq!(prog.current_page, progress_count, "Mock fetcher should only process page 0");
+                                    received_fetching = true;
+                                    progress_count += 1;
                                 }
                                 FetchingState::Idle => {
-                                    ()
+                                    received_idle = true;
                                 }
                             }
                         }
-                        Action::Fetching(FetchingAction::InsertTransaction(_)) => {
-                            ()
-                        }
-                        _ => {}
-                    }
-                }
-                _ = &mut timeout => {
-                    println!("Timeout reached");
-                    break;
-                }
-            }
-        }
-    }
-
-    #[tokio::test]
-    #[ignore]
-    async fn test_fetch_progress() {
-        // FIXME : This test is not working
-        let (mut app, mut page) = get_test_objs();
-
-        app.manager.update_account("abc").unwrap();
-        app.manager.update_cookie("123").unwrap();
-
-        page = page.client(fetcher::MealFetcher::default());
-
-        page.handle_events(&app, Event::Key(KeyEvent::from(' ').into()))
-            .unwrap();
-
-        let mut cur_count: i32 = -1;
-        let mut received_final_idle = false;
-        let mut received_insert = false;
-
-        let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
-        tokio::pin!(timeout);
-
-        loop {
-            tokio::select! {
-                Some(action) = app.recv() => {
-                    println!("Action: {:?}", action);
-                    app.update(&action).unwrap();
-                    println!("app updated");
-                    page.update(&app, action.clone());
-                    println!("page updated");
-                    match action {
-                        Action::Fetching(FetchingAction::UpdateFetchStatus(state)) => {
-                            match state {
-                                FetchingState::Fetching(prog) => {
-                                    assert_eq!(prog.current_page as i32, cur_count + 1);
-                                    cur_count = cur_count + 1;
-                                }
-                                FetchingState::Idle => {
-                                    received_final_idle = true;
-                                }
-                            }
-                        }
-                        Action::Fetching(FetchingAction::InsertTransaction(_)) => {
+                        Action::Fetching(FetchingAction::InsertTransaction(transactions)) => {
+                            assert!(!transactions.is_empty(), "Should receive some transactions");
                             received_insert = true;
                         }
                         _ => {}
                     }
 
-                    // Exit loop when we've received both the Idle state and Insert action
-                    if received_final_idle && received_insert {
+                    // Exit loop when we've received all expected actions
+                    if received_fetching && received_idle && received_insert {
                         break;
                     }
                 }
@@ -583,7 +537,89 @@ mod test {
                 }
             }
         }
-        assert_ne!(cur_count, -1, "No action received");
-        assert!(matches!(page.fetching_state, FetchingState::Idle)); // Need to unwrap
+
+        // Final assertions
+        assert!(received_fetching, "Should have received fetching state");
+        assert!(received_idle, "Should have received idle state");
+        assert!(
+            received_insert,
+            "Should have received insert transaction action"
+        );
+        assert!(
+            progress_count > 0,
+            "Should have received at least one progress update"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_fetch_progress() {
+        let (mut rx, page) = get_test_objs();
+
+        page.manager.update_account("account").unwrap();
+        page.manager.update_cookie("cookie").unwrap();
+        let mut page = page.client(MealFetcher::Mock(fetcher::MockMealFetcher::default()));
+
+        
+        page.event_loop_once_with_action(
+            &mut rx,
+            Action::Fetching(FetchingAction::MoveFocus(Focus::UserInput)),
+        );
+        let mut seq: Vec<Event> = vec![KeyCode::Enter.into()];
+        seq.extend("2024-09-01".chars().map(|c| Event::from(c)));
+        seq.push(KeyCode::Enter.into());
+        seq.iter().for_each(|e| page.event_loop_once(&mut rx, e.clone()));
+
+        // start fetching
+        page.handle_events(' '.into()).unwrap();
+
+        let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
+        tokio::pin!(timeout);
+
+        let mut received_insert = false;
+        let mut last_progress = 0;
+
+        loop {
+            tokio::select! {
+                Some(action) = rx.recv() => {
+
+                    match &action {
+                        Action::Fetching(FetchingAction::InsertTransaction(transactions)) => {
+                            assert!(!transactions.is_empty(), "Should receive some transactions");
+                            received_insert = true;
+                        }
+                        _ => {}
+                    }
+
+                    page.update(action);
+
+                    if let FetchingState::Fetching(progress) = &page.fetching_state {
+                        if progress.total_entries_fetched >= last_progress {
+                            println!("Fetching... Current Page: {}", progress.current_page);
+                            last_progress = progress.current_page;
+                        } else {
+                            panic!("Progress should always increase");
+                        }
+                    }
+
+                    // Exit loop when we've received all expected actions
+                    if received_insert {
+                        break;
+                    }
+                }
+                _ = &mut timeout => {
+                    println!("Timeout reached");
+                    break;
+                }
+            }
+        }
+
+        assert!(
+            received_insert,
+            "Should have received insert transaction action"
+        );
+        assert!(
+            last_progress > 0,
+            "Should have received at least one progress update"
+        );
     }
 }

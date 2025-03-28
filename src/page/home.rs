@@ -1,7 +1,6 @@
 use std::vec;
 
 use crate::{
-    RootState,
     actions::Action,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
@@ -19,7 +18,7 @@ use ratatui::{
 pub struct Home {}
 
 impl Page for Home {
-    fn render(&self, frame: &mut Frame, _app: &RootState) {
+    fn render(&self, frame: &mut Frame) {
         let area = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
             .split(frame.area());
@@ -47,13 +46,13 @@ impl Page for Home {
         help_msg.render(frame, area[1]);
     }
 
-    fn update(&mut self, _root_state: &RootState, _action: Action) {}
+    fn update(&mut self, _action: Action) {}
 
     fn get_name(&self) -> String {
         "Home".to_string()
     }
 
-    fn handle_events(&self, _app: &RootState, _event: crate::tui::Event) -> Result<()> {
+    fn handle_events(&self, _event: crate::tui::Event) -> Result<()> {
         Ok(())
     }
 }
@@ -64,29 +63,26 @@ mod tests {
     use ratatui::{Terminal, backend::TestBackend};
 
     use super::*;
-    use crate::{app::RootState, utils::key_events::test_utils::get_char_evt};
 
-    fn get_test_page() -> (Home, RootState) {
-        let app = RootState::new(None);
-
+    fn get_test_page() -> Home {
         let mut home = Home::default();
-        home.init(&app);
-        (home, app)
+        home.init();
+        home
     }
 
     #[test]
     fn test_render() {
-        let (page, app) = get_test_page();
+        let page = get_test_page();
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
-        terminal.draw(|frame| page.render(frame, &app)).unwrap();
+        terminal.draw(|frame| page.render(frame)).unwrap();
         assert_snapshot!(terminal.backend());
     }
 
     #[test]
     fn test_events() {
-        let (mut page, mut app) = get_test_page();
-        app.handle_event_and_update(&mut page, get_char_evt('q'));
-        page.update(&app, Action::Tick);
+        let mut page = get_test_page();
+        page.handle_events('T'.into()).unwrap();
+        page.update(Action::Tick);
         // nothing should happen. No panic means success.
     }
 

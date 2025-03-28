@@ -5,6 +5,7 @@ use std::{
 };
 
 use color_eyre::eyre::Result;
+use crossterm::event::{KeyCode, KeyModifiers};
 use futures::{FutureExt, StreamExt};
 use ratatui::{
     backend::CrosstermBackend,
@@ -33,13 +34,23 @@ pub enum Event {
     Render,
     FocusGained,
     FocusLost,
-    #[allow(dead_code)]
     Paste(String),
     Key(KeyEvent),
     #[allow(dead_code)]
     Mouse(MouseEvent),
     #[allow(dead_code)]
     Resize(u16, u16),
+}
+
+impl From<KeyCode> for Event {
+    fn from(value: KeyCode) -> Self {
+        Event::Key(KeyEvent::new(value, KeyModifiers::NONE))
+    }
+}
+impl From<char> for Event {
+    fn from(value: char) -> Self {
+        Event::Key(KeyEvent::new(KeyCode::Char(value), KeyModifiers::NONE))
+    }
 }
 
 pub struct Tui {

@@ -1,6 +1,6 @@
 use crate::{
-    RootState,
-    actions::Action,
+    actions::{Action, ActionSender, NaviTarget},
+    libs::transactions::TransactionManager,
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
@@ -15,12 +15,23 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph},
 };
 
-#[derive(Default, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct Transactions {
     transactions: Vec<crate::libs::transactions::Transaction>,
+
+    tx: crate::actions::ActionSender,
+    manager: TransactionManager,
 }
 
 impl Transactions {
+    pub fn new(tx: ActionSender, manager: TransactionManager) -> Self {
+        Self {
+            transactions: Default::default(),
+            tx,
+            manager,
+        }
+    }
+
     fn get_help_msg(&self) -> HelpMsg {
         let help_msg: HelpMsg = vec![
             HelpEntry::new_plain("Move focus: hjkl"),
@@ -44,7 +55,7 @@ impl From<TransactionAction> for Action {
 }
 
 impl Page for Transactions {
-    fn render(&self, frame: &mut Frame, _app: &RootState) {
+    fn render(&self, frame: &mut Frame) {
         let area = frame.area();
 
         let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
@@ -72,24 +83,23 @@ impl Page for Transactions {
 
         self.get_help_msg().render(frame, rects[1]);
     }
-    fn handle_events(&self, app: &RootState, event: Event) -> Result<()> {
+    fn handle_events(&self, event: Event) -> Result<()> {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
                 // navigate to fetch page
-                (_, KeyCode::Char('f')) => app.send_action(crate::page::fetch::Fetch::default()),
-                (_, KeyCode::Char('l')) => app.send_action(TransactionAction::LoadTransactions),
+                (_, KeyCode::Char('f')) => self.tx.send(Action::NavigateTo(NaviTarget::Fetch)),
+                (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
                 _ => (),
             }
         };
         Ok(())
     }
 
-    fn update(&mut self, root_state: &RootState, action: Action) {
+    fn update(&mut self, action: Action) {
         if let Action::Transaction(action) = action {
             match action {
                 TransactionAction::LoadTransactions => {
-                    self.transactions = root_state.manager.fetch_all().unwrap();
-                    root_state.send_action(Action::Render);
+                    self.transactions = self.manager.fetch_all().unwrap();
                 }
             }
         }
@@ -99,7 +109,7 @@ impl Page for Transactions {
         "Transactions".to_string()
     }
 
-    fn init(&mut self, app: &RootState) {
-        app.send_action(TransactionAction::LoadTransactions)
+    fn init(&mut self) {
+        self.tx.send(TransactionAction::LoadTransactions)
     }
 }
