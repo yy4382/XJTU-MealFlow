@@ -5,7 +5,7 @@ use config::Source;
 use crate::config::get_data_dir;
 
 #[derive(Parser, Debug)]
-#[command(author, version = version(), about)]
+#[command(author, version = version(), about = "How much did you eat at XJTU?")]
 pub struct Cli {
     /// Tick rate, i.e. number of ticks per second
     #[arg(short, long, value_name = "FLOAT", default_value_t = 4.0)]
@@ -18,6 +18,10 @@ pub struct Cli {
     /// Path to the data directory
     #[arg(short, long, value_name = "PATH")]
     pub data_dir: Option<String>,
+
+    /// Use an in-memory database, which means all data will lost when the program exits [default: false]
+    #[arg(long, value_name = "BOOL", default_value = "false")]
+    pub db_in_mem: bool,
 }
 
 const VERSION_MESSAGE: &str = concat!(env!("CARGO_PKG_VERSION"));
