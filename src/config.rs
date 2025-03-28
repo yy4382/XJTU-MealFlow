@@ -28,10 +28,6 @@ pub struct Config {
 
 lazy_static! {
     pub static ref PROJECT_NAME: String = env!("CARGO_CRATE_NAME").to_uppercase().to_string();
-    pub static ref DATA_FOLDER: Option<PathBuf> =
-        env::var(format!("{}_DATA", PROJECT_NAME.clone()))
-            .ok()
-            .map(PathBuf::from);
 }
 
 impl Config {
@@ -57,7 +53,11 @@ impl Config {
 }
 
 pub fn get_data_dir() -> PathBuf {
-    let directory = if let Some(s) = DATA_FOLDER.clone() {
+    let directory = if let Some(s) = env::var(format!("{}_DATA", PROJECT_NAME.clone()))
+        .ok()
+        .map(PathBuf::from)
+        .clone()
+    {
         s
     } else if let Some(proj_dirs) = project_directory() {
         proj_dirs.data_local_dir().to_path_buf()
@@ -93,7 +93,7 @@ mod tests {
             || {
                 let config = Config::new(None).unwrap();
                 println!("{:?}", config);
-                assert!(config.config.data_dir.exists());
+                assert_eq!(config.config.data_dir, temp_data.path());
 
                 assert_eq!(
                     config.config.db_path(),
@@ -105,7 +105,6 @@ mod tests {
 
     #[test]
     fn test_config_with_cli() {
-        color_eyre::install().unwrap();
         let args = crate::cli::Cli::parse_from(&["test-config", "--data-dir", ".cli-data"]);
         let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
 

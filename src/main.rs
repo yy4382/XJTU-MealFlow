@@ -27,9 +27,14 @@ async fn run() -> Result<()> {
 
     // application state
     let config = crate::config::Config::new(Some(ClapSource::new(&args)))
-        .context("Error when loading config").unwrap();
+        .context("Error when loading config")
+        .unwrap();
     let mut app = App {
-        state: RootState::new(Some(config.config.db_path())),
+        state: RootState::new(if args.db_in_mem {
+            None
+        } else {
+            Some(config.config.db_path())
+        }),
         page: Box::new(page::home::Home::default()),
         tui: tui::Tui::new()?
             .tick_rate(args.tick_rate)
