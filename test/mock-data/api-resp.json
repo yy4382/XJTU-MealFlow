@@ -1,0 +1,35 @@
+{
+  "issucceed": false,
+  "name": null,
+  "total": 1625,
+  "tranamt": 0,
+  "tranamt1": 0,
+  "tranamt2": 0,
+  "parm1": null,
+  "parm2": null,
+  "trannum": 0,
+  "rows": [
+    {
+      "RO": 1,
+      "OCCTIME": "2025-03-26 12:28:34",
+      "EFFECTDATE": "2025-03-26 12:35:37",
+      "MERCNAME": "库迪咖啡                                ",
+      "TRANAMT": -4,
+      "TRANNAME": "电子账户消费                            ",
+      "TRANCODE": "94",
+      "CARDBAL": 39.31,
+      "JDESC": "[order_no=250326122834000040000000]",
+      "JNUM": 3043375,
+      "MACCOUNT": 1001071,
+      "F1": "1",
+      "F2": "11",
+      "F3": "2",
+      "SYSCODE": 216,
+      "POSCODE": 245,
+      "CMONEY": 39.31,
+      "ZMONEY": 39.31,
+      "ACCTYPENAME": "电子账户(电子钱包)                      "
+    }
+  ],
+  "footer": null
+}

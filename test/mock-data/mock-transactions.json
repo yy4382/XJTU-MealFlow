@@ -1,0 +1,3662 @@
+[
+  {
+    "OCCTIME": "2024-04-01 14:48:18",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -19.86
+  },
+  {
+    "OCCTIME": "2024-04-01 11:01:39",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-04-02 23:23:04",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -1.61
+  },
+  {
+    "OCCTIME": "2024-04-02 09:43:04",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -13.7
+  },
+  {
+    "OCCTIME": "2024-04-03 10:10:55",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -18.25
+  },
+  {
+    "OCCTIME": "2024-04-03 12:34:24",
+    "MERCNAME": "寿司",
+    "TRANAMT": -18.0
+  },
+  {
+    "OCCTIME": "2024-04-04 17:44:45",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -8.45
+  },
+  {
+    "OCCTIME": "2024-04-04 12:59:48",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -10.92
+  },
+  {
+    "OCCTIME": "2024-04-05 19:50:44",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -17.94
+  },
+  {
+    "OCCTIME": "2024-04-05 19:13:48",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -25.74
+  },
+  {
+    "OCCTIME": "2024-04-06 18:49:31",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -13.82
+  },
+  {
+    "OCCTIME": "2024-04-06 12:37:03",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -7.48
+  },
+  {
+    "OCCTIME": "2024-04-07 07:42:10",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -9.61
+  },
+  {
+    "OCCTIME": "2024-04-07 07:12:44",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -7.03
+  },
+  {
+    "OCCTIME": "2024-04-08 19:16:53",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -7.15
+  },
+  {
+    "OCCTIME": "2024-04-08 18:56:38",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -19.49
+  },
+  {
+    "OCCTIME": "2024-04-09 18:20:19",
+    "MERCNAME": "寿司",
+    "TRANAMT": -23.68
+  },
+  {
+    "OCCTIME": "2024-04-09 12:28:18",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -24.48
+  },
+  {
+    "OCCTIME": "2024-04-10 19:55:12",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -11.49
+  },
+  {
+    "OCCTIME": "2024-04-10 11:04:13",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -11.03
+  },
+  {
+    "OCCTIME": "2024-04-11 12:48:44",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -24.26
+  },
+  {
+    "OCCTIME": "2024-04-11 11:16:47",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -1.8
+  },
+  {
+    "OCCTIME": "2024-04-12 18:59:48",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -13.35
+  },
+  {
+    "OCCTIME": "2024-04-12 11:12:37",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -18.59
+  },
+  {
+    "OCCTIME": "2024-04-13 14:41:14",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -28.81
+  },
+  {
+    "OCCTIME": "2024-04-13 10:20:25",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -1.86
+  },
+  {
+    "OCCTIME": "2024-04-14 17:14:28",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -12.18
+  },
+  {
+    "OCCTIME": "2024-04-14 11:59:08",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -29.32
+  },
+  {
+    "OCCTIME": "2024-04-15 17:33:12",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -29.52
+  },
+  {
+    "OCCTIME": "2024-04-15 12:23:47",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -25.89
+  },
+  {
+    "OCCTIME": "2024-04-16 05:30:54",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -5.33
+  },
+  {
+    "OCCTIME": "2024-04-16 13:45:51",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -9.18
+  },
+  {
+    "OCCTIME": "2024-04-17 12:01:54",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -5.66
+  },
+  {
+    "OCCTIME": "2024-04-17 19:11:58",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -22.16
+  },
+  {
+    "OCCTIME": "2024-04-18 16:03:41",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -17.8
+  },
+  {
+    "OCCTIME": "2024-04-18 14:52:16",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -21.18
+  },
+  {
+    "OCCTIME": "2024-04-19 06:57:46",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -2.76
+  },
+  {
+    "OCCTIME": "2024-04-19 11:20:37",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -12.27
+  },
+  {
+    "OCCTIME": "2024-04-20 11:41:41",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -2.13
+  },
+  {
+    "OCCTIME": "2024-04-20 04:47:01",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -18.12
+  },
+  {
+    "OCCTIME": "2024-04-21 13:04:54",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -19.17
+  },
+  {
+    "OCCTIME": "2024-04-21 13:17:45",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-04-22 19:38:56",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -2.12
+  },
+  {
+    "OCCTIME": "2024-04-22 12:43:55",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -5.48
+  },
+  {
+    "OCCTIME": "2024-04-23 19:58:16",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -4.57
+  },
+  {
+    "OCCTIME": "2024-04-23 14:52:22",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -22.61
+  },
+  {
+    "OCCTIME": "2024-04-24 12:46:02",
+    "MERCNAME": "寿司",
+    "TRANAMT": -17.64
+  },
+  {
+    "OCCTIME": "2024-04-24 20:47:39",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -3.65
+  },
+  {
+    "OCCTIME": "2024-04-25 18:55:11",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.97
+  },
+  {
+    "OCCTIME": "2024-04-25 21:06:44",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -13.45
+  },
+  {
+    "OCCTIME": "2024-04-26 21:02:12",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -3.37
+  },
+  {
+    "OCCTIME": "2024-04-26 20:32:30",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -9.68
+  },
+  {
+    "OCCTIME": "2024-04-27 12:05:22",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -10.59
+  },
+  {
+    "OCCTIME": "2024-04-27 06:40:32",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -12.47
+  },
+  {
+    "OCCTIME": "2024-04-28 18:15:31",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -9.63
+  },
+  {
+    "OCCTIME": "2024-04-28 21:29:07",
+    "MERCNAME": "寿司",
+    "TRANAMT": -10.58
+  },
+  {
+    "OCCTIME": "2024-04-29 13:42:06",
+    "MERCNAME": "寿司",
+    "TRANAMT": -16.73
+  },
+  {
+    "OCCTIME": "2024-04-29 19:06:10",
+    "MERCNAME": "寿司",
+    "TRANAMT": -11.4
+  },
+  {
+    "OCCTIME": "2024-04-30 13:54:41",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -12.5
+  },
+  {
+    "OCCTIME": "2024-04-30 18:45:58",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -8.47
+  },
+  {
+    "OCCTIME": "2024-05-01 17:13:06",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -9.22
+  },
+  {
+    "OCCTIME": "2024-05-01 12:45:57",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -26.72
+  },
+  {
+    "OCCTIME": "2024-05-02 08:37:47",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -3.11
+  },
+  {
+    "OCCTIME": "2024-05-02 21:56:10",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -10.62
+  },
+  {
+    "OCCTIME": "2024-05-03 21:44:27",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -21.19
+  },
+  {
+    "OCCTIME": "2024-05-03 21:19:03",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -9.33
+  },
+  {
+    "OCCTIME": "2024-05-04 12:08:53",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -7.43
+  },
+  {
+    "OCCTIME": "2024-05-04 12:05:13",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -22.21
+  },
+  {
+    "OCCTIME": "2024-05-05 12:23:59",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-05-05 22:12:23",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -7.25
+  },
+  {
+    "OCCTIME": "2024-05-06 07:30:07",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -12.33
+  },
+  {
+    "OCCTIME": "2024-05-06 12:37:46",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -18.44
+  },
+  {
+    "OCCTIME": "2024-05-07 18:28:21",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-05-07 20:35:06",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.48
+  },
+  {
+    "OCCTIME": "2024-05-08 11:08:22",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -10.33
+  },
+  {
+    "OCCTIME": "2024-05-08 12:54:40",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -14.22
+  },
+  {
+    "OCCTIME": "2024-05-09 17:19:38",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -13.77
+  },
+  {
+    "OCCTIME": "2024-05-09 21:03:57",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -12.0
+  },
+  {
+    "OCCTIME": "2024-05-10 08:02:16",
+    "MERCNAME": "寿司",
+    "TRANAMT": -18.1
+  },
+  {
+    "OCCTIME": "2024-05-10 21:55:45",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -5.33
+  },
+  {
+    "OCCTIME": "2024-05-11 10:56:19",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -27.66
+  },
+  {
+    "OCCTIME": "2024-05-11 06:12:33",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -9.75
+  },
+  {
+    "OCCTIME": "2024-05-12 12:08:39",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -15.38
+  },
+  {
+    "OCCTIME": "2024-05-12 09:28:21",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -20.27
+  },
+  {
+    "OCCTIME": "2024-05-13 09:23:17",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -2.74
+  },
+  {
+    "OCCTIME": "2024-05-13 16:52:04",
+    "MERCNAME": "寿司",
+    "TRANAMT": -18.1
+  },
+  {
+    "OCCTIME": "2024-05-14 15:43:51",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -20.95
+  },
+  {
+    "OCCTIME": "2024-05-14 21:44:16",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -26.89
+  },
+  {
+    "OCCTIME": "2024-05-15 08:09:53",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -5.63
+  },
+  {
+    "OCCTIME": "2024-05-15 21:59:58",
+    "MERCNAME": "寿司",
+    "TRANAMT": -22.28
+  },
+  {
+    "OCCTIME": "2024-05-16 21:53:49",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -16.24
+  },
+  {
+    "OCCTIME": "2024-05-16 17:03:12",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -16.81
+  },
+  {
+    "OCCTIME": "2024-05-17 19:33:42",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -13.29
+  },
+  {
+    "OCCTIME": "2024-05-17 09:38:14",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -15.29
+  },
+  {
+    "OCCTIME": "2024-05-18 12:28:44",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -26.01
+  },
+  {
+    "OCCTIME": "2024-05-18 11:44:21",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -6.06
+  },
+  {
+    "OCCTIME": "2024-05-19 14:04:05",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -27.55
+  },
+  {
+    "OCCTIME": "2024-05-19 19:10:39",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -6.61
+  },
+  {
+    "OCCTIME": "2024-05-20 13:32:34",
+    "MERCNAME": "寿司",
+    "TRANAMT": -27.96
+  },
+  {
+    "OCCTIME": "2024-05-20 17:48:35",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-05-21 20:14:19",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -26.12
+  },
+  {
+    "OCCTIME": "2024-05-21 12:21:14",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -2.42
+  },
+  {
+    "OCCTIME": "2024-05-22 21:22:05",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-05-22 12:29:52",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -20.83
+  },
+  {
+    "OCCTIME": "2024-05-23 12:31:19",
+    "MERCNAME": "寿司",
+    "TRANAMT": -25.31
+  },
+  {
+    "OCCTIME": "2024-05-23 22:08:11",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -17.82
+  },
+  {
+    "OCCTIME": "2024-05-24 21:41:10",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -11.42
+  },
+  {
+    "OCCTIME": "2024-05-24 13:25:47",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -5.24
+  },
+  {
+    "OCCTIME": "2024-05-25 18:44:24",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -18.2
+  },
+  {
+    "OCCTIME": "2024-05-25 07:53:20",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-05-26 10:25:16",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -20.25
+  },
+  {
+    "OCCTIME": "2024-05-26 19:18:10",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -18.09
+  },
+  {
+    "OCCTIME": "2024-05-27 11:33:22",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -25.9
+  },
+  {
+    "OCCTIME": "2024-05-27 19:42:16",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -24.24
+  },
+  {
+    "OCCTIME": "2024-05-28 13:52:46",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-05-28 18:31:40",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -7.4
+  },
+  {
+    "OCCTIME": "2024-05-29 22:09:46",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -17.87
+  },
+  {
+    "OCCTIME": "2024-05-29 20:29:41",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -27.06
+  },
+  {
+    "OCCTIME": "2024-05-30 08:30:36",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -15.17
+  },
+  {
+    "OCCTIME": "2024-05-30 13:43:44",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -10.65
+  },
+  {
+    "OCCTIME": "2024-05-31 14:57:28",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -25.6
+  },
+  {
+    "OCCTIME": "2024-05-31 13:05:38",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -8.0
+  },
+  {
+    "OCCTIME": "2024-06-01 12:32:23",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -29.41
+  },
+  {
+    "OCCTIME": "2024-06-01 11:23:51",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -2.94
+  },
+  {
+    "OCCTIME": "2024-06-02 07:24:56",
+    "MERCNAME": "寿司",
+    "TRANAMT": -19.12
+  },
+  {
+    "OCCTIME": "2024-06-02 11:02:54",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -6.41
+  },
+  {
+    "OCCTIME": "2024-06-03 21:40:06",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -29.9
+  },
+  {
+    "OCCTIME": "2024-06-03 20:08:00",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -3.03
+  },
+  {
+    "OCCTIME": "2024-06-04 19:23:57",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -8.05
+  },
+  {
+    "OCCTIME": "2024-06-04 19:38:09",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.99
+  },
+  {
+    "OCCTIME": "2024-06-05 17:04:01",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.11
+  },
+  {
+    "OCCTIME": "2024-06-05 08:43:32",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -10.53
+  },
+  {
+    "OCCTIME": "2024-06-06 12:12:36",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -6.04
+  },
+  {
+    "OCCTIME": "2024-06-06 01:36:44",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -10.31
+  },
+  {
+    "OCCTIME": "2024-06-07 19:58:39",
+    "MERCNAME": "寿司",
+    "TRANAMT": -3.4
+  },
+  {
+    "OCCTIME": "2024-06-07 18:49:50",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-06-08 19:20:12",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -8.2
+  },
+  {
+    "OCCTIME": "2024-06-08 17:07:35",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-06-09 11:58:30",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -15.7
+  },
+  {
+    "OCCTIME": "2024-06-09 17:07:28",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -7.69
+  },
+  {
+    "OCCTIME": "2024-06-10 11:13:25",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -5.61
+  },
+  {
+    "OCCTIME": "2024-06-10 22:44:54",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -3.08
+  },
+  {
+    "OCCTIME": "2024-06-11 21:13:49",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -16.8
+  },
+  {
+    "OCCTIME": "2024-06-11 10:10:38",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -19.32
+  },
+  {
+    "OCCTIME": "2024-06-12 15:44:00",
+    "MERCNAME": "寿司",
+    "TRANAMT": -16.93
+  },
+  {
+    "OCCTIME": "2024-06-12 01:41:57",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -7.17
+  },
+  {
+    "OCCTIME": "2024-06-13 12:01:22",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -23.08
+  },
+  {
+    "OCCTIME": "2024-06-13 18:30:28",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -21.09
+  },
+  {
+    "OCCTIME": "2024-06-14 12:56:05",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -5.67
+  },
+  {
+    "OCCTIME": "2024-06-14 12:47:14",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -29.73
+  },
+  {
+    "OCCTIME": "2024-06-15 18:05:09",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -6.19
+  },
+  {
+    "OCCTIME": "2024-06-15 10:53:22",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -11.71
+  },
+  {
+    "OCCTIME": "2024-06-16 12:38:25",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -4.91
+  },
+  {
+    "OCCTIME": "2024-06-16 12:20:41",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -27.24
+  },
+  {
+    "OCCTIME": "2024-06-17 14:17:24",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -25.91
+  },
+  {
+    "OCCTIME": "2024-06-17 07:00:57",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -13.03
+  },
+  {
+    "OCCTIME": "2024-06-18 18:52:03",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -25.25
+  },
+  {
+    "OCCTIME": "2024-06-18 11:02:07",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-06-19 20:23:53",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -6.36
+  },
+  {
+    "OCCTIME": "2024-06-19 11:47:51",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -1.02
+  },
+  {
+    "OCCTIME": "2024-06-20 12:03:29",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -23.79
+  },
+  {
+    "OCCTIME": "2024-06-20 12:49:00",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -21.1
+  },
+  {
+    "OCCTIME": "2024-06-21 12:25:33",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -12.73
+  },
+  {
+    "OCCTIME": "2024-06-21 11:47:33",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -5.58
+  },
+  {
+    "OCCTIME": "2024-06-22 12:47:16",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-06-22 09:59:12",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -10.59
+  },
+  {
+    "OCCTIME": "2024-06-23 10:59:07",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -3.43
+  },
+  {
+    "OCCTIME": "2024-06-23 07:47:57",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -7.16
+  },
+  {
+    "OCCTIME": "2024-06-24 07:44:35",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -12.55
+  },
+  {
+    "OCCTIME": "2024-06-24 18:03:48",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -16.08
+  },
+  {
+    "OCCTIME": "2024-06-25 12:29:34",
+    "MERCNAME": "寿司",
+    "TRANAMT": -22.99
+  },
+  {
+    "OCCTIME": "2024-06-25 10:25:37",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -27.47
+  },
+  {
+    "OCCTIME": "2024-06-26 14:27:03",
+    "MERCNAME": "寿司",
+    "TRANAMT": -2.52
+  },
+  {
+    "OCCTIME": "2024-06-26 19:17:24",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -7.62
+  },
+  {
+    "OCCTIME": "2024-06-27 08:51:34",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -12.73
+  },
+  {
+    "OCCTIME": "2024-06-27 11:28:04",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-06-28 12:16:01",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-06-28 13:22:39",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -1.46
+  },
+  {
+    "OCCTIME": "2024-06-29 13:42:04",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -23.96
+  },
+  {
+    "OCCTIME": "2024-06-29 15:44:54",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -28.09
+  },
+  {
+    "OCCTIME": "2024-06-30 19:06:20",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -22.81
+  },
+  {
+    "OCCTIME": "2024-06-30 15:46:39",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -2.49
+  },
+  {
+    "OCCTIME": "2024-07-01 12:16:27",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -11.88
+  },
+  {
+    "OCCTIME": "2024-07-01 09:11:27",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -21.55
+  },
+  {
+    "OCCTIME": "2024-07-02 21:13:36",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -5.93
+  },
+  {
+    "OCCTIME": "2024-07-02 11:08:53",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -26.95
+  },
+  {
+    "OCCTIME": "2024-07-03 21:15:16",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -14.44
+  },
+  {
+    "OCCTIME": "2024-07-03 19:05:12",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -21.85
+  },
+  {
+    "OCCTIME": "2024-07-04 13:54:20",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -17.16
+  },
+  {
+    "OCCTIME": "2024-07-04 13:38:59",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -15.64
+  },
+  {
+    "OCCTIME": "2024-07-05 20:54:39",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -9.54
+  },
+  {
+    "OCCTIME": "2024-07-05 16:30:08",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -2.61
+  },
+  {
+    "OCCTIME": "2024-07-06 09:52:07",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -2.81
+  },
+  {
+    "OCCTIME": "2024-07-06 21:40:51",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -10.54
+  },
+  {
+    "OCCTIME": "2024-07-07 12:16:13",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -22.86
+  },
+  {
+    "OCCTIME": "2024-07-07 12:11:35",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -9.29
+  },
+  {
+    "OCCTIME": "2024-07-08 07:56:41",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -8.97
+  },
+  {
+    "OCCTIME": "2024-07-08 11:42:58",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -25.86
+  },
+  {
+    "OCCTIME": "2024-07-09 20:19:09",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -8.66
+  },
+  {
+    "OCCTIME": "2024-07-09 13:59:50",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -14.26
+  },
+  {
+    "OCCTIME": "2024-07-10 07:04:00",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -28.06
+  },
+  {
+    "OCCTIME": "2024-07-10 20:49:49",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.2
+  },
+  {
+    "OCCTIME": "2024-07-11 18:40:38",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -8.68
+  },
+  {
+    "OCCTIME": "2024-07-11 21:10:14",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -19.56
+  },
+  {
+    "OCCTIME": "2024-07-12 13:31:10",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -1.84
+  },
+  {
+    "OCCTIME": "2024-07-12 06:43:05",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-07-13 14:39:17",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -8.18
+  },
+  {
+    "OCCTIME": "2024-07-13 20:12:08",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -7.39
+  },
+  {
+    "OCCTIME": "2024-07-14 20:29:42",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -5.33
+  },
+  {
+    "OCCTIME": "2024-07-14 17:05:11",
+    "MERCNAME": "寿司",
+    "TRANAMT": -18.15
+  },
+  {
+    "OCCTIME": "2024-07-15 11:04:37",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -15.36
+  },
+  {
+    "OCCTIME": "2024-07-15 22:25:44",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -10.89
+  },
+  {
+    "OCCTIME": "2024-07-16 12:25:25",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -2.82
+  },
+  {
+    "OCCTIME": "2024-07-16 08:08:50",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -28.55
+  },
+  {
+    "OCCTIME": "2024-07-17 16:43:03",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -5.32
+  },
+  {
+    "OCCTIME": "2024-07-17 10:38:59",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -18.49
+  },
+  {
+    "OCCTIME": "2024-07-18 06:00:25",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -8.75
+  },
+  {
+    "OCCTIME": "2024-07-18 13:04:44",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -23.44
+  },
+  {
+    "OCCTIME": "2024-07-19 21:34:35",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -20.18
+  },
+  {
+    "OCCTIME": "2024-07-19 11:26:18",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -10.04
+  },
+  {
+    "OCCTIME": "2024-07-20 04:50:32",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-07-20 07:56:59",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -2.31
+  },
+  {
+    "OCCTIME": "2024-07-21 11:25:41",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -24.3
+  },
+  {
+    "OCCTIME": "2024-07-21 12:04:14",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -5.09
+  },
+  {
+    "OCCTIME": "2024-07-22 11:05:16",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -28.77
+  },
+  {
+    "OCCTIME": "2024-07-22 18:13:19",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -2.94
+  },
+  {
+    "OCCTIME": "2024-07-23 23:12:32",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -5.4
+  },
+  {
+    "OCCTIME": "2024-07-23 12:58:43",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-07-24 11:01:40",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -7.47
+  },
+  {
+    "OCCTIME": "2024-07-24 13:07:10",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -16.8
+  },
+  {
+    "OCCTIME": "2024-07-25 15:58:13",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -28.47
+  },
+  {
+    "OCCTIME": "2024-07-25 18:51:48",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -12.49
+  },
+  {
+    "OCCTIME": "2024-07-26 14:56:38",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -29.91
+  },
+  {
+    "OCCTIME": "2024-07-26 16:32:58",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -24.85
+  },
+  {
+    "OCCTIME": "2024-07-27 19:23:38",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -3.12
+  },
+  {
+    "OCCTIME": "2024-07-27 11:05:06",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -24.89
+  },
+  {
+    "OCCTIME": "2024-07-28 15:30:56",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-07-28 18:54:44",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -14.78
+  },
+  {
+    "OCCTIME": "2024-07-29 11:07:03",
+    "MERCNAME": "寿司",
+    "TRANAMT": -15.93
+  },
+  {
+    "OCCTIME": "2024-07-29 19:45:04",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -7.73
+  },
+  {
+    "OCCTIME": "2024-07-30 13:00:16",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -24.15
+  },
+  {
+    "OCCTIME": "2024-07-30 13:26:54",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -4.29
+  },
+  {
+    "OCCTIME": "2024-07-31 13:53:06",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -5.22
+  },
+  {
+    "OCCTIME": "2024-07-31 14:48:02",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -26.47
+  },
+  {
+    "OCCTIME": "2024-08-01 06:54:23",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -11.16
+  },
+  {
+    "OCCTIME": "2024-08-01 10:32:09",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -18.34
+  },
+  {
+    "OCCTIME": "2024-08-02 20:13:32",
+    "MERCNAME": "寿司",
+    "TRANAMT": -5.13
+  },
+  {
+    "OCCTIME": "2024-08-02 16:53:54",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -6.38
+  },
+  {
+    "OCCTIME": "2024-08-03 18:33:49",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -2.87
+  },
+  {
+    "OCCTIME": "2024-08-03 20:13:05",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -11.98
+  },
+  {
+    "OCCTIME": "2024-08-04 19:16:17",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -7.74
+  },
+  {
+    "OCCTIME": "2024-08-04 21:56:44",
+    "MERCNAME": "寿司",
+    "TRANAMT": -24.22
+  },
+  {
+    "OCCTIME": "2024-08-05 21:49:20",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -9.0
+  },
+  {
+    "OCCTIME": "2024-08-05 18:46:08",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-08-06 19:00:40",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -21.28
+  },
+  {
+    "OCCTIME": "2024-08-06 17:33:12",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -1.1
+  },
+  {
+    "OCCTIME": "2024-08-07 18:44:29",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -14.43
+  },
+  {
+    "OCCTIME": "2024-08-07 20:05:53",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -22.77
+  },
+  {
+    "OCCTIME": "2024-08-08 20:14:08",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -15.13
+  },
+  {
+    "OCCTIME": "2024-08-08 10:56:25",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -9.62
+  },
+  {
+    "OCCTIME": "2024-08-09 20:31:26",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -9.6
+  },
+  {
+    "OCCTIME": "2024-08-09 07:17:41",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -17.8
+  },
+  {
+    "OCCTIME": "2024-08-10 10:44:21",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -29.07
+  },
+  {
+    "OCCTIME": "2024-08-10 11:42:55",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -9.76
+  },
+  {
+    "OCCTIME": "2024-08-11 02:10:55",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -11.68
+  },
+  {
+    "OCCTIME": "2024-08-11 20:38:27",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -5.99
+  },
+  {
+    "OCCTIME": "2024-08-12 12:02:59",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -27.93
+  },
+  {
+    "OCCTIME": "2024-08-12 23:32:25",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -13.11
+  },
+  {
+    "OCCTIME": "2024-08-13 11:40:32",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.56
+  },
+  {
+    "OCCTIME": "2024-08-13 18:27:49",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -16.7
+  },
+  {
+    "OCCTIME": "2024-08-14 17:56:11",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-08-14 13:38:27",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -2.37
+  },
+  {
+    "OCCTIME": "2024-08-15 20:40:43",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -14.42
+  },
+  {
+    "OCCTIME": "2024-08-15 13:18:36",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-08-16 13:39:30",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -6.78
+  },
+  {
+    "OCCTIME": "2024-08-16 19:12:36",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -18.42
+  },
+  {
+    "OCCTIME": "2024-08-17 21:40:17",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -28.16
+  },
+  {
+    "OCCTIME": "2024-08-17 19:49:06",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -18.96
+  },
+  {
+    "OCCTIME": "2024-08-18 06:19:26",
+    "MERCNAME": "寿司",
+    "TRANAMT": -28.21
+  },
+  {
+    "OCCTIME": "2024-08-18 08:42:58",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -19.22
+  },
+  {
+    "OCCTIME": "2024-08-19 19:37:42",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -6.32
+  },
+  {
+    "OCCTIME": "2024-08-19 11:02:30",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -7.58
+  },
+  {
+    "OCCTIME": "2024-08-20 18:11:04",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -13.87
+  },
+  {
+    "OCCTIME": "2024-08-20 06:32:07",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -16.88
+  },
+  {
+    "OCCTIME": "2024-08-21 16:54:06",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -22.83
+  },
+  {
+    "OCCTIME": "2024-08-21 21:58:04",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -5.25
+  },
+  {
+    "OCCTIME": "2024-08-22 06:46:07",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -28.8
+  },
+  {
+    "OCCTIME": "2024-08-22 06:08:53",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -18.97
+  },
+  {
+    "OCCTIME": "2024-08-23 13:06:47",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -13.38
+  },
+  {
+    "OCCTIME": "2024-08-23 10:37:47",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -29.26
+  },
+  {
+    "OCCTIME": "2024-08-24 12:11:45",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -16.54
+  },
+  {
+    "OCCTIME": "2024-08-24 14:05:36",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -24.13
+  },
+  {
+    "OCCTIME": "2024-08-25 06:14:30",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -19.69
+  },
+  {
+    "OCCTIME": "2024-08-25 13:11:37",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -7.58
+  },
+  {
+    "OCCTIME": "2024-08-26 07:37:09",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -11.3
+  },
+  {
+    "OCCTIME": "2024-08-26 11:03:59",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -26.75
+  },
+  {
+    "OCCTIME": "2024-08-27 12:24:07",
+    "MERCNAME": "寿司",
+    "TRANAMT": -19.18
+  },
+  {
+    "OCCTIME": "2024-08-27 19:26:53",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -18.33
+  },
+  {
+    "OCCTIME": "2024-08-28 12:10:06",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -1.18
+  },
+  {
+    "OCCTIME": "2024-08-28 11:42:58",
+    "MERCNAME": "寿司",
+    "TRANAMT": -19.07
+  },
+  {
+    "OCCTIME": "2024-08-29 12:15:29",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -16.61
+  },
+  {
+    "OCCTIME": "2024-08-29 21:05:56",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -11.4
+  },
+  {
+    "OCCTIME": "2024-08-30 15:06:14",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -27.62
+  },
+  {
+    "OCCTIME": "2024-08-30 12:31:49",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -21.59
+  },
+  {
+    "OCCTIME": "2024-08-31 11:52:38",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -28.6
+  },
+  {
+    "OCCTIME": "2024-08-31 09:44:00",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -26.27
+  },
+  {
+    "OCCTIME": "2024-09-01 13:25:44",
+    "MERCNAME": "寿司",
+    "TRANAMT": -27.59
+  },
+  {
+    "OCCTIME": "2024-09-01 13:14:50",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -6.04
+  },
+  {
+    "OCCTIME": "2024-09-02 07:44:42",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -29.54
+  },
+  {
+    "OCCTIME": "2024-09-02 06:07:11",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -15.96
+  },
+  {
+    "OCCTIME": "2024-09-03 21:53:48",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.91
+  },
+  {
+    "OCCTIME": "2024-09-03 15:52:14",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -3.61
+  },
+  {
+    "OCCTIME": "2024-09-04 12:07:32",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.83
+  },
+  {
+    "OCCTIME": "2024-09-04 10:03:08",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -27.98
+  },
+  {
+    "OCCTIME": "2024-09-05 12:46:34",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -25.78
+  },
+  {
+    "OCCTIME": "2024-09-05 12:42:20",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -11.96
+  },
+  {
+    "OCCTIME": "2024-09-06 12:54:31",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -9.65
+  },
+  {
+    "OCCTIME": "2024-09-06 12:43:18",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -15.55
+  },
+  {
+    "OCCTIME": "2024-09-07 12:02:55",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -28.57
+  },
+  {
+    "OCCTIME": "2024-09-07 13:23:07",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -20.5
+  },
+  {
+    "OCCTIME": "2024-09-08 15:10:07",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -16.37
+  },
+  {
+    "OCCTIME": "2024-09-08 20:59:27",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-09-09 20:59:44",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -11.87
+  },
+  {
+    "OCCTIME": "2024-09-09 11:18:26",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -14.83
+  },
+  {
+    "OCCTIME": "2024-09-10 07:44:23",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -12.53
+  },
+  {
+    "OCCTIME": "2024-09-10 11:30:34",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -16.81
+  },
+  {
+    "OCCTIME": "2024-09-11 12:35:21",
+    "MERCNAME": "寿司",
+    "TRANAMT": -11.29
+  },
+  {
+    "OCCTIME": "2024-09-11 21:08:26",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-09-12 11:47:51",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -25.43
+  },
+  {
+    "OCCTIME": "2024-09-12 14:55:56",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -12.72
+  },
+  {
+    "OCCTIME": "2024-09-13 09:54:45",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -17.52
+  },
+  {
+    "OCCTIME": "2024-09-13 12:45:22",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -10.73
+  },
+  {
+    "OCCTIME": "2024-09-14 20:44:44",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -23.32
+  },
+  {
+    "OCCTIME": "2024-09-14 18:44:42",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -11.11
+  },
+  {
+    "OCCTIME": "2024-09-15 12:30:12",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -8.55
+  },
+  {
+    "OCCTIME": "2024-09-15 13:53:08",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -29.98
+  },
+  {
+    "OCCTIME": "2024-09-16 21:36:45",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -26.52
+  },
+  {
+    "OCCTIME": "2024-09-16 20:42:45",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-09-17 11:57:36",
+    "MERCNAME": "寿司",
+    "TRANAMT": -3.08
+  },
+  {
+    "OCCTIME": "2024-09-17 21:28:30",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -24.57
+  },
+  {
+    "OCCTIME": "2024-09-18 12:40:53",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -4.6
+  },
+  {
+    "OCCTIME": "2024-09-18 16:55:45",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -23.96
+  },
+  {
+    "OCCTIME": "2024-09-19 01:30:19",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -19.09
+  },
+  {
+    "OCCTIME": "2024-09-19 18:33:53",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -24.22
+  },
+  {
+    "OCCTIME": "2024-09-20 13:02:59",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -16.71
+  },
+  {
+    "OCCTIME": "2024-09-20 21:50:11",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -14.94
+  },
+  {
+    "OCCTIME": "2024-09-21 09:04:48",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -9.36
+  },
+  {
+    "OCCTIME": "2024-09-21 20:59:58",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -22.83
+  },
+  {
+    "OCCTIME": "2024-09-22 13:06:51",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -24.35
+  },
+  {
+    "OCCTIME": "2024-09-22 20:07:33",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -7.77
+  },
+  {
+    "OCCTIME": "2024-09-23 05:17:11",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -24.39
+  },
+  {
+    "OCCTIME": "2024-09-23 23:59:37",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -21.68
+  },
+  {
+    "OCCTIME": "2024-09-24 19:28:14",
+    "MERCNAME": "寿司",
+    "TRANAMT": -3.62
+  },
+  {
+    "OCCTIME": "2024-09-24 19:46:42",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -19.9
+  },
+  {
+    "OCCTIME": "2024-09-25 08:48:13",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -26.22
+  },
+  {
+    "OCCTIME": "2024-09-25 08:38:47",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -20.97
+  },
+  {
+    "OCCTIME": "2024-09-26 13:40:09",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-09-26 19:40:58",
+    "MERCNAME": "寿司",
+    "TRANAMT": -23.42
+  },
+  {
+    "OCCTIME": "2024-09-27 19:38:55",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -24.84
+  },
+  {
+    "OCCTIME": "2024-09-27 11:43:08",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.76
+  },
+  {
+    "OCCTIME": "2024-09-28 11:42:58",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -17.87
+  },
+  {
+    "OCCTIME": "2024-09-28 13:26:51",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -29.32
+  },
+  {
+    "OCCTIME": "2024-09-29 06:09:18",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -17.22
+  },
+  {
+    "OCCTIME": "2024-09-29 13:31:41",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -14.13
+  },
+  {
+    "OCCTIME": "2024-09-30 13:08:50",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -20.63
+  },
+  {
+    "OCCTIME": "2024-09-30 14:24:22",
+    "MERCNAME": "寿司",
+    "TRANAMT": -3.92
+  },
+  {
+    "OCCTIME": "2024-10-01 12:02:51",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -22.71
+  },
+  {
+    "OCCTIME": "2024-10-01 09:38:51",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -6.37
+  },
+  {
+    "OCCTIME": "2024-10-02 13:50:43",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -26.38
+  },
+  {
+    "OCCTIME": "2024-10-02 19:35:39",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -2.08
+  },
+  {
+    "OCCTIME": "2024-10-03 12:09:40",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -27.39
+  },
+  {
+    "OCCTIME": "2024-10-03 11:40:58",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -7.65
+  },
+  {
+    "OCCTIME": "2024-10-04 10:23:22",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -14.93
+  },
+  {
+    "OCCTIME": "2024-10-04 12:18:29",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -2.35
+  },
+  {
+    "OCCTIME": "2024-10-05 07:08:16",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -11.49
+  },
+  {
+    "OCCTIME": "2024-10-05 11:26:55",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -17.64
+  },
+  {
+    "OCCTIME": "2024-10-06 11:33:38",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -26.98
+  },
+  {
+    "OCCTIME": "2024-10-06 10:08:00",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -9.39
+  },
+  {
+    "OCCTIME": "2024-10-07 10:21:43",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -3.09
+  },
+  {
+    "OCCTIME": "2024-10-07 19:47:42",
+    "MERCNAME": "寿司",
+    "TRANAMT": -11.82
+  },
+  {
+    "OCCTIME": "2024-10-08 19:24:47",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -26.45
+  },
+  {
+    "OCCTIME": "2024-10-08 10:55:03",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -7.85
+  },
+  {
+    "OCCTIME": "2024-10-09 08:35:52",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -17.65
+  },
+  {
+    "OCCTIME": "2024-10-09 07:51:05",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -1.09
+  },
+  {
+    "OCCTIME": "2024-10-10 14:05:42",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -9.28
+  },
+  {
+    "OCCTIME": "2024-10-10 01:43:11",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -10.27
+  },
+  {
+    "OCCTIME": "2024-10-11 18:27:08",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -20.46
+  },
+  {
+    "OCCTIME": "2024-10-11 20:34:54",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -25.96
+  },
+  {
+    "OCCTIME": "2024-10-12 19:53:08",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -6.13
+  },
+  {
+    "OCCTIME": "2024-10-12 18:01:15",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -23.58
+  },
+  {
+    "OCCTIME": "2024-10-13 15:06:37",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -3.51
+  },
+  {
+    "OCCTIME": "2024-10-13 06:34:08",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -12.47
+  },
+  {
+    "OCCTIME": "2024-10-14 18:47:06",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -5.22
+  },
+  {
+    "OCCTIME": "2024-10-14 12:03:56",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -18.19
+  },
+  {
+    "OCCTIME": "2024-10-15 13:06:12",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -9.42
+  },
+  {
+    "OCCTIME": "2024-10-15 13:42:59",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -4.97
+  },
+  {
+    "OCCTIME": "2024-10-16 23:04:00",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -22.0
+  },
+  {
+    "OCCTIME": "2024-10-16 11:46:29",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -2.06
+  },
+  {
+    "OCCTIME": "2024-10-17 07:17:44",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -25.97
+  },
+  {
+    "OCCTIME": "2024-10-17 21:03:57",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -6.34
+  },
+  {
+    "OCCTIME": "2024-10-18 07:11:49",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -18.22
+  },
+  {
+    "OCCTIME": "2024-10-18 20:52:09",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -7.31
+  },
+  {
+    "OCCTIME": "2024-10-19 14:31:20",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -20.91
+  },
+  {
+    "OCCTIME": "2024-10-19 12:08:07",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.31
+  },
+  {
+    "OCCTIME": "2024-10-20 13:07:27",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -20.25
+  },
+  {
+    "OCCTIME": "2024-10-20 20:33:31",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -17.61
+  },
+  {
+    "OCCTIME": "2024-10-21 11:22:20",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -21.65
+  },
+  {
+    "OCCTIME": "2024-10-21 23:05:42",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.06
+  },
+  {
+    "OCCTIME": "2024-10-22 17:39:25",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -29.36
+  },
+  {
+    "OCCTIME": "2024-10-22 12:22:29",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -26.39
+  },
+  {
+    "OCCTIME": "2024-10-23 10:35:15",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-10-23 12:42:44",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -21.5
+  },
+  {
+    "OCCTIME": "2024-10-24 13:46:29",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -7.18
+  },
+  {
+    "OCCTIME": "2024-10-24 23:24:20",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -18.17
+  },
+  {
+    "OCCTIME": "2024-10-25 20:48:02",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -20.16
+  },
+  {
+    "OCCTIME": "2024-10-25 21:15:52",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-10-26 12:30:44",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -3.32
+  },
+  {
+    "OCCTIME": "2024-10-26 06:30:33",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -1.89
+  },
+  {
+    "OCCTIME": "2024-10-27 07:05:42",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -8.58
+  },
+  {
+    "OCCTIME": "2024-10-27 13:47:01",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -10.82
+  },
+  {
+    "OCCTIME": "2024-10-28 09:51:03",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -13.5
+  },
+  {
+    "OCCTIME": "2024-10-28 17:03:39",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -26.77
+  },
+  {
+    "OCCTIME": "2024-10-29 13:20:38",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -3.52
+  },
+  {
+    "OCCTIME": "2024-10-29 21:41:14",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -18.19
+  },
+  {
+    "OCCTIME": "2024-10-30 18:13:16",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -2.12
+  },
+  {
+    "OCCTIME": "2024-10-30 21:23:15",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -4.75
+  },
+  {
+    "OCCTIME": "2024-10-31 11:36:34",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -26.89
+  },
+  {
+    "OCCTIME": "2024-10-31 11:36:49",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -2.48
+  },
+  {
+    "OCCTIME": "2024-11-01 12:53:28",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -14.42
+  },
+  {
+    "OCCTIME": "2024-11-01 12:34:56",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -4.94
+  },
+  {
+    "OCCTIME": "2024-11-02 12:46:59",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -4.68
+  },
+  {
+    "OCCTIME": "2024-11-02 16:38:37",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -6.88
+  },
+  {
+    "OCCTIME": "2024-11-03 11:25:47",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -13.77
+  },
+  {
+    "OCCTIME": "2024-11-03 18:31:30",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-11-04 20:52:33",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-11-04 18:55:04",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -2.21
+  },
+  {
+    "OCCTIME": "2024-11-05 18:55:29",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-11-05 04:14:21",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -5.23
+  },
+  {
+    "OCCTIME": "2024-11-06 13:10:54",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -24.83
+  },
+  {
+    "OCCTIME": "2024-11-06 19:50:24",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -27.15
+  },
+  {
+    "OCCTIME": "2024-11-07 12:42:30",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -22.13
+  },
+  {
+    "OCCTIME": "2024-11-07 09:18:49",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -28.23
+  },
+  {
+    "OCCTIME": "2024-11-08 17:25:28",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -9.64
+  },
+  {
+    "OCCTIME": "2024-11-08 11:49:54",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-11-09 11:13:33",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -10.53
+  },
+  {
+    "OCCTIME": "2024-11-09 13:12:53",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.89
+  },
+  {
+    "OCCTIME": "2024-11-10 11:26:51",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-11-10 18:26:44",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -19.01
+  },
+  {
+    "OCCTIME": "2024-11-11 08:43:48",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -14.81
+  },
+  {
+    "OCCTIME": "2024-11-11 11:07:04",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -1.28
+  },
+  {
+    "OCCTIME": "2024-11-12 10:36:29",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-11-12 11:52:54",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -13.63
+  },
+  {
+    "OCCTIME": "2024-11-13 12:12:59",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -7.5
+  },
+  {
+    "OCCTIME": "2024-11-13 18:59:15",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -13.51
+  },
+  {
+    "OCCTIME": "2024-11-14 19:23:20",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -22.34
+  },
+  {
+    "OCCTIME": "2024-11-14 13:38:18",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-11-15 19:04:01",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -7.99
+  },
+  {
+    "OCCTIME": "2024-11-15 10:31:32",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.4
+  },
+  {
+    "OCCTIME": "2024-11-16 19:08:06",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -4.59
+  },
+  {
+    "OCCTIME": "2024-11-16 21:52:39",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -27.84
+  },
+  {
+    "OCCTIME": "2024-11-17 17:25:06",
+    "MERCNAME": "寿司",
+    "TRANAMT": -17.21
+  },
+  {
+    "OCCTIME": "2024-11-17 14:09:40",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -13.28
+  },
+  {
+    "OCCTIME": "2024-11-18 21:12:41",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -3.98
+  },
+  {
+    "OCCTIME": "2024-11-18 20:08:18",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -21.75
+  },
+  {
+    "OCCTIME": "2024-11-19 19:08:56",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -16.11
+  },
+  {
+    "OCCTIME": "2024-11-19 11:20:31",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -10.5
+  },
+  {
+    "OCCTIME": "2024-11-20 10:14:32",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -28.07
+  },
+  {
+    "OCCTIME": "2024-11-20 18:00:18",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -9.49
+  },
+  {
+    "OCCTIME": "2024-11-21 12:48:28",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -1.11
+  },
+  {
+    "OCCTIME": "2024-11-21 07:04:52",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -6.18
+  },
+  {
+    "OCCTIME": "2024-11-22 23:01:41",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -12.82
+  },
+  {
+    "OCCTIME": "2024-11-22 20:06:41",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -19.76
+  },
+  {
+    "OCCTIME": "2024-11-23 12:38:34",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -11.28
+  },
+  {
+    "OCCTIME": "2024-11-23 13:33:45",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -20.73
+  },
+  {
+    "OCCTIME": "2024-11-24 03:51:05",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -3.48
+  },
+  {
+    "OCCTIME": "2024-11-24 13:11:07",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.24
+  },
+  {
+    "OCCTIME": "2024-11-25 11:29:29",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -25.7
+  },
+  {
+    "OCCTIME": "2024-11-25 13:05:24",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -22.74
+  },
+  {
+    "OCCTIME": "2024-11-26 09:47:22",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -24.51
+  },
+  {
+    "OCCTIME": "2024-11-26 06:16:01",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -11.07
+  },
+  {
+    "OCCTIME": "2024-11-27 20:36:30",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -25.16
+  },
+  {
+    "OCCTIME": "2024-11-27 18:16:46",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -19.98
+  },
+  {
+    "OCCTIME": "2024-11-28 20:29:39",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -27.03
+  },
+  {
+    "OCCTIME": "2024-11-28 20:49:57",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -2.82
+  },
+  {
+    "OCCTIME": "2024-11-29 12:17:06",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -12.55
+  },
+  {
+    "OCCTIME": "2024-11-29 18:40:11",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -11.99
+  },
+  {
+    "OCCTIME": "2024-11-30 18:03:16",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -20.54
+  },
+  {
+    "OCCTIME": "2024-11-30 12:47:44",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -6.7
+  },
+  {
+    "OCCTIME": "2024-12-01 11:09:15",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -23.3
+  },
+  {
+    "OCCTIME": "2024-12-01 13:38:24",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-12-02 12:56:40",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -11.17
+  },
+  {
+    "OCCTIME": "2024-12-02 13:01:33",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -29.97
+  },
+  {
+    "OCCTIME": "2024-12-03 13:02:50",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -11.32
+  },
+  {
+    "OCCTIME": "2024-12-03 12:02:07",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -23.9
+  },
+  {
+    "OCCTIME": "2024-12-04 17:00:14",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -10.97
+  },
+  {
+    "OCCTIME": "2024-12-04 19:43:06",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.89
+  },
+  {
+    "OCCTIME": "2024-12-05 01:54:45",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.82
+  },
+  {
+    "OCCTIME": "2024-12-05 14:44:22",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -12.27
+  },
+  {
+    "OCCTIME": "2024-12-06 13:36:04",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -1.5
+  },
+  {
+    "OCCTIME": "2024-12-06 13:09:59",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2024-12-07 13:48:22",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -16.68
+  },
+  {
+    "OCCTIME": "2024-12-07 20:20:18",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -29.73
+  },
+  {
+    "OCCTIME": "2024-12-08 18:15:08",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -16.93
+  },
+  {
+    "OCCTIME": "2024-12-08 12:54:41",
+    "MERCNAME": "寿司",
+    "TRANAMT": -22.99
+  },
+  {
+    "OCCTIME": "2024-12-09 20:55:44",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -23.1
+  },
+  {
+    "OCCTIME": "2024-12-09 11:11:04",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-12-10 13:10:58",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -28.15
+  },
+  {
+    "OCCTIME": "2024-12-10 13:48:25",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -22.96
+  },
+  {
+    "OCCTIME": "2024-12-11 12:46:08",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -20.2
+  },
+  {
+    "OCCTIME": "2024-12-11 12:21:38",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -20.31
+  },
+  {
+    "OCCTIME": "2024-12-12 19:52:49",
+    "MERCNAME": "寿司",
+    "TRANAMT": -27.74
+  },
+  {
+    "OCCTIME": "2024-12-12 20:13:19",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -25.6
+  },
+  {
+    "OCCTIME": "2024-12-13 18:46:39",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -6.58
+  },
+  {
+    "OCCTIME": "2024-12-13 09:09:33",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -1.13
+  },
+  {
+    "OCCTIME": "2024-12-14 11:38:13",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -28.47
+  },
+  {
+    "OCCTIME": "2024-12-14 11:11:51",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -26.04
+  },
+  {
+    "OCCTIME": "2024-12-15 21:10:56",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -8.71
+  },
+  {
+    "OCCTIME": "2024-12-15 13:50:03",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -21.73
+  },
+  {
+    "OCCTIME": "2024-12-16 22:03:56",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -5.53
+  },
+  {
+    "OCCTIME": "2024-12-16 20:19:55",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -5.42
+  },
+  {
+    "OCCTIME": "2024-12-17 21:08:35",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -2.96
+  },
+  {
+    "OCCTIME": "2024-12-17 21:52:56",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -6.8
+  },
+  {
+    "OCCTIME": "2024-12-18 12:12:10",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -13.33
+  },
+  {
+    "OCCTIME": "2024-12-18 20:29:16",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -4.79
+  },
+  {
+    "OCCTIME": "2024-12-19 20:49:46",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -8.12
+  },
+  {
+    "OCCTIME": "2024-12-19 14:05:49",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -21.78
+  },
+  {
+    "OCCTIME": "2024-12-20 13:27:20",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -12.45
+  },
+  {
+    "OCCTIME": "2024-12-20 18:21:36",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.84
+  },
+  {
+    "OCCTIME": "2024-12-21 18:38:18",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -23.25
+  },
+  {
+    "OCCTIME": "2024-12-21 17:58:25",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -6.41
+  },
+  {
+    "OCCTIME": "2024-12-22 12:33:14",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -20.06
+  },
+  {
+    "OCCTIME": "2024-12-22 08:22:06",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -16.53
+  },
+  {
+    "OCCTIME": "2024-12-23 22:46:30",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -19.53
+  },
+  {
+    "OCCTIME": "2024-12-23 12:03:48",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -2.54
+  },
+  {
+    "OCCTIME": "2024-12-24 10:07:24",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2024-12-24 20:37:33",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.59
+  },
+  {
+    "OCCTIME": "2024-12-25 18:16:34",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -9.81
+  },
+  {
+    "OCCTIME": "2024-12-25 20:26:25",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -23.25
+  },
+  {
+    "OCCTIME": "2024-12-26 18:47:26",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -10.21
+  },
+  {
+    "OCCTIME": "2024-12-26 20:22:54",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.64
+  },
+  {
+    "OCCTIME": "2024-12-27 10:19:10",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -25.02
+  },
+  {
+    "OCCTIME": "2024-12-27 19:50:01",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -6.49
+  },
+  {
+    "OCCTIME": "2024-12-28 19:04:01",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -23.44
+  },
+  {
+    "OCCTIME": "2024-12-28 21:09:44",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -8.9
+  },
+  {
+    "OCCTIME": "2024-12-29 17:47:37",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -24.3
+  },
+  {
+    "OCCTIME": "2024-12-29 18:46:34",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -24.53
+  },
+  {
+    "OCCTIME": "2024-12-30 10:11:44",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -7.09
+  },
+  {
+    "OCCTIME": "2024-12-30 21:20:20",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -23.15
+  },
+  {
+    "OCCTIME": "2024-12-31 20:13:38",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -5.24
+  },
+  {
+    "OCCTIME": "2024-12-31 20:10:27",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -22.62
+  },
+  {
+    "OCCTIME": "2025-01-01 12:27:51",
+    "MERCNAME": "寿司",
+    "TRANAMT": -14.38
+  },
+  {
+    "OCCTIME": "2025-01-01 13:45:10",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -16.06
+  },
+  {
+    "OCCTIME": "2025-01-02 21:09:37",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -27.02
+  },
+  {
+    "OCCTIME": "2025-01-02 16:18:22",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -9.97
+  },
+  {
+    "OCCTIME": "2025-01-03 15:28:33",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -5.63
+  },
+  {
+    "OCCTIME": "2025-01-03 13:07:15",
+    "MERCNAME": "寿司",
+    "TRANAMT": -8.44
+  },
+  {
+    "OCCTIME": "2025-01-04 23:40:01",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -1.61
+  },
+  {
+    "OCCTIME": "2025-01-04 07:32:14",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -3.58
+  },
+  {
+    "OCCTIME": "2025-01-05 20:37:58",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -7.82
+  },
+  {
+    "OCCTIME": "2025-01-05 08:43:31",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -22.24
+  },
+  {
+    "OCCTIME": "2025-01-06 10:39:00",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -2.52
+  },
+  {
+    "OCCTIME": "2025-01-06 19:03:31",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -2.88
+  },
+  {
+    "OCCTIME": "2025-01-07 21:11:12",
+    "MERCNAME": "寿司",
+    "TRANAMT": -12.57
+  },
+  {
+    "OCCTIME": "2025-01-07 11:31:19",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -13.1
+  },
+  {
+    "OCCTIME": "2025-01-08 15:37:32",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -7.86
+  },
+  {
+    "OCCTIME": "2025-01-08 11:14:47",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -24.63
+  },
+  {
+    "OCCTIME": "2025-01-09 21:43:57",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2025-01-09 07:15:29",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -21.35
+  },
+  {
+    "OCCTIME": "2025-01-10 08:35:53",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -22.63
+  },
+  {
+    "OCCTIME": "2025-01-10 12:54:02",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -9.75
+  },
+  {
+    "OCCTIME": "2025-01-11 23:25:02",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -7.16
+  },
+  {
+    "OCCTIME": "2025-01-11 10:57:14",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -18.88
+  },
+  {
+    "OCCTIME": "2025-01-12 11:55:23",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -6.41
+  },
+  {
+    "OCCTIME": "2025-01-12 18:22:27",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -29.72
+  },
+  {
+    "OCCTIME": "2025-01-13 13:56:48",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -12.37
+  },
+  {
+    "OCCTIME": "2025-01-13 18:08:10",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -29.4
+  },
+  {
+    "OCCTIME": "2025-01-14 12:21:47",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -20.44
+  },
+  {
+    "OCCTIME": "2025-01-14 23:14:43",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -23.71
+  },
+  {
+    "OCCTIME": "2025-01-15 19:01:43",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -28.23
+  },
+  {
+    "OCCTIME": "2025-01-15 22:17:42",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -2.43
+  },
+  {
+    "OCCTIME": "2025-01-16 12:08:27",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -22.34
+  },
+  {
+    "OCCTIME": "2025-01-16 11:51:22",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -5.7
+  },
+  {
+    "OCCTIME": "2025-01-17 18:36:57",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -27.69
+  },
+  {
+    "OCCTIME": "2025-01-17 06:48:55",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -22.51
+  },
+  {
+    "OCCTIME": "2025-01-18 21:36:52",
+    "MERCNAME": "寿司",
+    "TRANAMT": -19.64
+  },
+  {
+    "OCCTIME": "2025-01-18 11:41:22",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -5.27
+  },
+  {
+    "OCCTIME": "2025-01-19 07:32:38",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -18.66
+  },
+  {
+    "OCCTIME": "2025-01-19 06:34:20",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -8.88
+  },
+  {
+    "OCCTIME": "2025-01-20 20:01:35",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -6.39
+  },
+  {
+    "OCCTIME": "2025-01-20 14:28:01",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -15.84
+  },
+  {
+    "OCCTIME": "2025-01-21 18:04:45",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -21.37
+  },
+  {
+    "OCCTIME": "2025-01-21 18:05:48",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -8.36
+  },
+  {
+    "OCCTIME": "2025-01-22 11:16:45",
+    "MERCNAME": "寿司",
+    "TRANAMT": -4.53
+  },
+  {
+    "OCCTIME": "2025-01-22 19:17:09",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -10.32
+  },
+  {
+    "OCCTIME": "2025-01-23 11:03:29",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -29.79
+  },
+  {
+    "OCCTIME": "2025-01-23 13:46:12",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -3.31
+  },
+  {
+    "OCCTIME": "2025-01-24 18:29:38",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -18.96
+  },
+  {
+    "OCCTIME": "2025-01-24 13:32:46",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2025-01-25 12:58:28",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -4.67
+  },
+  {
+    "OCCTIME": "2025-01-25 21:51:10",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -13.11
+  },
+  {
+    "OCCTIME": "2025-01-26 18:41:17",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -2.86
+  },
+  {
+    "OCCTIME": "2025-01-26 21:47:15",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -20.31
+  },
+  {
+    "OCCTIME": "2025-01-27 18:25:37",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -27.92
+  },
+  {
+    "OCCTIME": "2025-01-27 13:30:50",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -8.97
+  },
+  {
+    "OCCTIME": "2025-01-28 12:54:02",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -13.87
+  },
+  {
+    "OCCTIME": "2025-01-28 15:58:00",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -20.95
+  },
+  {
+    "OCCTIME": "2025-01-29 16:47:57",
+    "MERCNAME": "寿司",
+    "TRANAMT": -14.84
+  },
+  {
+    "OCCTIME": "2025-01-29 13:17:09",
+    "MERCNAME": "寿司",
+    "TRANAMT": -20.15
+  },
+  {
+    "OCCTIME": "2025-01-30 18:00:18",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-01-30 23:47:11",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -10.67
+  },
+  {
+    "OCCTIME": "2025-01-31 15:14:32",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -17.33
+  },
+  {
+    "OCCTIME": "2025-01-31 12:55:29",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -23.86
+  },
+  {
+    "OCCTIME": "2025-02-01 13:29:46",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -20.11
+  },
+  {
+    "OCCTIME": "2025-02-01 13:05:40",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -10.61
+  },
+  {
+    "OCCTIME": "2025-02-02 06:00:05",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-02-02 21:49:18",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-02-03 14:53:12",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-02-03 07:45:53",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -1.19
+  },
+  {
+    "OCCTIME": "2025-02-04 09:04:01",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -9.41
+  },
+  {
+    "OCCTIME": "2025-02-04 18:33:49",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -17.45
+  },
+  {
+    "OCCTIME": "2025-02-05 09:57:55",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -11.37
+  },
+  {
+    "OCCTIME": "2025-02-05 11:36:44",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -28.91
+  },
+  {
+    "OCCTIME": "2025-02-06 13:47:19",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -27.11
+  },
+  {
+    "OCCTIME": "2025-02-06 11:39:50",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -18.48
+  },
+  {
+    "OCCTIME": "2025-02-07 11:27:37",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -14.28
+  },
+  {
+    "OCCTIME": "2025-02-07 18:48:28",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-02-08 12:15:55",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -18.9
+  },
+  {
+    "OCCTIME": "2025-02-08 09:47:13",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -25.34
+  },
+  {
+    "OCCTIME": "2025-02-09 15:48:51",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -26.37
+  },
+  {
+    "OCCTIME": "2025-02-09 20:47:28",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -28.47
+  },
+  {
+    "OCCTIME": "2025-02-10 10:14:01",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -10.56
+  },
+  {
+    "OCCTIME": "2025-02-10 17:29:49",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -14.81
+  },
+  {
+    "OCCTIME": "2025-02-11 11:03:39",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -10.03
+  },
+  {
+    "OCCTIME": "2025-02-11 06:29:28",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -14.98
+  },
+  {
+    "OCCTIME": "2025-02-12 16:12:32",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -8.06
+  },
+  {
+    "OCCTIME": "2025-02-12 13:10:19",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.4
+  },
+  {
+    "OCCTIME": "2025-02-13 20:23:20",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -7.82
+  },
+  {
+    "OCCTIME": "2025-02-13 12:42:01",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -8.57
+  },
+  {
+    "OCCTIME": "2025-02-14 12:45:34",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -21.3
+  },
+  {
+    "OCCTIME": "2025-02-14 08:43:03",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -16.33
+  },
+  {
+    "OCCTIME": "2025-02-15 13:57:57",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -5.98
+  },
+  {
+    "OCCTIME": "2025-02-15 21:44:28",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -27.39
+  },
+  {
+    "OCCTIME": "2025-02-16 14:29:33",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -21.05
+  },
+  {
+    "OCCTIME": "2025-02-16 23:06:52",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -15.98
+  },
+  {
+    "OCCTIME": "2025-02-17 11:21:54",
+    "MERCNAME": "寿司",
+    "TRANAMT": -17.39
+  },
+  {
+    "OCCTIME": "2025-02-17 11:38:41",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -16.29
+  },
+  {
+    "OCCTIME": "2025-02-18 18:30:57",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -21.56
+  },
+  {
+    "OCCTIME": "2025-02-18 19:48:33",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -1.28
+  },
+  {
+    "OCCTIME": "2025-02-19 13:11:04",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -7.99
+  },
+  {
+    "OCCTIME": "2025-02-19 14:05:58",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -13.51
+  },
+  {
+    "OCCTIME": "2025-02-20 18:05:49",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -25.61
+  },
+  {
+    "OCCTIME": "2025-02-20 06:37:46",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -13.04
+  },
+  {
+    "OCCTIME": "2025-02-21 16:04:32",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -16.03
+  },
+  {
+    "OCCTIME": "2025-02-21 12:47:19",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -19.93
+  },
+  {
+    "OCCTIME": "2025-02-22 19:13:04",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -23.39
+  },
+  {
+    "OCCTIME": "2025-02-22 08:27:19",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -17.2
+  },
+  {
+    "OCCTIME": "2025-02-23 13:59:07",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -3.64
+  },
+  {
+    "OCCTIME": "2025-02-23 11:28:45",
+    "MERCNAME": "寿司",
+    "TRANAMT": -24.32
+  },
+  {
+    "OCCTIME": "2025-02-24 09:30:25",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -26.42
+  },
+  {
+    "OCCTIME": "2025-02-24 08:34:16",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2025-02-25 20:31:32",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -13.61
+  },
+  {
+    "OCCTIME": "2025-02-25 13:36:57",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -7.42
+  },
+  {
+    "OCCTIME": "2025-02-26 14:06:17",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -15.69
+  },
+  {
+    "OCCTIME": "2025-02-26 06:53:12",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -25.82
+  },
+  {
+    "OCCTIME": "2025-02-27 08:22:02",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -15.36
+  },
+  {
+    "OCCTIME": "2025-02-27 19:23:27",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-02-28 21:19:23",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -2.9
+  },
+  {
+    "OCCTIME": "2025-02-28 12:51:55",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -16.27
+  },
+  {
+    "OCCTIME": "2025-03-01 15:38:17",
+    "MERCNAME": "寿司",
+    "TRANAMT": -15.84
+  },
+  {
+    "OCCTIME": "2025-03-01 16:59:34",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -27.09
+  },
+  {
+    "OCCTIME": "2025-03-02 10:16:36",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -10.7
+  },
+  {
+    "OCCTIME": "2025-03-02 21:43:01",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -22.61
+  },
+  {
+    "OCCTIME": "2025-03-03 21:52:56",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -15.05
+  },
+  {
+    "OCCTIME": "2025-03-03 07:22:16",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -4.5
+  },
+  {
+    "OCCTIME": "2025-03-04 20:42:08",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -20.29
+  },
+  {
+    "OCCTIME": "2025-03-04 12:41:07",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -16.56
+  },
+  {
+    "OCCTIME": "2025-03-05 11:48:34",
+    "MERCNAME": "寿司",
+    "TRANAMT": -27.71
+  },
+  {
+    "OCCTIME": "2025-03-05 11:15:23",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -9.47
+  },
+  {
+    "OCCTIME": "2025-03-06 15:28:00",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -11.83
+  },
+  {
+    "OCCTIME": "2025-03-06 18:48:19",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -3.92
+  },
+  {
+    "OCCTIME": "2025-03-07 09:09:56",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -26.0
+  },
+  {
+    "OCCTIME": "2025-03-07 14:25:11",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -19.61
+  },
+  {
+    "OCCTIME": "2025-03-08 21:44:20",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -13.67
+  },
+  {
+    "OCCTIME": "2025-03-08 16:17:32",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -8.6
+  },
+  {
+    "OCCTIME": "2025-03-09 11:21:23",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -10.95
+  },
+  {
+    "OCCTIME": "2025-03-09 15:19:32",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -4.11
+  },
+  {
+    "OCCTIME": "2025-03-10 09:39:40",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -15.08
+  },
+  {
+    "OCCTIME": "2025-03-10 20:30:53",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -21.38
+  },
+  {
+    "OCCTIME": "2025-03-11 21:10:13",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -17.11
+  },
+  {
+    "OCCTIME": "2025-03-11 21:59:24",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -5.2
+  },
+  {
+    "OCCTIME": "2025-03-12 08:54:53",
+    "MERCNAME": "土豆粉系列",
+    "TRANAMT": -3.15
+  },
+  {
+    "OCCTIME": "2025-03-12 11:29:09",
+    "MERCNAME": "寿司",
+    "TRANAMT": -13.23
+  },
+  {
+    "OCCTIME": "2025-03-13 08:57:28",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -27.99
+  },
+  {
+    "OCCTIME": "2025-03-13 20:47:23",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -22.28
+  },
+  {
+    "OCCTIME": "2025-03-14 07:34:47",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -16.07
+  },
+  {
+    "OCCTIME": "2025-03-14 07:01:24",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -10.79
+  },
+  {
+    "OCCTIME": "2025-03-15 06:22:57",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -22.39
+  },
+  {
+    "OCCTIME": "2025-03-15 10:56:02",
+    "MERCNAME": "",
+    "TRANAMT": 200
+  },
+  {
+    "OCCTIME": "2025-03-16 20:37:03",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -3.39
+  },
+  {
+    "OCCTIME": "2025-03-16 18:43:45",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -27.91
+  },
+  {
+    "OCCTIME": "2025-03-17 21:26:21",
+    "MERCNAME": "寿司",
+    "TRANAMT": -9.55
+  },
+  {
+    "OCCTIME": "2025-03-17 11:43:20",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -23.22
+  },
+  {
+    "OCCTIME": "2025-03-18 18:38:47",
+    "MERCNAME": "梧桐美润水饺",
+    "TRANAMT": -3.14
+  },
+  {
+    "OCCTIME": "2025-03-18 21:48:42",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -4.57
+  },
+  {
+    "OCCTIME": "2025-03-19 13:30:20",
+    "MERCNAME": "",
+    "TRANAMT": 100
+  },
+  {
+    "OCCTIME": "2025-03-19 13:19:53",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -7.55
+  },
+  {
+    "OCCTIME": "2025-03-20 20:50:26",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -12.32
+  },
+  {
+    "OCCTIME": "2025-03-20 19:41:39",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -29.37
+  },
+  {
+    "OCCTIME": "2025-03-21 09:19:48",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -22.56
+  },
+  {
+    "OCCTIME": "2025-03-21 10:03:33",
+    "MERCNAME": "时光水吧",
+    "TRANAMT": -20.53
+  },
+  {
+    "OCCTIME": "2025-03-22 10:25:24",
+    "MERCNAME": "寿司",
+    "TRANAMT": -12.59
+  },
+  {
+    "OCCTIME": "2025-03-22 11:45:18",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -1.86
+  },
+  {
+    "OCCTIME": "2025-03-23 16:54:30",
+    "MERCNAME": "凉皮饸络组",
+    "TRANAMT": -29.36
+  },
+  {
+    "OCCTIME": "2025-03-23 13:17:43",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -27.53
+  },
+  {
+    "OCCTIME": "2025-03-24 11:38:38",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -25.97
+  },
+  {
+    "OCCTIME": "2025-03-24 13:44:22",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -9.69
+  },
+  {
+    "OCCTIME": "2025-03-25 16:32:04",
+    "MERCNAME": "砂锅",
+    "TRANAMT": -28.33
+  },
+  {
+    "OCCTIME": "2025-03-25 13:08:53",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -11.6
+  },
+  {
+    "OCCTIME": "2025-03-26 11:38:06",
+    "MERCNAME": "凉菜",
+    "TRANAMT": -23.76
+  },
+  {
+    "OCCTIME": "2025-03-26 12:39:49",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -25.74
+  },
+  {
+    "OCCTIME": "2025-03-27 13:28:59",
+    "MERCNAME": "寿司",
+    "TRANAMT": -17.17
+  },
+  {
+    "OCCTIME": "2025-03-27 19:04:56",
+    "MERCNAME": "西14西15东12浴室",
+    "TRANAMT": -6.82
+  },
+  {
+    "OCCTIME": "2025-03-28 07:33:31",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -4.91
+  },
+  {
+    "OCCTIME": "2025-03-28 11:24:49",
+    "MERCNAME": "寿司",
+    "TRANAMT": -26.8
+  },
+  {
+    "OCCTIME": "2025-03-29 20:55:31",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -16.72
+  },
+  {
+    "OCCTIME": "2025-03-29 13:19:20",
+    "MERCNAME": "面夫子系列",
+    "TRANAMT": -12.08
+  },
+  {
+    "OCCTIME": "2025-03-30 20:49:12",
+    "MERCNAME": "梧晓桐便利店",
+    "TRANAMT": -21.5
+  },
+  {
+    "OCCTIME": "2025-03-30 18:28:37",
+    "MERCNAME": "库迪咖啡",
+    "TRANAMT": -19.79
+  },
+  {
+    "OCCTIME": "2025-03-31 09:44:33",
+    "MERCNAME": "民族风味小吃",
+    "TRANAMT": -25.08
+  },
+  {
+    "OCCTIME": "2025-03-31 11:22:48",
+    "MERCNAME": "寿司",
+    "TRANAMT": -8.92
+  },
+  {
+    "OCCTIME": "2025-04-01 12:52:45",
+    "MERCNAME": "肠粉系列",
+    "TRANAMT": -7.39
+  },
+  {
+    "OCCTIME": "2025-04-01 14:00:45",
+    "MERCNAME": "七彩阁浴室",
+    "TRANAMT": -19.57
+  }
+]
