@@ -95,7 +95,7 @@ impl Fetch {
     fn get_help_msg(&self) -> HelpMsg {
         let mut help: HelpMsg = vec![
             HelpEntry::new_plain("Move focus: hjkl"),
-            HelpEntry::new('e', "Edit accnout & cookie"),
+            HelpEntry::new('e', "Edit account & cookie"),
             HelpEntry::new('r', "Refresh local db count"),
             HelpEntry::new(KeyCode::Esc, "Back"),
             HelpEntry::new(' ', "Start fetch"),

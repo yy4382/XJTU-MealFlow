@@ -241,6 +241,7 @@ mod test {
         page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
         assert_eq!(
             page.manager.get_account_cookie_may_empty().unwrap().0,
+            // cSpell:ignore aklj
             "aklj"
         );
     }

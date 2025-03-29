@@ -529,6 +529,7 @@ pub mod test {
         seq.iter()
             .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
 
+        // cSpell:ignore acccb
         assert_eq!(page.content, "acccb")
     }
 
