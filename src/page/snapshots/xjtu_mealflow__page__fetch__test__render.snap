@@ -20,5 +20,5 @@ expression: terminal.backend()
 "                                                                                                                        "
 "                                                                                                                        "
 "╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮"
-"│ Move focus: hjkl | Edit accnout & cookie: e | Refresh local db count: r | Back: esc | Start fetch: space | Start inp │"
+"│ Move focus: hjkl | Edit account & cookie: e | Refresh local db count: r | Back: esc | Start fetch: space | Start inp │"
 "╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯"
