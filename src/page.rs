@@ -34,4 +34,12 @@ pub trait Page: Send + Sync {
             self.update(action);
         }
     }
+
+    #[cfg(test)]
+    fn event_loop_once_with_action(&mut self, rx: &mut UnboundedReceiver<Action>, action: Action) {
+        self.update(action);
+        while let Ok(action) = rx.try_recv() {
+            self.update(action);
+        }
+    }
 }
