@@ -408,6 +408,10 @@ pub mod test {
         }
 
         fn update(&mut self, action: Action) {
+            if let Action::SwitchInputMode(mode) = &action {
+                self.inputting = *mode;
+            };
+
             if let Action::TestPage(TestInputPageAction::SetFocus(focus)) = &action {
                 self.tx.send(self.input.get_switch_mode_action(if *focus {
                     InputMode::Focused
@@ -432,6 +436,19 @@ pub mod test {
         let mut page = TestInputPage::new(auto_submit, tx.clone());
         page.init();
         (page, rx)
+    }
+
+    #[test]
+    fn input_mode_change() {
+        let (mut page, mut rx) = get_test_page(false);
+        assert!(!page.inputting);
+        assert!(!page.input.inputting);
+        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(true));
+        assert!(page.inputting);
+        assert!(page.input.inputting);
+        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(false));
+        assert!(!page.inputting);
+        assert!(!page.input.inputting);
     }
 
     #[test]

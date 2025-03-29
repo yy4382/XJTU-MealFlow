@@ -454,6 +454,16 @@ mod test {
     }
 
     #[test]
+    fn test_input_mode_change() {
+        let (mut rx, mut page) = get_test_objs();
+        assert!(!page.input_mode);
+        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(true));
+        assert!(page.input_mode);
+        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(false));
+        assert!(!page.input_mode);
+    }
+
+    #[test]
     fn test_user_input() {
         let (mut rx, mut page) = get_test_objs();
         page.event_loop_once(&mut rx, Event::Key(KeyEvent::from('k').into()));

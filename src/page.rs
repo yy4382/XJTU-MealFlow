@@ -35,7 +35,6 @@ pub trait Page: Send + Sync {
         }
     }
 
-
     #[cfg(test)]
     fn event_loop_once_with_action(&mut self, rx: &mut UnboundedReceiver<Action>, action: Action) {
         self.update(action);
