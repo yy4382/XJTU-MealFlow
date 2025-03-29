@@ -1,0 +1,20 @@
+{
+  "issucceed": false,
+  "name": null,
+  "total": 2000,
+  "tranamt": 0,
+  "tranamt1": 0,
+  "tranamt2": 0,
+  "parm1": null,
+  "parm2": null,
+  "trannum": 0,
+  "rows": [
+    {
+      "OCCTIME": "2025-03-24 13:13:28",
+      "MERCNAME": "库迪咖啡                                ",
+      "TRANAMT": -4,
+      "TRANNAME": "电子账户消费                            "
+    }
+  ],
+  "footer": null
+}

@@ -9,7 +9,7 @@ use rusqlite::{Connection, params};
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
-    pub id: u64,
+    pub id: i64,
     pub time: DateTime<Local>,
     pub amount: f64,
     pub merchant: String,

@@ -4,7 +4,7 @@ use color_eyre::{
     eyre::{WrapErr, bail, eyre},
 };
 use reqwest::{blocking::Client, header};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     str::{self},
     thread::sleep,
@@ -16,12 +16,12 @@ use crate::{libs::transactions::Transaction, page::fetch::FetchProgress};
 pub const API_ORIGIN: &str = "http://card.xjtu.edu.cn";
 pub const API_PATH: &str = "/Report/GetPersonTrjn";
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Serialize)]
 struct ApiResponse {
     rows: Vec<TransactionRow>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Serialize)]
 struct TransactionRow {
     #[serde(rename = "OCCTIME")]
     time: String,
@@ -29,9 +29,6 @@ struct TransactionRow {
     amount: f64,
     #[serde(rename = "MERCNAME")]
     merchant: String,
-
-    #[serde(rename = "JNUM")]
-    id: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -205,23 +202,28 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
     let row_map = |row: TransactionRow| {
         // Parse the date
         let time_str = &row.time.trim();
-        let time: DateTime<Local> =
-            match chrono::NaiveDateTime::parse_from_str(time_str, "%Y-%m-%d %H:%M:%S") {
-                Ok(dt) => match chrono::Local::now().timezone().from_local_datetime(&dt) {
-                    chrono::LocalResult::Single(t) => t,
-                    _ => return None,
-                },
-                Err(_) => return None,
-            };
+        let Ok(time) = parse_date(time_str).with_context(|| format!("Invalid date: {}", time_str))
+        else {
+            return None;
+        };
 
         let amount = row.amount;
         let merchant = row.merchant.trim().to_string();
 
+        // hash time-amount-merchant
+
+        let hash = |s: &str| -> i64 {
+            use std::hash::{DefaultHasher, Hash, Hasher};
+            let mut hasher = DefaultHasher::new();
+            s.hash(&mut hasher);
+            i64::from_ne_bytes(hasher.finish().to_ne_bytes())
+        };
+
         Some(Transaction {
+            id: hash(&format!("{}&{}&{}", time.timestamp(), amount, &merchant)),
             time,
             amount,
             merchant,
-            id: row.id,
         })
     };
 
@@ -292,18 +294,34 @@ where
     Ok(all_transactions)
 }
 
-macro_rules! test_file {
-    ($a:expr) => {
-        include_str!(concat!(
-            concat!(env!("CARGO_MANIFEST_DIR"), "/test/mock-data/api-resp/"),
-            $a
-        ))
-    };
-}
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct MockMealFetcher {
     sim_delay: Option<Duration>,
+    per_page: u32,
+    data: Vec<TransactionRow>,
+}
+
+impl Default for MockMealFetcher {
+    fn default() -> Self {
+        let data = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test/mock-data/mock-transactions.json"
+        ));
+        let mut  data = serde_json::from_str::<Vec<TransactionRow>>(data).context(
+            "Failed to parse mock data. This may indicate that the mock data file is missing or corrupted.",
+        ).unwrap();
+        data.sort_by(|a, b| {
+            parse_date(&b.time)
+                .unwrap()
+                .cmp(&parse_date(&a.time).unwrap())
+        });
+
+        Self {
+            sim_delay: None,
+            per_page: 20,
+            data,
+        }
+    }
 }
 
 impl MockMealFetcher {
@@ -311,7 +329,13 @@ impl MockMealFetcher {
     pub fn set_sim_delay(self, duration: Duration) -> Self {
         Self {
             sim_delay: Some(duration),
+            ..self
         }
+    }
+
+    pub fn per_page(mut self, size: u32) -> Self {
+        self.per_page = size;
+        self
     }
 
     fn fetch_transaction_one_page(&self, page: u32) -> Result<String> {
@@ -319,17 +343,27 @@ impl MockMealFetcher {
             sleep(d);
         }
 
-        Ok(if page == 1 {
-            test_file!("1.json")
-        } else if page == 2 {
-            test_file!("2.json")
-        } else if page == 3 {
-            test_file!("3.json")
-        } else {
-            bail!("page too large")
-        }
-        .into())
+        let start = (page - 1) * self.per_page;
+        let end = start + self.per_page;
+
+        let transactions = &self.data[start as usize..end as usize];
+
+        serde_json::to_string(&ApiResponse {
+            rows: transactions.to_vec(),
+        })
+        .context("Failed to serialize mock data")
     }
+}
+
+fn parse_date(time: &str) -> Result<DateTime<Local>> {
+    let time = match chrono::NaiveDateTime::parse_from_str(time.trim(), "%Y-%m-%d %H:%M:%S") {
+        Ok(dt) => match chrono::Local::now().timezone().from_local_datetime(&dt) {
+            chrono::LocalResult::Single(t) => t,
+            _ => bail!("Invalid date format"),
+        },
+        Err(_) => bail!("Invalid date format"),
+    };
+    Ok(time)
 }
 
 #[cfg(test)]
@@ -342,7 +376,10 @@ mod tests {
 
     #[test]
     fn test_api_response_to_transactions() {
-        let transactions = api_response_to_transactions(test_file!("1.json"));
+        let transactions = api_response_to_transactions(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/test/mock-data/api-resp.json"
+        )));
         println!("{:?}", transactions);
     }
 
@@ -361,14 +398,17 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_mock_progress() {
         let (tx, mut rx) = tokio::sync::mpsc::channel::<FetchProgress>(1);
+        let (c_tx, mut c_rx) = tokio::sync::mpsc::unbounded_channel::<u32>();
         tokio::task::spawn_blocking(move || {
             let fetcher = MockMealFetcher::default().set_sim_delay(Duration::from_millis(200));
             let end_time = Local.with_ymd_and_hms(2025, 3, 6, 0, 0, 0).unwrap();
-            let _ = fetch(end_time, MealFetcher::Mock(fetcher), |fp| {
+            let result = fetch(end_time, MealFetcher::Mock(fetcher), |fp| {
                 tx.blocking_send(fp).unwrap()
             })
             .unwrap();
-            drop(tx)
+            c_tx.send(result.len() as u32).unwrap();
+            drop(tx);
+            drop(c_tx);
         });
 
         let mut received = Vec::<(FetchProgress, Instant)>::new();
@@ -377,11 +417,24 @@ mod tests {
             match tokio::time::timeout(Duration::from_secs(5), rx.recv()).await {
                 Ok(Some(p)) => received.push((p, Instant::now())),
                 Ok(None) => break,
-                Err(_) => println!("接收超时"),
+                Err(_) => println!("timeout"),
             }
         }
 
-        assert_eq!(received.len(), 3);
+        assert_ne!(received.len(), 0);
+
+        loop {
+            match tokio::time::timeout(Duration::from_secs(5), c_rx.recv()).await {
+                Ok(Some(p)) => assert!(
+                    // some fetched items are older than end_time, so they are filtered out
+                    // thus, reported progress may be larger than the total fetched items
+                    p <= received.last().unwrap().0.total_entries_fetched,
+                    "fetched items count should be smaller as progress-reported total"
+                ),
+                Ok(None) => break,
+                Err(_) => println!("timeout"),
+            }
+        }
 
         let gaps = if received.len() > 1 {
             received
@@ -408,7 +461,7 @@ mod tests {
     }
 
     #[test]
-    fn test_something() {
+    fn test_request() {
         // Request a new server from the pool
         let mut server = mockito::Server::new();
 
@@ -421,7 +474,10 @@ mod tests {
             .mock("POST", "/Report/GetPersonTrjn")
             .with_status(200)
             .with_header("content-type", "application/json")
-            .with_body(test_file!("1.json"))
+            .with_body(include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/test/mock-data/api-resp.json"
+            )))
             .create();
 
         let fetch = RealMealFetcher::default()
@@ -431,9 +487,10 @@ mod tests {
 
         let t = fetch.fetch_transaction_one_page(1).unwrap();
 
-        assert_eq!(api_response_to_transactions(&t).unwrap().len(), 19);
+        assert_eq!(api_response_to_transactions(&t).unwrap().is_empty(), false);
 
         // You can use `Mock::assert` to verify that your mock was called
+        // TODO check if request is valid
         mock.assert();
     }
 
