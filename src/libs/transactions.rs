@@ -186,25 +186,21 @@ impl TransactionManager {
         Ok(())
     }
 
-    pub fn get_account_cookie(&self) -> Result<(String, String)> {
-        let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT account, cookie FROM cookies")?;
-        let mut rows = stmt.query([])?;
-        let row = rows.next()?;
-        match row {
-            Some(row) => {
-                let account: String = row.get(0)?;
-                let cookie: String = row.get(1)?;
-                if account.is_empty() || cookie.is_empty() {
-                    bail!("Account or cookie is empty");
-                }
-                Ok((account, cookie))
-            }
-            None => bail!("No account and cookie found"),
-        }
+    pub fn update_hallticket(&self, hallticket: &str) -> Result<()> {
+        let cookie = format!("hallticket={}", hallticket);
+        self.update_cookie(&cookie)
     }
 
-    #[cfg(test)]
+    pub fn get_account_cookie(&self) -> Result<(String, String)> {
+        let (account, cookie) = self.get_account_cookie_may_empty()?;
+
+        if account.is_empty() || cookie.is_empty() {
+            bail!("Account or cookie is empty");
+        }
+
+        Ok((account, cookie))
+    }
+
     pub fn get_account_cookie_may_empty(&self) -> Result<(String, String)> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT account, cookie FROM cookies")?;

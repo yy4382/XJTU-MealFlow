@@ -25,7 +25,7 @@ pub struct CookieInput {
 
 impl CookieInput {
     pub fn new(action_tx: ActionSender, manager: TransactionManager, input_mode: bool) -> Self {
-        let (account, cookie) = manager.get_account_cookie().unwrap_or_default();
+        let (account, cookie) = manager.get_account_cookie_may_empty().unwrap_or_default();
         Self {
             state: Default::default(),
             manager,
