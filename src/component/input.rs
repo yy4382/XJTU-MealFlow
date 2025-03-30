@@ -383,7 +383,7 @@ pub mod test {
     }
 
     impl Page for TestInputPage {
-        fn render(&self, frame: &mut Frame) {
+        fn render(&mut self, frame: &mut Frame) {
             self.input.draw(frame, &frame.area());
         }
 

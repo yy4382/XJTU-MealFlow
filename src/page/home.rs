@@ -18,7 +18,7 @@ use ratatui::{
 pub struct Home {}
 
 impl Page for Home {
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
             .split(frame.area());
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_render() {
-        let page = get_test_page();
+        let mut page = get_test_page();
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
         terminal.draw(|frame| page.render(frame)).unwrap();
         assert_snapshot!(terminal.backend());

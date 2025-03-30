@@ -367,6 +367,19 @@ fn parse_date(time: &str) -> Result<DateTime<Local>> {
 }
 
 #[cfg(test)]
+pub mod test_utils {
+    use crate::libs::transactions::Transaction;
+
+    use super::{MockMealFetcher, api_response_to_transactions};
+
+    pub fn get_mock_data(count: u32) -> Vec<Transaction> {
+        let fetcher = MockMealFetcher::default().per_page(count);
+        let data = fetcher.fetch_transaction_one_page(1).unwrap();
+        api_response_to_transactions(&data).unwrap()
+    }
+}
+
+#[cfg(test)]
 mod tests {
 
     use chrono::Duration as CDuration;

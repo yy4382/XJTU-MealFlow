@@ -13,7 +13,7 @@ use tokio::sync::mpsc::UnboundedReceiver;
 
 pub trait Page: Send + Sync {
     /// Render the page
-    fn render(&self, frame: &mut Frame);
+    fn render(&mut self, frame: &mut Frame);
 
     /// Convert Events to Actions
     fn handle_events(&self, event: Event) -> Result<()>;

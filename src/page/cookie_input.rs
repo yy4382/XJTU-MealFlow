@@ -87,7 +87,7 @@ impl From<CookieInputAction> for Action {
 }
 
 impl Page for CookieInput {
-    fn render(&self, frame: &mut ratatui::Frame) {
+    fn render(&mut self, frame: &mut ratatui::Frame) {
         let chunks = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
             .split(frame.area());
@@ -262,7 +262,7 @@ mod test {
 
     #[test]
     fn test_cookie_input_render() {
-        let (_, page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
 
         terminal

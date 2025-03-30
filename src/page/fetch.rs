@@ -144,7 +144,7 @@ impl Focus {
 }
 
 impl Page for Fetch {
-    fn render(&self, frame: &mut ratatui::Frame) {
+    fn render(&mut self, frame: &mut ratatui::Frame) {
         let area = frame.area();
         let area = &Layout::default()
             .constraints([

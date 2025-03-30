@@ -8,12 +8,53 @@ use crate::{
 use super::Page;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
+use lazy_static::lazy_static;
 use ratatui::{
     Frame,
-    layout::{Alignment, Constraint, Layout},
-    style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    layout::{Constraint, Layout, Margin, Rect},
+    style::{Color, Modifier, Style, Stylize, palette::tailwind},
+    text::Text,
+    widgets::{
+        Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
+        TableState,
+    },
 };
+
+struct TableColors {
+    buffer_bg: Color,
+    header_bg: Color,
+    header_fg: Color,
+    row_fg: Color,
+    selected_row_style_fg: Color,
+    selected_column_style_fg: Color,
+    selected_cell_style_fg: Color,
+    normal_row_color: Color,
+    alt_row_color: Color,
+    // footer_border_color: Color,
+}
+
+impl Default for TableColors {
+    fn default() -> Self {
+        Self {
+            buffer_bg: tailwind::SLATE.c950,
+            header_bg: tailwind::BLUE.c900,
+            header_fg: tailwind::SLATE.c200,
+            row_fg: tailwind::SLATE.c200,
+            selected_row_style_fg: tailwind::BLUE.c400,
+            selected_column_style_fg: tailwind::BLUE.c400,
+            selected_cell_style_fg: tailwind::BLUE.c600,
+            normal_row_color: tailwind::SLATE.c950,
+            alt_row_color: tailwind::SLATE.c900,
+            // footer_border_color: tailwind::BLUE.c400,
+        }
+    }
+}
+
+lazy_static! {
+    static ref TABLE_COLORS: TableColors = TableColors::default();
+}
+
+const ITEM_HEIGHT: usize = 3;
 
 #[derive(Clone, Debug)]
 pub struct Transactions {
@@ -21,6 +62,9 @@ pub struct Transactions {
 
     tx: crate::actions::ActionSender,
     manager: TransactionManager,
+
+    table_state: TableState,
+    scroll_state: ScrollbarState,
 }
 
 impl Transactions {
@@ -29,6 +73,9 @@ impl Transactions {
             transactions: Default::default(),
             tx,
             manager,
+
+            table_state: TableState::default(),
+            scroll_state: ScrollbarState::default(),
         }
     }
 
@@ -46,6 +93,7 @@ impl Transactions {
 #[derive(Clone, Debug)]
 pub enum TransactionAction {
     LoadTransactions,
+    ChangeRowFocus(isize),
 }
 
 impl From<TransactionAction> for Action {
@@ -55,31 +103,14 @@ impl From<TransactionAction> for Action {
 }
 
 impl Page for Transactions {
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
         let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
         let rects = vertical.split(area);
 
-        frame.render_widget(
-            {
-                let transactions_str = self
-                    .transactions
-                    .iter()
-                    .fold(String::new(), |acc, x| acc + &format!("{:?}\n", x));
-                Paragraph::new(transactions_str)
-                    .block(
-                        Block::default()
-                            .title("Transactions")
-                            .title_alignment(Alignment::Center)
-                            .borders(Borders::ALL)
-                            .border_type(BorderType::Rounded),
-                    )
-                    .style(Style::default().fg(Color::Cyan))
-                    .alignment(Alignment::Center)
-            },
-            rects[0],
-        );
+        self.render_table(frame, rects[0]);
+        self.render_scrollbar(frame, rects[0]);
 
         self.get_help_msg().render(frame, rects[1]);
     }
@@ -89,6 +120,8 @@ impl Page for Transactions {
                 // navigate to fetch page
                 (_, KeyCode::Char('f')) => self.tx.send(Action::NavigateTo(NaviTarget::Fetch)),
                 (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
+                (_, KeyCode::Char('j')) => self.tx.send(TransactionAction::ChangeRowFocus(1)),
+                (_, KeyCode::Char('k')) => self.tx.send(TransactionAction::ChangeRowFocus(-1)),
                 _ => (),
             }
         };
@@ -100,6 +133,24 @@ impl Page for Transactions {
             match action {
                 TransactionAction::LoadTransactions => {
                     self.transactions = self.manager.fetch_all().unwrap();
+                    self.scroll_state = self
+                        .scroll_state
+                        .content_length(self.transactions.len() * ITEM_HEIGHT);
+                }
+                TransactionAction::ChangeRowFocus(index) => {
+                    let cur_index = self.table_state.selected().unwrap_or(0);
+                    let max = self.transactions.len();
+                    if max == 0 {
+                        return;
+                    }
+                    // add index to current index, wrap around from 0  to max
+                    let new_index = if index < 0 {
+                        (cur_index as isize + index + max as isize) as usize % max
+                    } else {
+                        (cur_index as isize + index) as usize % max
+                    };
+                    self.table_state.select(Some(new_index));
+                    self.scroll_state = self.scroll_state.position(new_index * ITEM_HEIGHT);
                 }
             }
         }
@@ -111,5 +162,131 @@ impl Page for Transactions {
 
     fn init(&mut self) {
         self.tx.send(TransactionAction::LoadTransactions)
+    }
+}
+
+impl Transactions {
+    fn render_table(&mut self, frame: &mut Frame, area: Rect) {
+        let header_style = Style::default()
+            .fg(TABLE_COLORS.header_fg)
+            .bg(TABLE_COLORS.header_bg);
+        let selected_row_style = Style::default()
+            .add_modifier(Modifier::REVERSED)
+            .fg(TABLE_COLORS.selected_row_style_fg);
+        let selected_col_style = Style::default().fg(TABLE_COLORS.selected_column_style_fg);
+        let selected_cell_style = Style::default()
+            .add_modifier(Modifier::REVERSED)
+            .fg(TABLE_COLORS.selected_cell_style_fg);
+
+        let header = ["金额", "时间", "商家"]
+            .into_iter()
+            .map(Cell::from)
+            .collect::<Row>()
+            .style(header_style)
+            .height(1);
+
+        let rows = self.transactions.iter().enumerate().map(|(i, t)| {
+            let color = match i % 2 {
+                0 => TABLE_COLORS.normal_row_color,
+                _ => TABLE_COLORS.alt_row_color,
+            };
+            Row::new(
+                vec![
+                    format!("\n{}\n", t.amount),
+                    format!("\n{}\n", t.time),
+                    format!("\n{}\n", t.merchant),
+                ]
+                .into_iter()
+                .map(|s| Cell::from(Text::from(s))),
+            )
+            .style(Style::new().fg(TABLE_COLORS.row_fg).bg(color))
+            .height(ITEM_HEIGHT as u16)
+        });
+        let bar = " █ ";
+        // FIXME use real width
+        let t = Table::new(rows, [20, 20, 20])
+            .header(header)
+            .row_highlight_style(selected_row_style)
+            .column_highlight_style(selected_col_style)
+            .cell_highlight_style(selected_cell_style)
+            .highlight_symbol(Text::from(vec!["".into(), bar.into(), "".into()]))
+            .bg(TABLE_COLORS.buffer_bg)
+            .highlight_spacing(HighlightSpacing::Always);
+
+        frame.render_stateful_widget(t, area, &mut self.table_state);
+    }
+
+    fn render_scrollbar(&mut self, frame: &mut Frame, area: Rect) {
+        frame.render_stateful_widget(
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(None)
+                .end_symbol(None),
+            area.inner(Margin {
+                vertical: 1,
+                horizontal: 1,
+            }),
+            &mut self.scroll_state,
+        );
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::libs::fetcher;
+
+    use super::*;
+    use insta::assert_snapshot;
+    use ratatui::{Terminal, backend::TestBackend};
+    use tokio::sync::mpsc::{self, UnboundedReceiver};
+
+    fn get_test_objs() -> (UnboundedReceiver<Action>, Transactions) {
+        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+
+        let manager = TransactionManager::new(None).unwrap();
+        let data = fetcher::test_utils::get_mock_data(50);
+        manager.insert(&data).unwrap();
+
+        let mut transaction = Transactions::new(tx.into(), manager);
+        transaction.init();
+
+        while let Ok(action) = rx.try_recv() {
+            transaction.update(action);
+        }
+
+        assert!(!transaction.transactions.is_empty());
+
+        (rx, transaction)
+    }
+
+    #[test]
+    fn navigation() {
+        let (mut rx, mut transaction) = get_test_objs();
+        assert_eq!(transaction.table_state.selected(), None);
+
+        transaction.event_loop_once(&mut rx, 'j'.into());
+        assert_eq!(transaction.table_state.selected(), Some(1));
+
+        transaction.event_loop_once(&mut rx, 'k'.into());
+        assert_eq!(transaction.table_state.selected(), Some(0));
+
+        transaction.event_loop_once(&mut rx, 'k'.into());
+        assert_eq!(
+            transaction.table_state.selected(),
+            Some(transaction.transactions.len() - 1)
+        );
+    }
+
+    #[test]
+    fn render() {
+        let (mut rx, mut transaction) = get_test_objs();
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+
+        terminal.draw(|frame| transaction.render(frame)).unwrap();
+        assert_snapshot!(terminal.backend());
+
+        transaction.event_loop_once(&mut rx, 'k'.into());
+        terminal.draw(|frame| transaction.render(frame)).unwrap();
+        assert_snapshot!(terminal.backend());
     }
 }
