@@ -192,11 +192,13 @@ impl App {
                             self.state.input_mode,
                         )
                         .client(if self.state.config.fetch.use_mock_data {
-                            MockMealFetcher::default().set_sim_delay(Duration::from_secs(1))
+                            MockMealFetcher::default()
+                                .set_sim_delay(Duration::from_secs(1))
+                                .per_page(50)
                         } else {
                             Default::default()
                         });
-                        
+
                         self.page = Box::new(fetch_page);
                     }
                     NaviTarget::Transaction => {
