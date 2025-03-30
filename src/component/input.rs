@@ -355,7 +355,7 @@ pub mod test {
 
     use crate::{
         component::Component,
-        page::Page,
+        page::{EventLoopParticipant, Page},
         utils::key_events::test_utils::{get_char_evt, get_key_evt},
     };
 
@@ -391,7 +391,7 @@ pub mod test {
         }
     }
 
-    impl Page for TestInputPage {
+    impl EventLoopParticipant for TestInputPage {
         fn handle_events(&self, event: Event) -> Result<()> {
             if !self.inputting {
                 if let Event::Key(key) = event {
@@ -429,7 +429,9 @@ pub mod test {
             };
             self.input.update(&action).unwrap();
         }
+    }
 
+    impl Page for TestInputPage {
         fn get_name(&self) -> String {
             "Test Input Page".into()
         }

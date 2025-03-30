@@ -20,7 +20,7 @@ use crate::{
     libs::{fetcher, transactions},
 };
 
-use super::{Page, WidgetExt};
+use super::{EventLoopParticipant, Page, WidgetExt};
 
 #[derive(Clone, Default, Debug)]
 pub enum FetchingState {
@@ -235,7 +235,7 @@ impl WidgetExt for Fetch {
     }
 }
 
-impl Page for Fetch {
+impl EventLoopParticipant for Fetch {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
         if let crate::tui::Event::Key(key) = event {
             if !self.input_mode {
@@ -346,7 +346,9 @@ impl Page for Fetch {
 
         self.input.update(&action).unwrap();
     }
+}
 
+impl Page for Fetch {
     fn get_name(&self) -> String {
         "Fetch".to_string()
     }

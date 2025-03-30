@@ -12,18 +12,24 @@ pub mod transactions;
 #[cfg(test)]
 use tokio::sync::mpsc::UnboundedReceiver;
 
-pub trait Page: Send + Sync + WidgetExt {
-    /// Convert Events to Actions
-    fn handle_events(&self, event: Event) -> Result<()>;
-
-    /// Perform Actions and update the state of the page
-    fn update(&mut self, action: Action);
-
+pub trait Page: Send + Sync + WidgetExt + EventLoopParticipant {
     /// Get the name of the page
     fn get_name(&self) -> String;
 
     /// Initialize the page
     fn init(&mut self) {}
+}
+
+pub(crate) trait WidgetExt {
+    fn render(&mut self, frame: &mut Frame, area: Rect);
+}
+
+pub(crate) trait EventLoopParticipant {
+    /// Handle events
+    fn handle_events(&self, event: Event) -> Result<()>;
+
+    /// Perform Actions and update the state of the page
+    fn update(&mut self, action: Action);
 
     #[cfg(test)]
     fn event_loop_once(&mut self, rx: &mut UnboundedReceiver<Action>, event: Event) {
@@ -40,8 +46,4 @@ pub trait Page: Send + Sync + WidgetExt {
             self.update(action);
         }
     }
-}
-
-pub(crate) trait WidgetExt {
-    fn render(&mut self, frame: &mut Frame, area: Rect);
 }

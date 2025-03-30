@@ -11,7 +11,7 @@ use crate::component::input::{InputComp, InputMode};
 use crate::libs::transactions::TransactionManager;
 use crate::utils::help_msg::{HelpEntry, HelpMsg};
 
-use super::{Page, WidgetExt};
+use super::{EventLoopParticipant, Page, WidgetExt};
 
 #[derive(Clone, Debug)]
 pub struct CookieInput {
@@ -106,7 +106,7 @@ impl WidgetExt for CookieInput {
     }
 }
 
-impl Page for CookieInput {
+impl EventLoopParticipant for CookieInput {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
         if let crate::tui::Event::Key(key) = &event {
             if !self.input_mode {
@@ -162,7 +162,9 @@ impl Page for CookieInput {
         self.account_input.update(&action).unwrap();
         self.cookie_input.update(&action).unwrap();
     }
+}
 
+impl Page for CookieInput {
     fn get_name(&self) -> String {
         "Cookie Input".to_string()
     }

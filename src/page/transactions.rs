@@ -7,7 +7,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::{Page, WidgetExt};
+use super::{EventLoopParticipant, Page, WidgetExt};
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use lazy_static::lazy_static;
@@ -119,7 +119,7 @@ impl WidgetExt for Transactions {
     }
 }
 
-impl Page for Transactions {
+impl EventLoopParticipant for Transactions {
     fn handle_events(&self, event: Event) -> Result<()> {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
@@ -163,7 +163,9 @@ impl Page for Transactions {
             }
         }
     }
+}
 
+impl Page for Transactions {
     fn get_name(&self) -> String {
         "Transactions".to_string()
     }

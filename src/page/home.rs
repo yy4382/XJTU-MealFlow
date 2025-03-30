@@ -5,7 +5,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::{Page, WidgetExt};
+use super::{EventLoopParticipant, Page, WidgetExt};
 use color_eyre::eyre::Result;
 use ratatui::{
     Frame,
@@ -47,15 +47,17 @@ impl WidgetExt for Home {
     }
 }
 
-impl Page for Home {
-    fn update(&mut self, _action: Action) {}
-
-    fn get_name(&self) -> String {
-        "Home".to_string()
-    }
-
+impl EventLoopParticipant for Home {
     fn handle_events(&self, _event: crate::tui::Event) -> Result<()> {
         Ok(())
+    }
+
+    fn update(&mut self, _action: Action) {}
+}
+
+impl Page for Home {
+    fn get_name(&self) -> String {
+        "Home".to_string()
     }
 }
 
