@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, FixedOffset, Local};
 use color_eyre::eyre::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -7,12 +7,12 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
-use tracing::{debug, info, instrument};
+use tracing::{info, instrument};
 
 use crate::{
     actions::{Action, ActionSender, NaviTarget},
     component::{Component, input::InputComp},
-    libs::fetcher::MealFetcher,
+    libs::{fetcher::MealFetcher, transactions::OFFSET_UTC_PLUS8},
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 use crate::{
@@ -33,12 +33,12 @@ pub enum FetchingState {
 pub struct FetchProgress {
     pub current_page: u32,
     pub total_entries_fetched: u32,
-    pub oldest_date: Option<DateTime<Local>>,
+    pub oldest_date: Option<DateTime<FixedOffset>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum FetchingAction {
-    StartFetching(DateTime<Local>),
+    StartFetching(DateTime<FixedOffset>),
     UpdateFetchStatus(FetchingState),
     InsertTransaction(Vec<transactions::Transaction>),
 
@@ -56,7 +56,7 @@ impl From<FetchingAction> for Action {
 pub struct Fetch {
     fetching_state: FetchingState,
     local_db_cnt: u64,
-    fetch_start_date: Option<DateTime<Local>>,
+    fetch_start_date: Option<DateTime<FixedOffset>>,
     current_focus: Focus,
 
     input: InputComp,
@@ -305,16 +305,19 @@ impl Page for Fetch {
                     self.fetch_start_date = match &self.current_focus {
                         Focus::P1Year => Some(
                             Local::now()
+                                .fixed_offset()
                                 .checked_sub_signed(chrono::Duration::days(365))
                                 .unwrap(),
                         ),
                         Focus::P1Month => Some(
                             Local::now()
+                                .fixed_offset()
                                 .checked_sub_signed(chrono::Duration::days(30))
                                 .unwrap(),
                         ),
                         Focus::P3Months => Some(
                             Local::now()
+                                .fixed_offset()
                                 .checked_sub_signed(chrono::Duration::days(90))
                                 .unwrap(),
                         ),
@@ -358,28 +361,19 @@ impl Page for Fetch {
 
 impl Fetch {
     #[instrument]
-    fn parse_user_input(input: &str) -> Option<DateTime<Local>> {
-        match chrono::NaiveDate::parse_from_str(input.trim(), "%Y-%m-%d") {
-            Ok(dt) => {
-                match chrono::Local::now()
-                    .timezone()
-                    .from_local_datetime(&dt.and_hms_opt(0, 0, 0).unwrap())
-                {
-                    chrono::LocalResult::Single(t) => Some(t),
-                    _ => {
-                        debug!("Invalid date input: {}", input);
-                        None
-                    }
-                }
-            }
-            Err(_) => {
-                debug!("Invalid date input: {}", input);
-                None
-            }
-        }
+    fn parse_user_input(input: &str) -> Option<DateTime<FixedOffset>> {
+        chrono::NaiveDate::parse_from_str(input, "%Y-%m-%d")
+            .ok()
+            .map(|d| {
+                d.and_hms_opt(0, 0, 0)
+                    .unwrap()
+                    .and_local_timezone(OFFSET_UTC_PLUS8)
+                    .single()
+                    .expect("Failed to convert to local timezone")
+            })
     }
 
-    fn fetch<T: Into<MealFetcher>>(tx: ActionSender, client: T, date: DateTime<Local>) {
+    fn fetch<T: Into<MealFetcher>>(tx: ActionSender, client: T, date: DateTime<FixedOffset>) {
         let client = client.into();
 
         let tx2 = tx.clone();
@@ -410,11 +404,16 @@ impl Fetch {
 #[cfg(test)]
 mod test {
 
+    use chrono::TimeZone as _;
     use insta::assert_snapshot;
     use ratatui::backend::TestBackend;
     use tokio::sync::mpsc::{self, UnboundedReceiver};
 
-    use crate::{libs::transactions::TransactionManager, tui::Event, utils::key_events::KeyEvent};
+    use crate::{
+        libs::transactions::{OFFSET_UTC_PLUS8, TransactionManager},
+        tui::Event,
+        utils::key_events::KeyEvent,
+    };
 
     use super::*;
     fn get_test_objs() -> (UnboundedReceiver<Action>, Fetch) {
@@ -476,7 +475,9 @@ mod test {
         });
         assert_eq!(
             page.fetch_start_date.unwrap(),
-            Local.with_ymd_and_hms(2025, 3, 2, 0, 0, 0).unwrap()
+            OFFSET_UTC_PLUS8
+                .with_ymd_and_hms(2025, 3, 2, 0, 0, 0)
+                .unwrap()
         );
         page.event_loop_once(&mut rx, KeyCode::Enter.into());
         assert!(!page.input_mode);
@@ -500,7 +501,9 @@ mod test {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Action>();
 
         let client = MealFetcher::Mock(fetcher::MockMealFetcher::default());
-        let date = Local.with_ymd_and_hms(2025, 03, 1, 0, 0, 0).unwrap();
+        let date = OFFSET_UTC_PLUS8
+            .with_ymd_and_hms(2025, 03, 1, 0, 0, 0)
+            .unwrap();
 
         Fetch::fetch(tx.into(), client, date);
 

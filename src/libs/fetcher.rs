@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, FixedOffset};
 use color_eyre::{
     Result, Section, SectionExt,
     eyre::{WrapErr, bail, eyre},
@@ -202,29 +202,14 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
     let row_map = |row: TransactionRow| {
         // Parse the date
         let time_str = &row.time.trim();
-        let Ok(time) = parse_date(time_str).with_context(|| format!("Invalid date: {}", time_str))
-        else {
+        let Ok(time) = Transaction::parse_to_fixed_utc_plus8(&time_str, "%Y-%m-%d %H:%M:%S") else {
             return None;
         };
 
         let amount = row.amount;
         let merchant = row.merchant.trim().to_string();
 
-        // hash time-amount-merchant
-
-        let hash = |s: &str| -> i64 {
-            use std::hash::{DefaultHasher, Hash, Hasher};
-            let mut hasher = DefaultHasher::new();
-            s.hash(&mut hasher);
-            i64::from_ne_bytes(hasher.finish().to_ne_bytes())
-        };
-
-        Some(Transaction {
-            id: hash(&format!("{}&{}&{}", time.timestamp(), amount, &merchant)),
-            time,
-            amount,
-            merchant,
-        })
+        Some(Transaction::new(amount, merchant, time))
     };
 
     Ok(api_response
@@ -236,7 +221,7 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
 }
 
 pub fn fetch<F>(
-    end_time: DateTime<Local>,
+    end_time: DateTime<FixedOffset>,
     client: MealFetcher,
     progress_cb: F,
 ) -> Result<Vec<Transaction>>
@@ -310,10 +295,17 @@ impl Default for MockMealFetcher {
         let mut  data = serde_json::from_str::<Vec<TransactionRow>>(data).context(
             "Failed to parse mock data. This may indicate that the mock data file is missing or corrupted.",
         ).unwrap();
+
+        let parse_date = |date_str: &str| {
+            let date =
+                Transaction::parse_to_fixed_utc_plus8(date_str, "%Y-%m-%d %H:%M:%S").unwrap();
+            date
+        };
+
         data.sort_by(|a, b| {
-            parse_date(&b.time)
-                .unwrap()
-                .cmp(&parse_date(&a.time).unwrap())
+            let a_time = parse_date(&a.time);
+            let b_time = parse_date(&b.time);
+            b_time.cmp(&a_time)
         });
 
         Self {
@@ -355,17 +347,6 @@ impl MockMealFetcher {
     }
 }
 
-fn parse_date(time: &str) -> Result<DateTime<Local>> {
-    let time = match chrono::NaiveDateTime::parse_from_str(time.trim(), "%Y-%m-%d %H:%M:%S") {
-        Ok(dt) => match chrono::Local::now().timezone().from_local_datetime(&dt) {
-            chrono::LocalResult::Single(t) => t,
-            _ => bail!("Invalid date format"),
-        },
-        Err(_) => bail!("Invalid date format"),
-    };
-    Ok(time)
-}
-
 #[cfg(test)]
 pub mod test_utils {
     use crate::libs::transactions::Transaction;
@@ -395,7 +376,11 @@ pub mod test_utils {
 mod tests {
 
     use chrono::Duration as CDuration;
+    use chrono::Local;
+    use chrono::TimeZone as _;
     use std::time::{Duration, Instant};
+
+    use crate::libs::transactions::OFFSET_UTC_PLUS8;
 
     use super::*;
 
@@ -411,7 +396,9 @@ mod tests {
     #[test]
     fn test_fetch_mock() {
         let fetcher = MockMealFetcher::default();
-        let end_time = Local.with_ymd_and_hms(2025, 3, 1, 0, 0, 0).unwrap();
+        let end_time = OFFSET_UTC_PLUS8
+            .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+            .unwrap();
 
         let transactions = fetch(end_time, MealFetcher::Mock(fetcher), |_| ()).unwrap();
         assert!(!transactions.is_empty());
@@ -426,7 +413,9 @@ mod tests {
         let (c_tx, mut c_rx) = tokio::sync::mpsc::unbounded_channel::<u32>();
         tokio::task::spawn_blocking(move || {
             let fetcher = MockMealFetcher::default().set_sim_delay(Duration::from_millis(200));
-            let end_time = Local.with_ymd_and_hms(2025, 3, 6, 0, 0, 0).unwrap();
+            let end_time = OFFSET_UTC_PLUS8
+                .with_ymd_and_hms(2025, 3, 6, 0, 0, 0)
+                .unwrap();
             let result = fetch(end_time, MealFetcher::Mock(fetcher), |fp| {
                 tx.blocking_send(fp).unwrap()
             })
@@ -526,7 +515,7 @@ mod tests {
 
         let cookie = std::env::var("XMF_COOKIE").unwrap();
         let account = std::env::var("XMF_ACCOUNT").unwrap();
-        let end_time = Local::now() - CDuration::days(3);
+        let end_time = Local::now().fixed_offset() - CDuration::days(7);
         let fetch = RealMealFetcher::default().account(account).cookie(cookie);
 
         let transactions = super::fetch(end_time, MealFetcher::Real(fetch), |_| ()).unwrap();

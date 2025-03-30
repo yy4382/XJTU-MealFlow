@@ -3,16 +3,50 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use chrono::{DateTime, Local};
-use color_eyre::eyre::{Context, Result, bail};
+use chrono::{DateTime, FixedOffset};
+use color_eyre::eyre::{Context, ContextCompat, Result, bail};
 use rusqlite::{Connection, params};
 
 #[derive(Debug, Clone)]
 pub struct Transaction {
     pub id: i64,
-    pub time: DateTime<Local>,
+    /// Time of the transaction in UTC+8
+    pub time: DateTime<FixedOffset>,
     pub amount: f64,
     pub merchant: String,
+}
+
+pub const OFFSET_UTC_PLUS8: FixedOffset =
+    FixedOffset::east_opt(8 * 3600).expect("Failed to create FixedOffset +8");
+
+impl Transaction {
+    pub fn new(amount: f64, merchant: String, time: DateTime<FixedOffset>) -> Self {
+        Transaction {
+            id: Transaction::hash(&format!("{}&{}&{}", time.timestamp(), amount, &merchant)),
+            time,
+            amount,
+            merchant,
+        }
+    }
+
+    /// Parse a date string in UTC+8 timezone
+    pub fn parse_to_fixed_utc_plus8(s: &str, format: &str) -> Result<DateTime<FixedOffset>> {
+        let naive_dt = chrono::NaiveDateTime::parse_from_str(s, format).with_context(|| {
+            format!("Failed to parse date string: {} with format: {}", s, format)
+        })?;
+
+        naive_dt
+            .and_local_timezone(OFFSET_UTC_PLUS8)
+            .single()
+            .with_context(|| format!("Ambiguous result when adding TZ info to {}", naive_dt))
+    }
+
+    fn hash(s: &str) -> i64 {
+        use std::hash::{DefaultHasher, Hash, Hasher};
+        let mut hasher = DefaultHasher::new();
+        s.hash(&mut hasher);
+        i64::from_ne_bytes(hasher.finish().to_ne_bytes())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -115,14 +149,13 @@ impl TransactionManager {
     /// Fetch all transactions from the database
     ///
     /// Do not guarantee the order of transactions
-    pub fn fetch_all(&self) -> Result<Vec<Transaction>, rusqlite::Error> {
+    pub fn fetch_all(&self) -> Result<Vec<Transaction>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, time, amount, merchant FROM transactions")?;
         let transactions = stmt.query_map([], |row| {
             let time_str: String = row.get(1)?;
             let time = chrono::DateTime::parse_from_rfc3339(&time_str)
-                .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?
-                .with_timezone(&Local);
+                .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
 
             Ok(Transaction {
                 id: row.get(0)?,
@@ -222,7 +255,34 @@ impl TransactionManager {
 
 #[cfg(test)]
 mod tests {
+    use chrono::TimeZone;
+
     use super::*;
+
+    #[test]
+    fn transaction_parse_time() {
+        let time_str = "2025-03-01 00:00:00";
+        let format = "%Y-%m-%d %H:%M:%S";
+        let time = Transaction::parse_to_fixed_utc_plus8(time_str, format).unwrap();
+        assert_eq!(
+            time,
+            OFFSET_UTC_PLUS8
+                .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn transaction_new() {
+        let time = OFFSET_UTC_PLUS8
+            .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+            .unwrap();
+        let transaction = Transaction::new(-100.0, "Amazon".to_string(), time);
+        assert_eq!(transaction.amount, -100.0);
+        assert_eq!(transaction.merchant, "Amazon");
+        assert_eq!(transaction.time, time);
+        assert_eq!(transaction.id, 2865793625909541060);
+    }
 
     #[test]
     fn test_transaction_manager() {
@@ -233,13 +293,17 @@ mod tests {
         let transactions = vec![
             Transaction {
                 id: 1,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -100.0,
                 merchant: "Amazon".to_string(),
             },
             Transaction {
                 id: 2,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -200.0,
                 merchant: "Google".to_string(),
             },
@@ -291,13 +355,17 @@ mod tests {
         let transactions = vec![
             Transaction {
                 id: 1,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -100.0,
                 merchant: "Amazon".to_string(),
             },
             Transaction {
                 id: 2,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -200.0,
                 merchant: "Google".to_string(),
             },
@@ -312,7 +380,9 @@ mod tests {
         // Add more transactions
         let more_transactions = vec![Transaction {
             id: 3,
-            time: Local::now(),
+            time: OFFSET_UTC_PLUS8
+                .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                .unwrap(),
             amount: -300.0,
             merchant: "Apple".to_string(),
         }];
@@ -338,13 +408,17 @@ mod tests {
         let transactions = vec![
             Transaction {
                 id: 1,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -100.0,
                 merchant: "Amazon".to_string(),
             },
             Transaction {
                 id: 2,
-                time: Local::now(),
+                time: OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
                 amount: -200.0,
                 merchant: "Google".to_string(),
             },
