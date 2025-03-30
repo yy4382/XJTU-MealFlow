@@ -1,6 +1,8 @@
+use std::cmp::max;
+
 use crate::{
     actions::{Action, ActionSender, NaviTarget},
-    libs::transactions::TransactionManager,
+    libs::transactions::{Transaction, TransactionManager},
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
@@ -11,7 +13,7 @@ use crossterm::event::KeyCode;
 use lazy_static::lazy_static;
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
     style::{Color, Modifier, Style, Stylize, palette::tailwind},
     text::Text,
     widgets::{
@@ -19,6 +21,7 @@ use ratatui::{
         TableState,
     },
 };
+use unicode_width::UnicodeWidthStr;
 
 struct TableColors {
     buffer_bg: Color,
@@ -37,15 +40,15 @@ impl Default for TableColors {
     fn default() -> Self {
         Self {
             buffer_bg: tailwind::SLATE.c950,
-            header_bg: tailwind::BLUE.c900,
+            header_bg: tailwind::INDIGO.c900,
             header_fg: tailwind::SLATE.c200,
-            row_fg: tailwind::SLATE.c200,
-            selected_row_style_fg: tailwind::BLUE.c400,
-            selected_column_style_fg: tailwind::BLUE.c400,
-            selected_cell_style_fg: tailwind::BLUE.c600,
+            row_fg: tailwind::INDIGO.c200,
+            selected_row_style_fg: tailwind::INDIGO.c400,
+            selected_column_style_fg: tailwind::INDIGO.c400,
+            selected_cell_style_fg: tailwind::INDIGO.c600,
             normal_row_color: tailwind::SLATE.c950,
             alt_row_color: tailwind::SLATE.c900,
-            // footer_border_color: tailwind::BLUE.c400,
+            // footer_border_color: tailwind::INDIGO.c400,
         }
     }
 }
@@ -65,6 +68,7 @@ pub struct Transactions {
 
     table_state: TableState,
     scroll_state: ScrollbarState,
+    longest_item_lens: (usize, usize, usize),
 }
 
 impl Transactions {
@@ -76,6 +80,7 @@ impl Transactions {
 
             table_state: TableState::default(),
             scroll_state: ScrollbarState::default(),
+            longest_item_lens: (0, 0, 0),
         }
     }
 
@@ -137,6 +142,7 @@ impl Page for Transactions {
                     self.scroll_state = self
                         .scroll_state
                         .content_length(self.transactions.len() * ITEM_HEIGHT);
+                    self.longest_item_lens = constraint_len_calculator(&self.transactions);
                 }
                 TransactionAction::ChangeRowFocus(index) => {
                     let cur_index = self.table_state.selected().unwrap_or(0);
@@ -193,26 +199,33 @@ impl Transactions {
             };
             Row::new(
                 vec![
-                    format!("\n{}\n", t.amount),
-                    format!("\n{}\n", t.time),
-                    format!("\n{}\n", t.merchant),
+                    Text::from(format!("\n{}\n", t.amount)).alignment(Alignment::Right),
+                    Text::from(format!("\n{}\n", t.time)),
+                    Text::from(format!("\n{}\n", t.merchant)),
                 ]
-                .into_iter()
-                .map(|s| Cell::from(Text::from(s))),
+                .into_iter(),
             )
             .style(Style::new().fg(TABLE_COLORS.row_fg).bg(color))
             .height(ITEM_HEIGHT as u16)
         });
         let bar = " █ ";
-        // FIXME use real width
-        let t = Table::new(rows, [20, 20, 20])
-            .header(header)
-            .row_highlight_style(selected_row_style)
-            .column_highlight_style(selected_col_style)
-            .cell_highlight_style(selected_cell_style)
-            .highlight_symbol(Text::from(vec!["".into(), bar.into(), "".into()]))
-            .bg(TABLE_COLORS.buffer_bg)
-            .highlight_spacing(HighlightSpacing::Always);
+
+        let t = Table::new(
+            rows,
+            [
+                Constraint::Length((self.longest_item_lens.0 + 2).try_into().unwrap()),
+                Constraint::Min((self.longest_item_lens.1 + 2).try_into().unwrap()),
+                Constraint::Min((self.longest_item_lens.2 + 2).try_into().unwrap()),
+            ],
+        )
+        .header(header)
+        .row_highlight_style(selected_row_style)
+        .column_highlight_style(selected_col_style)
+        .cell_highlight_style(selected_cell_style)
+        .highlight_symbol(Text::from(vec!["".into(), bar.into(), "".into()]))
+        .bg(TABLE_COLORS.buffer_bg)
+        .highlight_spacing(HighlightSpacing::Always)
+        .column_spacing(4);
 
         frame.render_stateful_widget(t, area, &mut self.table_state);
     }
@@ -230,6 +243,24 @@ impl Transactions {
             &mut self.scroll_state,
         );
     }
+}
+
+fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) {
+    items.iter().fold((0, 0, 0), |acc, item| {
+        let amount_len = max(
+            acc.0,
+            UnicodeWidthStr::width(item.amount.to_string().as_str()),
+        );
+        let time_len = max(
+            acc.1,
+            UnicodeWidthStr::width(item.time.to_string().as_str()),
+        );
+        let merchant_len = max(
+            acc.2,
+            UnicodeWidthStr::width_cjk(item.merchant.to_string().as_str()),
+        );
+        (amount_len, time_len, merchant_len)
+    })
 }
 
 #[cfg(test)]
