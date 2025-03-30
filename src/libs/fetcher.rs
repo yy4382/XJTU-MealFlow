@@ -343,8 +343,8 @@ impl MockMealFetcher {
             sleep(d);
         }
 
-        let start = (page - 1) * self.per_page;
-        let end = start + self.per_page;
+        let start = std::cmp::min((page - 1) * self.per_page, self.data.len() as u32);
+        let end = std::cmp::min(start + self.per_page, self.data.len() as u32);
 
         let transactions = &self.data[start as usize..end as usize];
 

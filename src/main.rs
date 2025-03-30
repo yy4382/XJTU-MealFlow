@@ -20,8 +20,9 @@ use dotenv::dotenv;
 
 #[cfg(not(tarpaulin_include))]
 async fn run() -> Result<()> {
-    use cli::ClapSource;
+    use cli::{ClapSource, Commands};
     use color_eyre::eyre::Context;
+    use libs::transactions::TransactionManager;
 
     let args = cli::Cli::parse();
 
@@ -29,21 +30,28 @@ async fn run() -> Result<()> {
     let config = crate::config::Config::new(Some(ClapSource::new(&args)))
         .context("Error when loading config")
         .unwrap();
-    let mut app = App {
-        state: RootState::new(if args.db_in_mem {
-            None
-        } else {
-            Some(config.config.db_path())
-        }),
-        page: Box::new(page::home::Home::default()),
-        tui: tui::Tui::new()?
-            .tick_rate(args.tick_rate)
-            .frame_rate(args.frame_rate),
-    };
 
-    app.run().await?;
+    match &args.command {
+        Some(Commands::ClearDb) => {
+            let manager = TransactionManager::new(config.config.db_path())
+                .context("Error when connecting to Database")?;
+            manager.clear_db().context("Error when clearing database")?;
+            println!("Database cleared");
+            Ok(())
+        }
+        None => {
+            let mut app = App {
+                state: RootState::new(config),
+                page: Box::new(page::home::Home::default()),
+                tui: tui::Tui::new()?
+                    .tick_rate(args.tick_rate)
+                    .frame_rate(args.frame_rate),
+            };
 
-    Ok(())
+            app.run().await?;
+            Ok(())
+        }
+    }
 }
 
 #[tokio::main]

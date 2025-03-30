@@ -5,25 +5,49 @@ use directories::ProjectDirs;
 use lazy_static::lazy_static;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deserialize, Default)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct AppConfig {
     #[serde(default)]
     pub data_dir: PathBuf,
     #[serde(default)]
     db_path: PathBuf,
+
+    /// Use an in-memory database, which means all data will lost when the program exits
+    #[serde(default)]
+    db_in_mem: bool,
 }
 
 impl AppConfig {
-    pub fn db_path(&self) -> PathBuf {
-        // concat the data_dir and db_path
-        self.data_dir.join(&self.db_path)
+    /// Returns the path to the database file
+    /// If using a memory database, returns None
+    pub fn db_path(&self) -> Option<PathBuf> {
+        if self.db_in_mem {
+            None
+        } else {
+            Some(self.data_dir.join(&self.db_path))
+        }
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+/// Configuration for fetching transactions from XJTU server
+///
+/// This SHOULD NOT be the source of truth for fetching. This is only for initializing
+/// related configurations in database.
+///
+/// The source of truth for fetching is from Database.
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct FetchConfig {
+    pub account: Option<String>,
+    pub hallticket: Option<String>,
+    pub use_mock_data: bool,
+}
+
+#[derive(Clone, Debug, Deserialize)]
 pub struct Config {
     #[serde(default, flatten)]
     pub config: AppConfig,
+    #[serde(default)]
+    pub fetch: FetchConfig,
 }
 
 lazy_static! {
@@ -77,12 +101,12 @@ mod tests {
     use clap::Parser;
     use tempfile::tempdir_in;
 
-    use crate::cli::ClapSource;
+    use crate::cli::{ClapSource, Cli};
 
     use super::*;
 
     #[test]
-    fn test_default_config() {
+    fn data_dir_from_env() {
         let temp_data = tempdir_in(".").unwrap();
 
         temp_env::with_vars(
@@ -97,17 +121,54 @@ mod tests {
 
                 assert_eq!(
                     config.config.db_path(),
-                    config.config.data_dir.join("transactions.db")
+                    Some(config.config.data_dir.join("transactions.db"))
                 );
             },
         );
     }
 
     #[test]
-    fn test_config_with_cli() {
+    fn data_dir_from_cli() {
         let args = crate::cli::Cli::parse_from(&["test-config", "--data-dir", ".cli-data"]);
         let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
 
         assert_eq!(config.config.data_dir, PathBuf::from(".cli-data"));
+    }
+
+    #[test]
+    fn account_from_dir() {
+        let args = Cli::parse_from(&["test-config", "--account", "123456"]);
+        let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
+
+        assert_eq!(config.fetch.account.unwrap(), "123456");
+    }
+
+    #[test]
+    fn hallticket_from_dir() {
+        let args = Cli::parse_from(&["test-config", "--hallticket", "123456"]);
+        let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
+
+        assert_eq!(config.fetch.hallticket.unwrap(), "123456");
+    }
+
+    #[test]
+    fn db_in_men_path() {
+        let args = Cli::parse_from(&["test-config", "--db-in-mem"]);
+        let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
+
+        assert_eq!(config.config.db_path(), None);
+    }
+
+    #[test]
+    fn use_mock_data() {
+        let args = Cli::parse_from(&["test-config", "--use-mock-data"]);
+        let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
+
+        assert_eq!(config.fetch.use_mock_data, true);
+
+        let args = Cli::parse_from(&["test-config"]);
+        let config = Config::new(Some(ClapSource::new(&args))).expect("Failed to load config");
+
+        assert_eq!(config.fetch.use_mock_data, false);
     }
 }

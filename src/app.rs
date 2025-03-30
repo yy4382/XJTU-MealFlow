@@ -1,12 +1,14 @@
+use std::time::Duration;
+
 use crate::{
     actions::{Action, NaviTarget},
-    libs::transactions::TransactionManager,
+    config::Config,
+    libs::{fetcher::MockMealFetcher, transactions::TransactionManager},
     page::{Page, cookie_input::CookieInput, fetch::Fetch, home::Home, transactions::Transactions},
     tui,
 };
 use color_eyre::eyre::{Context, Result};
 use crossterm::event::KeyCode::Char;
-use std::path::PathBuf;
 use tokio::sync::mpsc;
 use tracing::warn;
 
@@ -16,28 +18,43 @@ pub struct RootState {
     action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
     manager: crate::libs::transactions::TransactionManager,
     input_mode: bool,
+
+    config: Config,
 }
 
 impl RootState {
-    pub fn new(db_path: Option<PathBuf>) -> Self {
+    pub fn new(config: Config) -> Self {
         let (action_tx, action_rx) = mpsc::unbounded_channel();
+
+        let manager = TransactionManager::new(config.config.db_path())
+            .with_context(|| {
+                format!(
+                    "Fail to connect to Database at {}",
+                    config
+                        .config
+                        .db_path()
+                        .as_ref()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or("memory".into())
+                )
+            })
+            .unwrap();
+
+        if let Some(account) = &config.fetch.account {
+            manager.update_account(&account).unwrap();
+        }
+        if let Some(hallticket) = &config.fetch.hallticket {
+            manager.update_hallticket(hallticket).unwrap();
+        }
 
         Self {
             should_quit: false,
             action_tx,
             action_rx,
-            manager: TransactionManager::new(db_path.clone())
-                .with_context(|| {
-                    format!(
-                        "Fail to connect to Database at {}",
-                        db_path
-                            .as_ref()
-                            .map(|p| p.display().to_string())
-                            .unwrap_or("memory".into())
-                    )
-                })
-                .unwrap(),
+            manager: manager,
             input_mode: false,
+
+            config,
         }
     }
 
@@ -169,11 +186,18 @@ impl App {
                 match *target {
                     NaviTarget::Home => self.page = Box::new(Home::default()),
                     NaviTarget::Fetch => {
-                        self.page = Box::new(Fetch::new(
+                        let fetch_page = Fetch::new(
                             self.state.action_tx.clone().into(),
                             self.state.manager.clone(),
                             self.state.input_mode,
-                        ))
+                        )
+                        .client(if self.state.config.fetch.use_mock_data {
+                            MockMealFetcher::default().set_sim_delay(Duration::from_secs(1))
+                        } else {
+                            Default::default()
+                        });
+                        
+                        self.page = Box::new(fetch_page);
                     }
                     NaviTarget::Transaction => {
                         self.page = Box::new(Transactions::new(
@@ -196,5 +220,33 @@ impl App {
         }
         self.state.update(&action).unwrap();
         self.page.update(action);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use clap::Parser;
+
+    use crate::cli::{ClapSource, Cli};
+
+    use super::RootState;
+
+    #[test]
+    fn root_state_set_fetch_config() {
+        let cli = Cli::parse_from(&[
+            "test-config",
+            "--account",
+            "123456",
+            "--hallticket",
+            "543210",
+            "--db-in-mem",
+        ]);
+        let config =
+            crate::config::Config::new(Some(ClapSource::new(&cli))).expect("Failed to load config");
+
+        let root = RootState::new(config);
+        let (account, cookie) = root.manager.get_account_cookie().unwrap();
+        assert_eq!(account, "123456");
+        assert_eq!(cookie, "hallticket=543210");
     }
 }

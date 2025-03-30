@@ -108,7 +108,7 @@ impl Fetch {
     }
 
     #[allow(dead_code)]
-    fn client<T: Into<MealFetcher>>(mut self, client: T) -> Self {
+    pub fn client<T: Into<MealFetcher>>(mut self, client: T) -> Self {
         self.client = client.into();
         self
     }
