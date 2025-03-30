@@ -8,7 +8,8 @@ use color_eyre::eyre::Result;
 use crossterm::event::{KeyCode, KeyModifiers};
 use futures::{FutureExt, StreamExt};
 use ratatui::{
-    backend::CrosstermBackend,
+    Frame,
+    backend::{CrosstermBackend, TestBackend},
     crossterm::{
         cursor,
         event::{
@@ -50,6 +51,48 @@ impl From<KeyCode> for Event {
 impl From<char> for Event {
     fn from(value: char) -> Self {
         Event::Key(KeyEvent::new(KeyCode::Char(value), KeyModifiers::NONE))
+    }
+}
+
+pub enum TuiEnum {
+    Crossterm(Tui),
+    Test(TestTui),
+}
+
+impl From<Tui> for TuiEnum {
+    fn from(tui: Tui) -> Self {
+        TuiEnum::Crossterm(tui)
+    }
+}
+impl From<TestTui> for TuiEnum {
+    fn from(tui: TestTui) -> Self {
+        TuiEnum::Test(tui)
+    }
+}
+impl TuiEnum {
+    pub fn enter(&mut self) -> Result<()> {
+        match self {
+            TuiEnum::Crossterm(tui) => tui.enter(),
+            TuiEnum::Test(_) => Ok(()),
+        }
+    }
+    pub fn exit(&mut self) -> Result<()> {
+        match self {
+            TuiEnum::Crossterm(tui) => tui.exit(),
+            TuiEnum::Test(_) => Ok(()),
+        }
+    }
+    pub async fn next(&mut self) -> Result<Event> {
+        match self {
+            TuiEnum::Crossterm(tui) => tui.next().await,
+            TuiEnum::Test(_) => Ok(Event::Tick),
+        }
+    }
+    pub fn draw(&mut self, f: impl FnOnce(&mut Frame)) -> Result<()> {
+        match self {
+            TuiEnum::Crossterm(tui) => tui.draw(f).map(|_| ()).map_err(Into::into),
+            TuiEnum::Test(tui) => tui.draw(f).map(|_| ()).map_err(Into::into),
+        }
     }
 }
 
@@ -262,5 +305,31 @@ impl DerefMut for Tui {
 impl Drop for Tui {
     fn drop(&mut self) {
         self.exit().unwrap();
+    }
+}
+
+pub struct TestTui {
+    pub terminal: ratatui::Terminal<TestBackend>,
+}
+
+impl TestTui {
+    #[cfg(test)]
+    pub fn new() -> Self {
+        let terminal = ratatui::Terminal::new(TestBackend::new(80, 25)).unwrap();
+        Self { terminal }
+    }
+}
+
+impl Deref for TestTui {
+    type Target = ratatui::Terminal<TestBackend>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.terminal
+    }
+}
+
+impl DerefMut for TestTui {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.terminal
     }
 }

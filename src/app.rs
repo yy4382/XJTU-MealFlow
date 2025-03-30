@@ -86,7 +86,7 @@ impl RootState {
 pub(super) struct App {
     pub page: Box<dyn Page>,
     pub state: RootState,
-    pub tui: tui::Tui,
+    pub tui: tui::TuiEnum,
 }
 
 impl App {
@@ -268,7 +268,7 @@ mod test {
         let mut app = App {
             page: Box::new(Home::default()),
             state: RootState::new(config),
-            tui: tui::Tui::new().unwrap(),
+            tui: tui::TestTui::new().into(),
         };
 
         // Navigate to Fetch page
@@ -291,7 +291,7 @@ mod test {
         let mut app = App {
             page: Box::new(Home::default()),
             state: RootState::new(config),
-            tui: tui::Tui::new().unwrap(),
+            tui: tui::TestTui::new().into(),
         };
 
         app.perform_action(Action::NavigateTo(NaviTarget::Fetch));
@@ -305,7 +305,7 @@ mod test {
         let mut app = App {
             page: Box::new(Home::default()),
             state: RootState::new(config),
-            tui: tui::Tui::new().unwrap(),
+            tui: tui::TestTui::new().into(),
         };
 
         app.perform_action(Action::Quit);

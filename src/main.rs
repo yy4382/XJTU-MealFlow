@@ -45,7 +45,7 @@ async fn run() -> Result<()> {
                 page: Box::new(page::home::Home::default()),
                 tui: tui::Tui::new()?
                     .tick_rate(args.tick_rate)
-                    .frame_rate(args.frame_rate),
+                    .frame_rate(args.frame_rate).into(),
             };
 
             app.run().await?;
