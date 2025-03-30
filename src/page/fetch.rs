@@ -569,7 +569,6 @@ mod test {
         page.manager.update_cookie("cookie").unwrap();
         let mut page = page.client(MealFetcher::Mock(fetcher::MockMealFetcher::default()));
 
-        
         page.event_loop_once_with_action(
             &mut rx,
             Action::Fetching(FetchingAction::MoveFocus(Focus::UserInput)),
@@ -577,7 +576,8 @@ mod test {
         let mut seq: Vec<Event> = vec![KeyCode::Enter.into()];
         seq.extend("2024-09-01".chars().map(|c| Event::from(c)));
         seq.push(KeyCode::Enter.into());
-        seq.iter().for_each(|e| page.event_loop_once(&mut rx, e.clone()));
+        seq.iter()
+            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
 
         // start fetching
         page.handle_events(' '.into()).unwrap();

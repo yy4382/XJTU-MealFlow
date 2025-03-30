@@ -263,12 +263,16 @@ mod test {
     #[test]
     fn order() {
         let (_, transaction) = get_test_objs();
-        transaction.transactions.iter().enumerate().for_each(|(i, t)| {
-            if i == 0 {
-                return;
-            }
-            assert!(t.time <= transaction.transactions[i - 1].time);
-        });
+        transaction
+            .transactions
+            .iter()
+            .enumerate()
+            .for_each(|(i, t)| {
+                if i == 0 {
+                    return;
+                }
+                assert!(t.time <= transaction.transactions[i - 1].time);
+            });
     }
 
     #[test]

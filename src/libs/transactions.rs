@@ -113,7 +113,7 @@ impl TransactionManager {
     }
 
     /// Fetch all transactions from the database
-    /// 
+    ///
     /// Do not guarantee the order of transactions
     pub fn fetch_all(&self) -> Result<Vec<Transaction>, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
