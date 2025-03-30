@@ -203,7 +203,7 @@ impl Transactions {
             Row::new(
                 vec![
                     Text::from(format!("\n{}\n", t.amount)).alignment(Alignment::Right),
-                    Text::from(format!("\n{}\n", t.time)),
+                    Text::from(format!("\n{}\n", t.time.format("%Y-%m-%d %H:%M"))),
                     Text::from(format!("\n{}\n", t.merchant)),
                 ]
                 .into_iter(),
@@ -256,7 +256,7 @@ fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) 
         );
         let time_len = max(
             acc.1,
-            UnicodeWidthStr::width(item.time.to_string().as_str()),
+            UnicodeWidthStr::width(format!("{}", item.time.format("%Y-%m-%d %H:%M")).as_str()),
         );
         let merchant_len = max(
             acc.2,
