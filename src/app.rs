@@ -182,7 +182,7 @@ impl App {
             Action::Render => {
                 self.tui
                     .draw(|f| {
-                        self.page.render(f);
+                        self.page.render(f, f.area());
                     })
                     .unwrap();
             }

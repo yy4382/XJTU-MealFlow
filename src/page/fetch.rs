@@ -2,7 +2,7 @@ use chrono::{DateTime, FixedOffset, Local};
 use color_eyre::eyre::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
-    layout::{Constraint, Flex, Layout},
+    layout::{Constraint, Flex, Layout, Rect},
     style::{Color, Style},
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
@@ -20,7 +20,7 @@ use crate::{
     libs::{fetcher, transactions},
 };
 
-use super::Page;
+use super::{Page, WidgetExt};
 
 #[derive(Clone, Default, Debug)]
 pub enum FetchingState {
@@ -143,9 +143,8 @@ impl Focus {
     }
 }
 
-impl Page for Fetch {
-    fn render(&mut self, frame: &mut ratatui::Frame) {
-        let area = frame.area();
+impl WidgetExt for Fetch {
+    fn render(&mut self, frame: &mut ratatui::Frame, area: Rect) {
         let area = &Layout::default()
             .constraints([
                 Constraint::Length(3),
@@ -198,7 +197,7 @@ impl Page for Fetch {
             top_areas[2],
         );
 
-        self.input.draw(frame, &area[1]);
+        self.input.render(frame, area[1]);
 
         // 修改这里：显示获取结果
         match &self.fetching_state {
@@ -234,7 +233,9 @@ impl Page for Fetch {
 
         self.get_help_msg().render(frame, area[3]);
     }
+}
 
+impl Page for Fetch {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
         if let crate::tui::Event::Key(key) = event {
             if !self.input_mode {
@@ -489,7 +490,7 @@ mod test {
         page.event_loop_once(&mut rx, 'h'.into());
         terminal
             .draw(|f| {
-                page.render(f);
+                page.render(f, f.area());
             })
             .unwrap();
 

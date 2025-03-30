@@ -5,7 +5,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::Page;
+use super::{Page, WidgetExt};
 use color_eyre::eyre::Result;
 use ratatui::{
     Frame,
@@ -17,11 +17,11 @@ use ratatui::{
 #[derive(Default, Clone, Debug)]
 pub struct Home {}
 
-impl Page for Home {
-    fn render(&mut self, frame: &mut Frame) {
+impl WidgetExt for Home {
+    fn render(&mut self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let area = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
-            .split(frame.area());
+            .split(area);
 
         // TODO use different ascii art for different screen sizes
         let ascii_art = include_str!("../../ascii-arts/mealflow.txt");
@@ -45,7 +45,9 @@ impl Page for Home {
 
         help_msg.render(frame, area[1]);
     }
+}
 
+impl Page for Home {
     fn update(&mut self, _action: Action) {}
 
     fn get_name(&self) -> String {
@@ -74,7 +76,9 @@ mod tests {
     fn test_render() {
         let mut page = get_test_page();
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
-        terminal.draw(|frame| page.render(frame)).unwrap();
+        terminal
+            .draw(|frame| page.render(frame, frame.area()))
+            .unwrap();
         assert_snapshot!(terminal.backend());
     }
 

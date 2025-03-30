@@ -2,6 +2,7 @@ use crate::actions::Action;
 use crate::tui::Event;
 use color_eyre::Result;
 use ratatui::Frame;
+use ratatui::layout::Rect;
 
 pub mod cookie_input;
 pub mod fetch;
@@ -11,10 +12,7 @@ pub mod transactions;
 #[cfg(test)]
 use tokio::sync::mpsc::UnboundedReceiver;
 
-pub trait Page: Send + Sync {
-    /// Render the page
-    fn render(&mut self, frame: &mut Frame);
-
+pub trait Page: Send + Sync + WidgetExt {
     /// Convert Events to Actions
     fn handle_events(&self, event: Event) -> Result<()>;
 
@@ -42,4 +40,8 @@ pub trait Page: Send + Sync {
             self.update(action);
         }
     }
+}
+
+pub(crate) trait WidgetExt {
+    fn render(&mut self, frame: &mut Frame, area: Rect);
 }

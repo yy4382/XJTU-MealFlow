@@ -7,7 +7,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::Page;
+use super::{Page, WidgetExt};
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use lazy_static::lazy_static;
@@ -107,10 +107,8 @@ impl From<TransactionAction> for Action {
     }
 }
 
-impl Page for Transactions {
-    fn render(&mut self, frame: &mut Frame) {
-        let area = frame.area();
-
+impl WidgetExt for Transactions {
+    fn render(&mut self, frame: &mut Frame, area: Rect) {
         let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
         let rects = vertical.split(area);
 
@@ -119,6 +117,9 @@ impl Page for Transactions {
 
         self.get_help_msg().render(frame, rects[1]);
     }
+}
+
+impl Page for Transactions {
     fn handle_events(&self, event: Event) -> Result<()> {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
@@ -329,11 +330,15 @@ mod test {
         let (mut rx, mut transaction) = get_test_objs();
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
 
-        terminal.draw(|frame| transaction.render(frame)).unwrap();
+        terminal
+            .draw(|frame| transaction.render(frame, frame.area()))
+            .unwrap();
         assert_snapshot!(terminal.backend());
 
         transaction.event_loop_once(&mut rx, 'k'.into());
-        terminal.draw(|frame| transaction.render(frame)).unwrap();
+        terminal
+            .draw(|frame| transaction.render(frame, frame.area()))
+            .unwrap();
         assert_snapshot!(terminal.backend());
     }
 }

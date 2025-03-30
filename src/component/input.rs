@@ -9,6 +9,7 @@ use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::{
     actions::{Action, ActionSender, CompAction},
+    page::WidgetExt,
     tui::Event,
     utils::{
         help_msg::{HelpEntry, HelpMsg},
@@ -296,8 +297,10 @@ impl super::Component for InputComp {
             InputAction::Submit(_) => Ok(()),
         }
     }
+}
 
-    fn draw(&self, frame: &mut Frame, area: &ratatui::prelude::Rect) {
+impl WidgetExt for InputComp {
+    fn render(&mut self, frame: &mut Frame, area: ratatui::prelude::Rect) {
         let width = area.width.max(3) - 3;
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.mode {
@@ -322,7 +325,7 @@ impl super::Component for InputComp {
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded),
             );
-        frame.render_widget(input_widget, *area);
+        frame.render_widget(input_widget, area);
 
         if matches!(self.mode, InputMode::Focused) && self.inputting {
             // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
@@ -346,7 +349,7 @@ impl InputComp {
 #[cfg(test)]
 pub mod test {
     use insta::assert_snapshot;
-    use ratatui::{Terminal, backend::TestBackend};
+    use ratatui::{Terminal, backend::TestBackend, layout::Rect};
     use tokio::sync::mpsc;
     use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -382,11 +385,13 @@ pub mod test {
         SetFocus(bool),
     }
 
-    impl Page for TestInputPage {
-        fn render(&mut self, frame: &mut Frame) {
-            self.input.draw(frame, &frame.area());
+    impl WidgetExt for TestInputPage {
+        fn render(&mut self, frame: &mut Frame, area: Rect) {
+            self.input.render(frame, area);
         }
+    }
 
+    impl Page for TestInputPage {
         fn handle_events(&self, event: Event) -> Result<()> {
             if !self.inputting {
                 if let Event::Key(key) = event {
@@ -593,12 +598,14 @@ pub mod test {
         let (mut page, mut rx) = get_test_page(false);
 
         let mut terminal = Terminal::new(TestBackend::new(40, 10)).unwrap();
-        terminal.draw(|frame| page.render(frame)).unwrap();
+        terminal
+            .draw(|frame| page.render(frame, frame.area()))
+            .unwrap();
         assert_snapshot!(terminal.backend());
         assert_eq!(get_buffer_color(&terminal), Color::Reset);
 
         page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        terminal.draw(|f| page.render(f)).unwrap();
+        terminal.draw(|f| page.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
 
         let seq = [
@@ -610,16 +617,16 @@ pub mod test {
         seq.iter()
             .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
 
-        terminal.draw(|f| page.render(f)).unwrap();
+        terminal.draw(|f| page.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Yellow);
 
         page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        terminal.draw(|f| page.render(f)).unwrap();
+        terminal.draw(|f| page.render(f, f.area())).unwrap();
         assert_snapshot!(terminal.backend());
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
 
         page.event_loop_once(&mut rx, get_key_evt(KeyCode::Esc));
-        terminal.draw(|f| page.render(f)).unwrap();
+        terminal.draw(|f| page.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Reset);
     }
 

@@ -1,4 +1,6 @@
 use crossterm::event::KeyCode;
+use ratatui::Frame;
+use ratatui::layout::Rect;
 use ratatui::layout::{Constraint, Layout};
 
 use crate::actions::Action;
@@ -9,7 +11,7 @@ use crate::component::input::{InputComp, InputMode};
 use crate::libs::transactions::TransactionManager;
 use crate::utils::help_msg::{HelpEntry, HelpMsg};
 
-use super::Page;
+use super::{Page, WidgetExt};
 
 #[derive(Clone, Debug)]
 pub struct CookieInput {
@@ -86,23 +88,25 @@ impl From<CookieInputAction> for Action {
     }
 }
 
-impl Page for CookieInput {
-    fn render(&mut self, frame: &mut ratatui::Frame) {
+impl WidgetExt for CookieInput {
+    fn render(&mut self, frame: &mut Frame, area: Rect) {
         let chunks = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
-            .split(frame.area());
+            .split(area);
 
         let sub_chunks = &Layout::default()
             .margin(1)
             .constraints([Constraint::Length(5), Constraint::Length(5)])
             .split(chunks[0]);
 
-        self.account_input.draw(frame, &sub_chunks[0]);
-        self.cookie_input.draw(frame, &sub_chunks[1]);
+        self.account_input.render(frame, sub_chunks[0]);
+        self.cookie_input.render(frame, sub_chunks[1]);
 
         self.get_help_msg().render(frame, chunks[1]);
     }
+}
 
+impl Page for CookieInput {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
         if let crate::tui::Event::Key(key) = &event {
             if !self.input_mode {
@@ -267,7 +271,7 @@ mod test {
 
         terminal
             .draw(|f| {
-                page.render(f);
+                page.render(f, f.area());
             })
             .unwrap();
 
