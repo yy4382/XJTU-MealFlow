@@ -377,6 +377,18 @@ pub mod test_utils {
         let data = fetcher.fetch_transaction_one_page(1).unwrap();
         api_response_to_transactions(&data).unwrap()
     }
+
+    mod test {
+        use insta::assert_debug_snapshot;
+
+        use super::*;
+
+        #[test]
+        fn test_get_mock_data() {
+            let data = get_mock_data(5);
+            assert_debug_snapshot!(data);
+        }
+    }
 }
 
 #[cfg(test)]

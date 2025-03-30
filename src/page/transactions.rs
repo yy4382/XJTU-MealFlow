@@ -133,6 +133,7 @@ impl Page for Transactions {
             match action {
                 TransactionAction::LoadTransactions => {
                     self.transactions = self.manager.fetch_all().unwrap();
+                    self.transactions.sort_by(|a, b| b.time.cmp(&a.time));
                     self.scroll_state = self
                         .scroll_state
                         .content_length(self.transactions.len() * ITEM_HEIGHT);
@@ -257,6 +258,17 @@ mod test {
         assert!(!transaction.transactions.is_empty());
 
         (rx, transaction)
+    }
+
+    #[test]
+    fn order() {
+        let (_, transaction) = get_test_objs();
+        transaction.transactions.iter().enumerate().for_each(|(i, t)| {
+            if i == 0 {
+                return;
+            }
+            assert!(t.time <= transaction.transactions[i - 1].time);
+        });
     }
 
     #[test]

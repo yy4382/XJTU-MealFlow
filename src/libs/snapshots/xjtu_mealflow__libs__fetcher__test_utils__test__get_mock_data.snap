@@ -1,0 +1,36 @@
+---
+source: src/libs/fetcher.rs
+expression: data
+---
+[
+    Transaction {
+        id: -3565132468199976448,
+        time: 2025-03-29T17:08:10+08:00,
+        amount: -18.72,
+        merchant: "寿司",
+    },
+    Transaction {
+        id: -1337156662745937695,
+        time: 2025-03-24T17:16:28+08:00,
+        amount: -1.37,
+        merchant: "西14西15东12浴室",
+    },
+    Transaction {
+        id: 6427162136306288771,
+        time: 2025-03-23T12:43:36+08:00,
+        amount: -9.76,
+        merchant: "库迪咖啡",
+    },
+    Transaction {
+        id: -3967367490449694268,
+        time: 2025-03-22T07:28:51+08:00,
+        amount: -4.11,
+        merchant: "时光水吧",
+    },
+    Transaction {
+        id: 7205246546790478654,
+        time: 2025-03-21T17:59:42+08:00,
+        amount: -1.0,
+        merchant: "西14西15东12浴室",
+    },
+]

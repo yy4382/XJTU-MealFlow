@@ -112,6 +112,9 @@ impl TransactionManager {
         Ok(())
     }
 
+    /// Fetch all transactions from the database
+    /// 
+    /// Do not guarantee the order of transactions
     pub fn fetch_all(&self) -> Result<Vec<Transaction>, rusqlite::Error> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, time, amount, merchant FROM transactions")?;
