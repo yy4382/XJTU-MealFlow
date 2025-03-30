@@ -96,12 +96,7 @@ impl App {
         loop {
             let e = self.tui.next().await?;
 
-            self.handle_event(e.clone())
-                .with_context(|| format!("failed to handle event {:?}", e))?;
-
-            while let Ok(action) = self.state.action_rx.try_recv() {
-                self.perform_action(action);
-            }
+            self.event_loop(e)?;
 
             // application exit
             if self.state.should_quit {
@@ -110,6 +105,16 @@ impl App {
         }
 
         self.tui.exit()?;
+        Ok(())
+    }
+
+    fn event_loop(&mut self, e: tui::Event) -> Result<()> {
+        self.handle_event(e.clone())
+            .with_context(|| format!("failed to handle event {:?}", e))?;
+
+        while let Ok(action) = self.state.action_rx.try_recv() {
+            self.perform_action(action);
+        }
         Ok(())
     }
 
@@ -231,24 +236,79 @@ mod test {
 
     use crate::cli::{ClapSource, Cli};
 
-    use super::RootState;
+    use super::*;
 
+    fn get_config(mut args: Vec<&str>, append_to_default: bool) -> Config {
+        let mut default_args = vec!["test-config"];
+        let args = if append_to_default {
+            default_args.push("--db-in-mem");
+            default_args.append(&mut args);
+            default_args
+        } else {
+            default_args.append(&mut args);
+            default_args
+        };
+        let cli = Cli::parse_from(args);
+        crate::config::Config::new(Some(ClapSource::new(&cli))).expect("Failed to load config")
+    }
     #[test]
     fn root_state_set_fetch_config() {
-        let cli = Cli::parse_from(&[
-            "test-config",
-            "--account",
-            "123456",
-            "--hallticket",
-            "543210",
-            "--db-in-mem",
-        ]);
-        let config =
-            crate::config::Config::new(Some(ClapSource::new(&cli))).expect("Failed to load config");
+        let config = get_config(vec!["--account", "123456", "--hallticket", "543210"], true);
 
         let root = RootState::new(config);
         let (account, cookie) = root.manager.get_account_cookie().unwrap();
         assert_eq!(account, "123456");
         assert_eq!(cookie, "hallticket=543210");
+    }
+
+    #[tokio::test]
+    async fn app_navigation() {
+        let config = get_config(vec![], true);
+
+        let mut app = App {
+            page: Box::new(Home::default()),
+            state: RootState::new(config),
+            tui: tui::Tui::new().unwrap(),
+        };
+
+        // Navigate to Fetch page
+        app.event_loop('T'.into()).unwrap();
+        assert_eq!(app.page.get_name(), "Transactions");
+
+        app.event_loop('H'.into()).unwrap();
+        assert_eq!(app.page.get_name(), "Home");
+
+        app.perform_action(Action::NavigateTo(NaviTarget::Fetch));
+        assert_eq!(app.page.get_name(), "Fetch");
+
+        app.perform_action(Action::NavigateTo(NaviTarget::CookieInput));
+        assert_eq!(app.page.get_name(), "Cookie Input");
+    }
+
+    #[tokio::test]
+    async fn app_nav_fetch_mock() {
+        let config = get_config(vec!["--use-mock-data"], true);
+        let mut app = App {
+            page: Box::new(Home::default()),
+            state: RootState::new(config),
+            tui: tui::Tui::new().unwrap(),
+        };
+
+        app.perform_action(Action::NavigateTo(NaviTarget::Fetch));
+        assert_eq!(app.page.get_name(), "Fetch");
+        // TODO find a way to assert that it is using mock client
+    }
+
+    #[tokio::test]
+    async fn app_quit() {
+        let config = get_config(vec![], true);
+        let mut app = App {
+            page: Box::new(Home::default()),
+            state: RootState::new(config),
+            tui: tui::Tui::new().unwrap(),
+        };
+
+        app.perform_action(Action::Quit);
+        assert_eq!(app.state.should_quit, true);
     }
 }
