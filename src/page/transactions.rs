@@ -39,15 +39,15 @@ struct TableColors {
 impl Default for TableColors {
     fn default() -> Self {
         Self {
-            buffer_bg: tailwind::SLATE.c950,
-            header_bg: tailwind::INDIGO.c900,
-            header_fg: tailwind::SLATE.c200,
-            row_fg: tailwind::INDIGO.c200,
-            selected_row_style_fg: tailwind::INDIGO.c400,
+            buffer_bg: Color::Reset,
+            header_bg: tailwind::INDIGO.c950,
+            header_fg: tailwind::GRAY.c100,
+            row_fg: tailwind::GRAY.c200,
+            selected_row_style_fg: tailwind::INDIGO.c300,
             selected_column_style_fg: tailwind::INDIGO.c400,
             selected_cell_style_fg: tailwind::INDIGO.c600,
-            normal_row_color: tailwind::SLATE.c950,
-            alt_row_color: tailwind::SLATE.c900,
+            normal_row_color: Color::Reset,
+            alt_row_color: tailwind::GRAY.c950,
             // footer_border_color: tailwind::INDIGO.c400,
         }
     }
