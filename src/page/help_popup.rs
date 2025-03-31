@@ -211,7 +211,7 @@ lazy_static::lazy_static! {
 #[cfg(test)]
 mod tests {
     use insta::assert_snapshot;
-    use ratatui::{Terminal, prelude::Backend};
+    use ratatui::Terminal;
 
     use super::*;
 

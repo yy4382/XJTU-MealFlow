@@ -1,6 +1,6 @@
 # XJTU MealFlow
 
-[![CI](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/yy4382/XJTU-MealFlow/graph/badge.svg?token=S3RCT5RFAW)](https://codecov.io/gh/yy4382/XJTU-MealFlow)
+[![CI](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/yy4382/XJTU-MealFlow/actions/workflows/ci.yml) [![codecov](https://codecov.io/gh/yy4382/XJTU-MealFlow/graph/badge.svg?token=S3RCT5RFAW)](https://codecov.io/gh/yy4382/XJTU-MealFlow) [![](https://tokei.rs/b1/github/yy4382/XJTU-MealFlow)](https://github.com/XAMPPRocky/tokei).
 
 你在西交吃了啥？
 
