@@ -25,5 +25,5 @@ expression: terminal.backend()
 " █    -7.89    2024-07-23 12:55                   梧桐美润水饺                █ " Hidden by multi-width symbols: [(51, " "), (53, " "), (55, " "), (57, " "), (59, " "), (61, " ")]
 "                                                                                "
 "╭──────────────────────────────────────────────────────────────────────────────╮"
-"│ Move focus: hjkl | Fetch: f | Load from local cache: l                       │"
+"│ Move focus: hjkl | Fetch: f | Show help: ? | Load from local cache: l        │"
 "╰──────────────────────────────────────────────────────────────────────────────╯"

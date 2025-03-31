@@ -181,9 +181,8 @@ impl App {
                 self.tui
                     .draw(|f| {
                         self.page
-                            .last_mut()
-                            .expect("No page in stack")
-                            .render(f, f.area());
+                            .iter_mut()
+                            .for_each(|page| page.render(f, f.area()));
                     })
                     .unwrap();
             }

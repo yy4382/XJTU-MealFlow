@@ -88,6 +88,7 @@ impl Transactions {
         let help_msg: HelpMsg = vec![
             HelpEntry::new_plain("Move focus: hjkl"),
             HelpEntry::new('f', "Fetch"),
+            HelpEntry::new('?', "Show help"),
             HelpEntry::new('l', "Load from local cache"),
         ]
         .into();
@@ -128,6 +129,9 @@ impl EventLoopParticipant for Transactions {
                 (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
                 (_, KeyCode::Char('j')) => self.tx.send(TransactionAction::ChangeRowFocus(1)),
                 (_, KeyCode::Char('k')) => self.tx.send(TransactionAction::ChangeRowFocus(-1)),
+                (_, KeyCode::Char('?')) => self.tx.send(LayerManageAction::PushPage(Layers::Help(
+                    self.get_help_msg(),
+                ))),
                 _ => (),
             }
         };

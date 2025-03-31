@@ -1,8 +1,11 @@
+use std::cmp::{max, min};
+
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style, palette::tailwind},
+    style::{Color, Modifier, Style, Stylize as _, palette::tailwind},
+    symbols,
     text::{Line, Text},
     widgets::{Block, BorderType, Borders, Clear, HighlightSpacing, List, ListItem, Padding},
 };
@@ -111,12 +114,12 @@ impl Page for HelpPopup {}
 
 impl WidgetExt for HelpPopup {
     fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::prelude::Rect) {
-        info!("Rendering help popup, {:?}", area);
+        let width = max(self.longest_entry_size + 8, min(50, frame.area().width - 4));
         let show_area = Rect {
             // FIXME deal with subtract overflow
-            x: (area.width - self.longest_entry_size - 6) / 2,
+            x: (area.width - width) / 2,
             y: area.height / 6,
-            width: self.longest_entry_size + 8,
+            width,
             height: area.height * 2 / 3,
         };
         let bottom_help_area = Rect {
@@ -150,12 +153,16 @@ impl HelpPopup {
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
             .fg(LIST_COLORS.selected_row_style_fg);
+        let header_style = Style::default()
+            .fg(LIST_COLORS.header_fg)
+            .bg(LIST_COLORS.header_bg);
 
         let block = Block::new()
             .title(Line::raw("Help").centered())
-            .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
-            .padding(Padding::horizontal(1));
+            .borders(Borders::ALL)
+            .padding(Padding::horizontal(1))
+            .padding(Padding::vertical(1));
 
         let items: Vec<ListItem> = self
             .help_msg
@@ -173,9 +180,9 @@ impl HelpPopup {
 }
 
 struct ListColors {
-    // buffer_bg: Color,
-    // header_bg: Color,
-    // header_fg: Color,
+    buffer_bg: Color,
+    header_bg: Color,
+    header_fg: Color,
     // row_fg: Color,
     selected_row_style_fg: Color,
     // selected_column_style_fg: Color,
@@ -188,9 +195,9 @@ struct ListColors {
 impl Default for ListColors {
     fn default() -> Self {
         Self {
-            // buffer_bg: tailwind::SLATE.c950,
-            // header_bg: tailwind::INDIGO.c900,
-            // header_fg: tailwind::SLATE.c200,
+            buffer_bg: tailwind::GRAY.c950,
+            header_bg: tailwind::INDIGO.c950,
+            header_fg: tailwind::GRAY.c100,
             // row_fg: tailwind::INDIGO.c200,
             selected_row_style_fg: tailwind::INDIGO.c400,
             // selected_column_style_fg: tailwind::INDIGO.c400,
