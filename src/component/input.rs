@@ -431,11 +431,7 @@ pub mod test {
         }
     }
 
-    impl Page for TestInputPage {
-        fn get_name(&self) -> String {
-            "Test Input Page".into()
-        }
-    }
+    impl Page for TestInputPage {}
 
     fn get_test_page(auto_submit: bool) -> (TestInputPage, UnboundedReceiver<Action>) {
         let (tx, rx) = mpsc::unbounded_channel::<Action>();

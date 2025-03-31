@@ -3,9 +3,9 @@ use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::layout::{Constraint, Layout};
 
-use crate::actions::Action;
 use crate::actions::ActionSender;
-use crate::actions::NaviTarget;
+use crate::actions::Layers;
+use crate::actions::{Action, LayerManageAction};
 use crate::component::Component;
 use crate::component::input::{InputComp, InputMode};
 use crate::libs::transactions::TransactionManager;
@@ -117,7 +117,7 @@ impl EventLoopParticipant for CookieInput {
                     (_, KeyCode::Char('j')) => self
                         .tx
                         .send(CookieInputAction::ChangeState(self.state.next())),
-                    (_, KeyCode::Esc) => self.tx.send(Action::NavigateTo(NaviTarget::Fetch)),
+                    (_, KeyCode::Esc) => self.tx.send(LayerManageAction::SwapPage(Layers::Fetch)),
                     _ => (),
                 }
             }
@@ -165,9 +165,6 @@ impl EventLoopParticipant for CookieInput {
 }
 
 impl Page for CookieInput {
-    fn get_name(&self) -> String {
-        "Cookie Input".to_string()
-    }
     fn init(&mut self) {
         self.tx.send(
             self.account_input

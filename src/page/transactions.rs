@@ -1,7 +1,7 @@
 use std::cmp::max;
 
 use crate::{
-    actions::{Action, ActionSender, NaviTarget},
+    actions::{Action, ActionSender, LayerManageAction, Layers},
     libs::transactions::{Transaction, TransactionManager},
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
@@ -124,7 +124,7 @@ impl EventLoopParticipant for Transactions {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
                 // navigate to fetch page
-                (_, KeyCode::Char('f')) => self.tx.send(Action::NavigateTo(NaviTarget::Fetch)),
+                (_, KeyCode::Char('f')) => self.tx.send(LayerManageAction::SwapPage(Layers::Fetch)),
                 (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
                 (_, KeyCode::Char('j')) => self.tx.send(TransactionAction::ChangeRowFocus(1)),
                 (_, KeyCode::Char('k')) => self.tx.send(TransactionAction::ChangeRowFocus(-1)),
@@ -166,10 +166,6 @@ impl EventLoopParticipant for Transactions {
 }
 
 impl Page for Transactions {
-    fn get_name(&self) -> String {
-        "Transactions".to_string()
-    }
-
     fn init(&mut self) {
         self.tx.send(TransactionAction::LoadTransactions)
     }

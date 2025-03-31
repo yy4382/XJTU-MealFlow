@@ -1,10 +1,13 @@
 use std::time::Duration;
 
 use crate::{
-    actions::{Action, NaviTarget},
+    actions::{Action, LayerManageAction, Layers},
     config::Config,
     libs::{fetcher::MockMealFetcher, transactions::TransactionManager},
-    page::{Page, cookie_input::CookieInput, fetch::Fetch, home::Home, transactions::Transactions},
+    page::{
+        Page, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
+        transactions::Transactions,
+    },
     tui,
 };
 use color_eyre::eyre::{Context, Result};
@@ -65,6 +68,10 @@ impl RootState {
         }
     }
 
+    pub fn clone_tx(&self) -> tokio::sync::mpsc::UnboundedSender<Action> {
+        self.action_tx.clone()
+    }
+
     pub(crate) fn update(&mut self, action: &Action) -> Result<()> {
         match action {
             Action::Tick => {
@@ -84,7 +91,7 @@ impl RootState {
 }
 
 pub(super) struct App {
-    pub page: Box<dyn Page>,
+    pub page: Vec<Box<dyn Page>>,
     pub state: RootState,
     pub tui: tui::TuiEnum,
 }
@@ -114,6 +121,9 @@ impl App {
 
         while let Ok(action) = self.state.action_rx.try_recv() {
             self.perform_action(action);
+            if self.state.should_quit {
+                break;
+            }
         }
         Ok(())
     }
@@ -131,6 +141,8 @@ impl App {
     /// and delegates the handling of page-specific events (remaining events, currently only key events)
     /// to the current page.
     fn handle_event(&self, event: tui::Event) -> Result<()> {
+        let last_page = self.page.last().expect("Page stack is empty");
+
         match event {
             tui::Event::Tick => self.send_action(Action::Tick),
             tui::Event::Render => self.send_action(Action::Render),
@@ -144,26 +156,12 @@ impl App {
             // tui::Event::Quit => action_tx.send(Action::Quit)?,
             tui::Event::Resize(_, _) => self.send_action(Action::Render),
 
-            tui::Event::Key(key) => {
-                match key.code {
-                    Char('H') => {
-                        // check if the current page is not Home
-                        if self.page.get_name() != "Home" {
-                            self.send_action(Action::NavigateTo(NaviTarget::Home))
-                        }
-                    }
-                    Char('T') => {
-                        // check if the current page is not Transactions
-                        if self.page.get_name() != "Transactions" {
-                            self.send_action(Action::NavigateTo(NaviTarget::Transaction))
-                        }
-                    }
-                    Char('q') => self.send_action(Action::Quit),
-                    _ => self.page.handle_events(event).unwrap(),
-                }
-            }
+            tui::Event::Key(key) => match key.code {
+                Char('q') => self.send_action(Action::Quit),
+                _ => last_page.handle_events(event).unwrap(),
+            },
 
-            _ => self.page.handle_events(event).unwrap(),
+            _ => last_page.handle_events(event).unwrap(),
         };
         Ok(())
     }
@@ -182,51 +180,77 @@ impl App {
             Action::Render => {
                 self.tui
                     .draw(|f| {
-                        self.page.render(f, f.area());
+                        self.page
+                            .last_mut()
+                            .expect("No page in stack")
+                            .render(f, f.area());
                     })
                     .unwrap();
             }
-            Action::NavigateTo(target) => {
-                // debug!("Navigating to {:?}", target);
-                match *target {
-                    NaviTarget::Home => self.page = Box::new(Home::default()),
-                    NaviTarget::Fetch => {
-                        let fetch_page = Fetch::new(
-                            self.state.action_tx.clone().into(),
-                            self.state.manager.clone(),
-                            self.state.input_mode,
-                        )
-                        .client(if self.state.config.fetch.use_mock_data {
-                            MockMealFetcher::default()
-                                .set_sim_delay(Duration::from_secs(1))
-                                .per_page(50)
-                        } else {
-                            Default::default()
-                        });
-
-                        self.page = Box::new(fetch_page);
-                    }
-                    NaviTarget::Transaction => {
-                        self.page = Box::new(Transactions::new(
-                            self.state.action_tx.clone().into(),
-                            self.state.manager.clone(),
-                        ))
-                    }
-                    NaviTarget::CookieInput => {
-                        self.page = Box::new(CookieInput::new(
-                            self.state.action_tx.clone().into(),
-                            self.state.manager.clone(),
-                            self.state.input_mode,
-                        ))
+            Action::Layer(layer_action) => match layer_action {
+                LayerManageAction::SwapPage(target) => {
+                    self.page.pop();
+                    self.page.push(self.get_layer(target));
+                }
+                LayerManageAction::PushPage(target) => {
+                    self.page.push(self.get_layer(target));
+                }
+                LayerManageAction::PopPage => {
+                    if self.page.len() > 1 {
+                        self.page.pop();
+                    } else {
+                        self.state.should_quit = true;
                     }
                 }
-                self.page.init();
-            }
+            },
 
             _ => {}
         }
         self.state.update(&action).unwrap();
-        self.page.update(action);
+        self.page
+            .last_mut()
+            .expect("Page stack is empty")
+            .update(action);
+    }
+
+    /// Get the page from Layers enum
+    ///
+    /// Page is already initialized
+    fn get_layer(&self, layer: &Layers) -> Box<dyn Page> {
+        let mut page = match layer.clone() {
+            Layers::Home => Box::new(Home {
+                tx: self.state.action_tx.clone().into(),
+            }) as Box<dyn Page>,
+            Layers::Transaction => Box::new(Transactions::new(
+                self.state.action_tx.clone().into(),
+                self.state.manager.clone(),
+            )),
+            Layers::Fetch => Box::new(
+                Fetch::new(
+                    self.state.action_tx.clone().into(),
+                    self.state.manager.clone(),
+                    self.state.input_mode,
+                )
+                .client(if self.state.config.fetch.use_mock_data {
+                    MockMealFetcher::default()
+                        .set_sim_delay(Duration::from_secs(1))
+                        .per_page(50)
+                } else {
+                    Default::default()
+                }),
+            ),
+            Layers::CookieInput => Box::new(CookieInput::new(
+                self.state.action_tx.clone().into(),
+                self.state.manager.clone(),
+                self.state.input_mode,
+            )),
+            Layers::Help(help_msg) => Box::new(HelpPopup::new(
+                self.state.action_tx.clone().into(),
+                help_msg.clone(),
+            )),
+        };
+        page.init();
+        page
     }
 }
 
@@ -261,52 +285,48 @@ mod test {
         assert_eq!(cookie, "hallticket=543210");
     }
 
-    #[tokio::test]
-    async fn app_navigation() {
-        let config = get_config(vec![], true);
-
-        let mut app = App {
-            page: Box::new(Home::default()),
-            state: RootState::new(config),
+    fn get_app() -> App {
+        let config = get_config(vec!["--use-mock-data"], true);
+        let state = RootState::new(config);
+        let app = App {
+            page: vec![Box::new(Home {
+                tx: state.action_tx.clone().into(),
+            })],
+            state: state,
             tui: tui::TestTui::new().into(),
         };
+        app
+    }
+
+    #[tokio::test]
+    async fn app_navigation() {
+        let mut app = get_app();
 
         // Navigate to Fetch page
         app.event_loop('T'.into()).unwrap();
-        assert_eq!(app.page.get_name(), "Transactions");
+        assert!(app.page.last().unwrap().is::<Transactions>());
 
-        app.event_loop('H'.into()).unwrap();
-        assert_eq!(app.page.get_name(), "Home");
+        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
+        assert!(app.page.last().unwrap().is::<Fetch>());
 
-        app.perform_action(Action::NavigateTo(NaviTarget::Fetch));
-        assert_eq!(app.page.get_name(), "Fetch");
-
-        app.perform_action(Action::NavigateTo(NaviTarget::CookieInput));
-        assert_eq!(app.page.get_name(), "Cookie Input");
+        app.perform_action(Action::Layer(LayerManageAction::SwapPage(
+            Layers::CookieInput,
+        )));
+        assert!(app.page.last().unwrap().is::<CookieInput>());
     }
 
     #[tokio::test]
     async fn app_nav_fetch_mock() {
-        let config = get_config(vec!["--use-mock-data"], true);
-        let mut app = App {
-            page: Box::new(Home::default()),
-            state: RootState::new(config),
-            tui: tui::TestTui::new().into(),
-        };
+        let mut app = get_app();
 
-        app.perform_action(Action::NavigateTo(NaviTarget::Fetch));
-        assert_eq!(app.page.get_name(), "Fetch");
+        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
+        assert!(app.page.last().unwrap().is::<Fetch>());
         // TODO find a way to assert that it is using mock client
     }
 
     #[tokio::test]
     async fn app_quit() {
-        let config = get_config(vec![], true);
-        let mut app = App {
-            page: Box::new(Home::default()),
-            state: RootState::new(config),
-            tui: tui::TestTui::new().into(),
-        };
+        let mut app = get_app();
 
         app.perform_action(Action::Quit);
         assert_eq!(app.state.should_quit, true);

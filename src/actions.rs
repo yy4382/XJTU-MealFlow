@@ -5,12 +5,13 @@ use crate::{
     page::{
         cookie_input::CookieInputAction, fetch::FetchingAction, transactions::TransactionAction,
     },
+    utils::help_msg::HelpMsg,
 };
 
 #[derive(Clone, Debug)]
 pub enum Action {
     Tick,
-    NavigateTo(NaviTarget),
+    Layer(LayerManageAction),
     SwitchInputMode(bool),
 
     Transaction(TransactionAction),
@@ -26,11 +27,12 @@ pub enum Action {
     TestPage(crate::component::input::test::TestInputPageAction),
 }
 #[derive(Clone, Debug)]
-pub enum NaviTarget {
+pub enum Layers {
     Home,
     Fetch,
     Transaction,
     CookieInput,
+    Help(HelpMsg),
 }
 
 #[derive(Clone, Debug)]
@@ -38,6 +40,21 @@ pub enum CompAction {
     Input(InputAction),
     #[allow(dead_code)]
     Placeholder,
+}
+
+#[derive(Clone, Debug)]
+/// These actions should only be sent by page at the top of the stack
+/// and should only be handled by the root app.
+pub enum LayerManageAction {
+    PushPage(Layers),
+    SwapPage(Layers),
+    PopPage,
+}
+
+impl From<LayerManageAction> for Action {
+    fn from(value: LayerManageAction) -> Self {
+        Action::Layer(value)
+    }
 }
 
 #[derive(Clone, Debug)]

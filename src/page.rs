@@ -1,24 +1,24 @@
 use crate::actions::Action;
 use crate::tui::Event;
 use color_eyre::Result;
+use downcast_rs::{DowncastSync, impl_downcast};
 use ratatui::Frame;
 use ratatui::layout::Rect;
 
 pub mod cookie_input;
 pub mod fetch;
+pub mod help_popup;
 pub mod home;
 pub mod transactions;
 
 #[cfg(test)]
 use tokio::sync::mpsc::UnboundedReceiver;
 
-pub trait Page: Send + Sync + WidgetExt + EventLoopParticipant {
-    /// Get the name of the page
-    fn get_name(&self) -> String;
-
+pub trait Page: Send + Sync + WidgetExt + EventLoopParticipant + DowncastSync {
     /// Initialize the page
     fn init(&mut self) {}
 }
+impl_downcast!(sync Page);
 
 pub(crate) trait WidgetExt {
     fn render(&mut self, frame: &mut Frame, area: Rect);

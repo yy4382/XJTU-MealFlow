@@ -10,7 +10,7 @@ use ratatui::{
 use tracing::{info, instrument};
 
 use crate::{
-    actions::{Action, ActionSender, NaviTarget},
+    actions::{Action, ActionSender, LayerManageAction, Layers},
     component::{Component, input::InputComp},
     libs::{fetcher::MealFetcher, transactions::OFFSET_UTC_PLUS8},
     utils::help_msg::{HelpEntry, HelpMsg},
@@ -252,11 +252,13 @@ impl EventLoopParticipant for Fetch {
                         .tx
                         .send(FetchingAction::MoveFocus(self.current_focus.prev())),
                     (_, KeyCode::Char('r')) => self.tx.send(FetchingAction::LoadDbCount),
-                    (_, KeyCode::Char('e')) => {
-                        self.tx.send(Action::NavigateTo(NaviTarget::CookieInput))
-                    }
+                    (_, KeyCode::Char('e')) => self
+                        .tx
+                        .send(LayerManageAction::SwapPage(Layers::CookieInput)),
 
-                    (_, KeyCode::Esc) => self.tx.send(Action::NavigateTo(NaviTarget::Transaction)),
+                    (_, KeyCode::Esc) => self
+                        .tx
+                        .send(LayerManageAction::SwapPage(Layers::Transaction)),
                     _ => (),
                 }
             }
@@ -279,7 +281,8 @@ impl EventLoopParticipant for Fetch {
                             if let Ok((account, cookie)) = self.manager.get_account_cookie() {
                                 Fetch::fetch(tx, c.clone().account(account).cookie(cookie), *date);
                             } else {
-                                self.tx.send(Action::NavigateTo(NaviTarget::CookieInput));
+                                self.tx
+                                    .send(LayerManageAction::SwapPage(Layers::CookieInput));
                             }
                         }
                         MealFetcher::Mock(c) => {
@@ -349,10 +352,6 @@ impl EventLoopParticipant for Fetch {
 }
 
 impl Page for Fetch {
-    fn get_name(&self) -> String {
-        "Fetch".to_string()
-    }
-
     fn init(&mut self) {
         self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
 

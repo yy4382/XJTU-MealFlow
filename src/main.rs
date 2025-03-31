@@ -40,9 +40,12 @@ async fn run() -> Result<()> {
             Ok(())
         }
         None => {
+            let state = RootState::new(config);
             let mut app = App {
-                state: RootState::new(config),
-                page: Box::new(page::home::Home::default()),
+                page: vec![Box::new(page::home::Home {
+                    tx: state.clone_tx().into(),
+                })],
+                state,
                 tui: tui::Tui::new()?
                     .tick_rate(args.tick_rate)
                     .frame_rate(args.frame_rate)

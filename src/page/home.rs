@@ -1,12 +1,14 @@
 use std::vec;
 
 use crate::{
-    actions::Action,
+    actions::{Action, ActionSender, LayerManageAction, Layers},
+    tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
 use super::{EventLoopParticipant, Page, WidgetExt};
 use color_eyre::eyre::Result;
+use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Flex, Layout},
@@ -14,8 +16,32 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-#[derive(Default, Clone, Debug)]
-pub struct Home {}
+#[derive(Clone, Debug)]
+pub struct Home {
+    pub tx: ActionSender,
+}
+
+impl Home {
+    fn get_help_msg(&self) -> HelpMsg {
+        let help_msg: HelpMsg = vec![
+            HelpEntry::new('T', "Go to transactions page"),
+            HelpEntry::new('q', "Quit"),
+            HelpEntry::new('?', "Show help"),
+        ]
+        .into();
+        help_msg
+    }
+}
+
+#[cfg(test)]
+impl Default for Home {
+    fn default() -> Self {
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
+        Self {
+            tx: ActionSender(tx),
+        }
+    }
+}
 
 impl WidgetExt for Home {
     fn render(&mut self, frame: &mut Frame, area: ratatui::layout::Rect) {
@@ -37,39 +63,44 @@ impl WidgetExt for Home {
             *v_align_area,
         );
 
-        let help_msg: HelpMsg = vec![
-            HelpEntry::new('T', "Go to transactions page"),
-            HelpEntry::new('q', "Quit"),
-        ]
-        .into();
-
-        help_msg.render(frame, area[1]);
+        self.get_help_msg().render(frame, area[1]);
     }
 }
 
 impl EventLoopParticipant for Home {
     fn handle_events(&self, _event: crate::tui::Event) -> Result<()> {
+        if let Event::Key(key) = _event {
+            match key.code {
+                KeyCode::Char('?') => self.tx.send(LayerManageAction::PushPage(Layers::Help(
+                    self.get_help_msg(),
+                ))),
+                KeyCode::Char('T') => {
+                    self.tx
+                        .send(LayerManageAction::SwapPage(Layers::Transaction));
+                }
+                _ => {}
+            }
+        }
         Ok(())
     }
 
     fn update(&mut self, _action: Action) {}
 }
 
-impl Page for Home {
-    fn get_name(&self) -> String {
-        "Home".to_string()
-    }
-}
+impl Page for Home {}
 
 #[cfg(test)]
 mod tests {
     use insta::assert_snapshot;
     use ratatui::{Terminal, backend::TestBackend};
+    use tokio::sync::mpsc;
 
     use super::*;
 
     fn get_test_page() -> Home {
-        let mut home = Home::default();
+        let mut home = Home {
+            tx: ActionSender(tokio::sync::mpsc::unbounded_channel().0),
+        };
         home.init();
         home
     }
@@ -86,14 +117,15 @@ mod tests {
 
     #[test]
     fn test_events() {
-        let mut page = get_test_page();
-        page.handle_events('T'.into()).unwrap();
-        page.update(Action::Tick);
-        // nothing should happen. No panic means success.
-    }
-
-    #[test]
-    fn test_name() {
-        assert_eq!(Home::default().get_name(), "Home");
+        let (tx, mut _rx) = mpsc::unbounded_channel::<Action>();
+        let home = Home { tx: tx.into() };
+        home.handle_events('?'.into()).unwrap();
+        let mut should_receive_layer_opt = false;
+        while let Ok(action) = _rx.try_recv() {
+            if let Action::Layer(LayerManageAction::PushPage(Layers::Help(_))) = action {
+                should_receive_layer_opt = true;
+            }
+        }
+        assert!(should_receive_layer_opt);
     }
 }

@@ -28,7 +28,7 @@ impl From<HelpEntry> for String {
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Clone, Debug)]
 pub(crate) struct HelpMsg {
     slices: Vec<HelpEntry>,
 }
@@ -52,7 +52,7 @@ impl HelpMsg {
         self.slices.push(entry);
     }
 
-    pub(crate) fn render(self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect) {
+    pub(crate) fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect) {
         let help_msg: String = self.into();
         let paragraph = ratatui::widgets::Paragraph::new(help_msg).block(
             Block::default()
@@ -81,6 +81,17 @@ impl DerefMut for HelpMsg {
 impl From<HelpMsg> for String {
     fn from(val: HelpMsg) -> Self {
         val.slices
+            .into_iter()
+            .map(|s| s.into())
+            .collect::<Vec<String>>()
+            .join(" | ")
+    }
+}
+
+impl From<&mut HelpMsg> for String {
+    fn from(val: &mut HelpMsg) -> Self {
+        val.slices
+            .clone()
             .into_iter()
             .map(|s| s.into())
             .collect::<Vec<String>>()
