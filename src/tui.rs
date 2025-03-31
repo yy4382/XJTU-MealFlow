@@ -333,3 +333,13 @@ impl DerefMut for TestTui {
         &mut self.terminal
     }
 }
+
+#[cfg(test)]
+impl TuiEnum {
+    pub fn backend(&self) -> &TestBackend {
+        match self {
+            TuiEnum::Crossterm(_) => panic!("Not a test backend"),
+            TuiEnum::Test(tui) => tui.backend(),
+        }
+    }
+}

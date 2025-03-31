@@ -4,12 +4,10 @@ use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Modifier, Style, Stylize as _, palette::tailwind},
-    symbols,
+    style::{Color, Modifier, Style, palette::tailwind},
     text::{Line, Text},
     widgets::{Block, BorderType, Borders, Clear, HighlightSpacing, List, ListItem, Padding},
 };
-use tracing::info;
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
@@ -153,9 +151,6 @@ impl HelpPopup {
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
             .fg(LIST_COLORS.selected_row_style_fg);
-        let header_style = Style::default()
-            .fg(LIST_COLORS.header_fg)
-            .bg(LIST_COLORS.header_bg);
 
         let block = Block::new()
             .title(Line::raw("Help").centered())
@@ -180,9 +175,9 @@ impl HelpPopup {
 }
 
 struct ListColors {
-    buffer_bg: Color,
-    header_bg: Color,
-    header_fg: Color,
+    // buffer_bg: Color,
+    // header_bg: Color,
+    // header_fg: Color,
     // row_fg: Color,
     selected_row_style_fg: Color,
     // selected_column_style_fg: Color,
@@ -195,9 +190,9 @@ struct ListColors {
 impl Default for ListColors {
     fn default() -> Self {
         Self {
-            buffer_bg: tailwind::GRAY.c950,
-            header_bg: tailwind::INDIGO.c950,
-            header_fg: tailwind::GRAY.c100,
+            // buffer_bg: tailwind::GRAY.c950,
+            // header_bg: tailwind::INDIGO.c950,
+            // header_fg: tailwind::GRAY.c100,
             // row_fg: tailwind::INDIGO.c200,
             selected_row_style_fg: tailwind::INDIGO.c400,
             // selected_column_style_fg: tailwind::INDIGO.c400,
@@ -211,4 +206,77 @@ impl Default for ListColors {
 
 lazy_static::lazy_static! {
     static ref LIST_COLORS: ListColors = ListColors::default();
+}
+
+#[cfg(test)]
+mod tests {
+    use insta::assert_snapshot;
+    use ratatui::{Terminal, prelude::Backend};
+
+    use super::*;
+
+    #[test]
+    fn test_help_popup_new() {
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
+        let help_popup =
+            HelpPopup::new(tx.into(), vec![HelpEntry::new('a', "test")].into()).unwrap();
+        assert_eq!(help_popup.help_msg.len(), 1);
+        assert_eq!(help_popup.longest_entry_size, 7);
+        assert_eq!(help_popup.list_state.selected(), None);
+    }
+
+    #[test]
+    fn test_navigation() {
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let mut help_popup = HelpPopup::new(
+            tx.into(),
+            vec![
+                HelpEntry::new('a', "test"),
+                HelpEntry::new('b', "test2"),
+                HelpEntry::new('c', "test3"),
+            ]
+            .into(),
+        )
+        .unwrap();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 25)).unwrap();
+
+        let mut test_loop = |key: char, expected: Option<usize>| {
+            help_popup.event_loop_once(&mut rx, key.into());
+            terminal
+                .draw(|f| {
+                    help_popup.render(f, f.area());
+                })
+                .unwrap();
+            assert_eq!(help_popup.list_state.selected(), expected);
+        };
+
+        test_loop('j', Some(0));
+        test_loop('k', Some(0));
+        test_loop('G', Some(2));
+        test_loop('k', Some(1));
+        test_loop('j', Some(2));
+        test_loop('g', Some(0));
+    }
+
+    #[test]
+    fn test_help_popup_render() {
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
+        let mut help_popup = HelpPopup::new(
+            tx.into(),
+            vec![
+                HelpEntry::new('a', "test"),
+                HelpEntry::new('b', "test2"),
+                HelpEntry::new('c', "test3"),
+            ]
+            .into(),
+        )
+        .unwrap();
+        let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 25)).unwrap();
+        terminal
+            .draw(|f| {
+                help_popup.render(f, f.area());
+            })
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
 }

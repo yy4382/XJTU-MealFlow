@@ -107,10 +107,14 @@ impl Fetch {
         help
     }
 
-    #[allow(dead_code)]
     pub fn client<T: Into<MealFetcher>>(mut self, client: T) -> Self {
         self.client = client.into();
         self
+    }
+
+    #[cfg(test)]
+    pub fn get_client(&self) -> MealFetcher {
+        self.client.clone()
     }
 }
 

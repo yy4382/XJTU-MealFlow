@@ -267,8 +267,15 @@ impl App {
 #[cfg(test)]
 mod test {
     use clap::Parser;
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use insta::assert_snapshot;
 
-    use crate::cli::{ClapSource, Cli};
+    use crate::{
+        cli::{ClapSource, Cli},
+        libs::fetcher::MealFetcher,
+        tui::Event,
+        utils::help_msg::HelpEntry,
+    };
 
     use super::*;
 
@@ -323,6 +330,10 @@ mod test {
             Layers::CookieInput,
         )));
         assert!(app.page.last().unwrap().is::<CookieInput>());
+        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Help(
+            vec![HelpEntry::new('?', "Help")].into(),
+        ))));
+        assert!(app.page.last().unwrap().is::<HelpPopup>());
     }
 
     #[tokio::test]
@@ -331,7 +342,8 @@ mod test {
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
         assert!(app.page.last().unwrap().is::<Fetch>());
-        // TODO find a way to assert that it is using mock client
+        let fetch = app.page.last().unwrap().downcast_ref::<Fetch>().unwrap();
+        assert!(matches!(fetch.get_client(), MealFetcher::Mock(_)));
     }
 
     #[tokio::test]
@@ -340,5 +352,50 @@ mod test {
 
         app.perform_action(Action::Quit);
         assert_eq!(app.state.should_quit, true);
+    }
+
+    #[tokio::test]
+    async fn app_quit_due_to_last_layer_pop() {
+        let mut app = get_app();
+
+        app.perform_action(Action::Layer(LayerManageAction::PopPage));
+        assert_eq!(app.state.should_quit, true);
+    }
+
+    #[tokio::test]
+    async fn app_push_layer() {
+        let mut app = get_app();
+
+        app.perform_action(Action::Layer(LayerManageAction::PushPage(
+            Layers::Transaction,
+        )));
+        assert_eq!(app.page.len(), 2);
+        assert!(app.page.first().unwrap().is::<Home>());
+        assert!(app.page.last().unwrap().is::<Transactions>());
+        app.perform_action(Action::Layer(LayerManageAction::PopPage));
+        assert_eq!(app.page.len(), 1);
+        assert!(app.page.first().unwrap().is::<Home>());
+    }
+
+    #[tokio::test]
+    async fn app_render() {
+        let mut app = get_app();
+
+        app.perform_action(Action::Render);
+        assert_snapshot!(app.tui.backend());
+    }
+
+    #[tokio::test]
+    async fn app_stacked_render() {
+        let mut app = get_app();
+
+        app.event_loop(Event::Key(KeyEvent::new(
+            KeyCode::Char('?'),
+            KeyModifiers::NONE,
+        )))
+        .unwrap();
+
+        app.perform_action(Action::Render);
+        assert_snapshot!(app.tui.backend());
     }
 }
