@@ -3,11 +3,7 @@ mod app;
 mod cli;
 mod component;
 mod config;
-#[cfg(not(tarpaulin_include))]
-mod errors;
 mod libs;
-#[cfg(not(tarpaulin_include))]
-mod logging;
 mod page;
 #[cfg(not(tarpaulin_include))]
 mod tui;
@@ -62,8 +58,8 @@ async fn run() -> Result<()> {
 #[cfg(not(tarpaulin_include))]
 async fn main() -> Result<()> {
     dotenv().ok();
-    errors::init()?;
-    logging::init()?;
+    utils::errors::init()?;
+    utils::logging::init()?;
 
     let result = run().await;
 
