@@ -355,7 +355,7 @@ pub mod test {
 
     use crate::{
         component::Component,
-        page::{EventLoopParticipant, Page},
+        page::{EventLoopParticipant, Layer},
         utils::key_events::test_utils::{get_char_evt, get_key_evt},
     };
 
@@ -431,7 +431,7 @@ pub mod test {
         }
     }
 
-    impl Page for TestInputPage {}
+    impl Layer for TestInputPage {}
 
     fn get_test_page(auto_submit: bool) -> (TestInputPage, UnboundedReceiver<Action>) {
         let (tx, rx) = mpsc::unbounded_channel::<Action>();

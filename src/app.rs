@@ -1,3 +1,45 @@
+//! Application state management and main event loop.
+//!
+//! This module contains the core application logic, including:
+//! - Root state management ([`RootState`])
+//! - Main application structure ([`App`])
+//! - Event handling and action dispatch
+//! - Page/Layer management
+//!
+//! # Architecture
+//!
+//! The application follows an event-driven architecture with the following components:
+//!
+//! - Events are received from the TUI
+//! - Events are converted to Actions
+//! - Actions are processed to update the application state
+//! - Rerender of the UI is triggered not by state changes, but by time-sequential events which
+//! is controlled by frame rate parameter
+//!
+//! # State Management
+//!
+//! The application state is split into two main parts:
+//!
+//! - [`RootState`]: Handles global application state like quit flags and input modes
+//! - Page-specific state: Each page manages its own internal state
+//!
+//! # Action Flow
+//!
+//! 1. Events are received in the main event loop
+//! 2. Events are converted to Actions via [`App::handle_event`]
+//! 3. Actions are processed by [`App::perform_action`]
+//! 4. State is updated accordingly
+//!
+//! # Layer Management
+//!
+//! The application uses a stack-based approach for managing UI layers:
+//!
+//! - Pages can be pushed onto the stack ([`LayerManageAction::PushPage`])
+//! - Pages can be popped off the stack ([`LayerManageAction::PopPage`])
+//! - The current page can be swapped ([`LayerManageAction::SwapPage`])
+//!
+//! When the last page is popped, the application exits.
+
 use std::time::Duration;
 
 use crate::{
@@ -5,7 +47,7 @@ use crate::{
     config::Config,
     libs::{fetcher::MockMealFetcher, transactions::TransactionManager},
     page::{
-        Page, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
+        Layer, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
         transactions::Transactions,
     },
     tui,
@@ -15,13 +57,21 @@ use crossterm::event::KeyCode::Char;
 use tokio::sync::mpsc;
 use tracing::warn;
 
-pub struct RootState {
+pub(crate) struct RootState {
+    /// Flag to indicate if the application should quit
     should_quit: bool,
+    /// Channel for sending actions
     action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
+    /// Channel for receiving actions
     action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
+
+    /// Transaction manager for interacting with the database
     manager: crate::libs::transactions::TransactionManager,
+
+    /// Flag to indicate if the application is in input mode
     input_mode: bool,
 
+    /// Configuration for the application
     config: Config,
 }
 
@@ -54,9 +104,8 @@ impl RootState {
             should_quit: false,
             action_tx,
             action_rx,
-            manager: manager,
+            manager,
             input_mode: false,
-
             config,
         }
     }
@@ -72,6 +121,7 @@ impl RootState {
         self.action_tx.clone()
     }
 
+    /// Update the state based on the action
     pub(crate) fn update(&mut self, action: &Action) -> Result<()> {
         match action {
             Action::Tick => {
@@ -91,12 +141,13 @@ impl RootState {
 }
 
 pub(super) struct App {
-    pub page: Vec<Box<dyn Page>>,
+    pub page: Vec<Box<dyn Layer>>,
     pub state: RootState,
     pub tui: tui::TuiEnum,
 }
 
 impl App {
+    /// The main event loop for the application
     pub async fn run(&mut self) -> Result<()> {
         self.tui.enter()?;
 
@@ -115,6 +166,9 @@ impl App {
         Ok(())
     }
 
+    /// The event loop for the application
+    ///
+    /// Takes in a [`tui::Event`] and handles it, updating the application state
     fn event_loop(&mut self, e: tui::Event) -> Result<()> {
         self.handle_event(e.clone())
             .with_context(|| format!("failed to handle event {:?}", e))?;
@@ -220,11 +274,11 @@ impl App {
     /// Get the page from Layers enum
     ///
     /// Page is already initialized
-    fn get_layer(&self, layer: &Layers) -> Option<Box<dyn Page>> {
+    fn get_layer(&self, layer: &Layers) -> Option<Box<dyn Layer>> {
         let mut page = match layer.clone() {
             Layers::Home => Box::new(Home {
                 tx: self.state.action_tx.clone().into(),
-            }) as Box<dyn Page>,
+            }) as Box<dyn Layer>,
             Layers::Transaction => Box::new(Transactions::new(
                 self.state.action_tx.clone().into(),
                 self.state.manager.clone(),
@@ -251,7 +305,7 @@ impl App {
             Layers::Help(help_msg) => {
                 let help = HelpPopup::new(self.state.action_tx.clone().into(), help_msg.clone());
                 match help {
-                    Some(help) => Box::new(help) as Box<dyn Page>,
+                    Some(help) => Box::new(help) as Box<dyn Layer>,
                     None => {
                         warn!("Help message is empty");
                         return None;

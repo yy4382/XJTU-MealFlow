@@ -7,7 +7,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::{EventLoopParticipant, Page, WidgetExt};
+use super::{EventLoopParticipant, Layer, WidgetExt};
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use lazy_static::lazy_static;
@@ -169,7 +169,7 @@ impl EventLoopParticipant for Transactions {
     }
 }
 
-impl Page for Transactions {
+impl Layer for Transactions {
     fn init(&mut self) {
         self.tx.send(TransactionAction::LoadTransactions)
     }

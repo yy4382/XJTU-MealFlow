@@ -6,7 +6,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::{EventLoopParticipant, Page, WidgetExt};
+use super::{EventLoopParticipant, Layer, WidgetExt};
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use ratatui::{
@@ -87,7 +87,7 @@ impl EventLoopParticipant for Home {
     fn update(&mut self, _action: Action) {}
 }
 
-impl Page for Home {}
+impl Layer for Home {}
 
 #[cfg(test)]
 mod tests {

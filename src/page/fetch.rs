@@ -20,7 +20,7 @@ use crate::{
     libs::{fetcher, transactions},
 };
 
-use super::{EventLoopParticipant, Page, WidgetExt};
+use super::{EventLoopParticipant, Layer, WidgetExt};
 
 #[derive(Clone, Default, Debug)]
 pub enum FetchingState {
@@ -355,7 +355,7 @@ impl EventLoopParticipant for Fetch {
     }
 }
 
-impl Page for Fetch {
+impl Layer for Fetch {
     fn init(&mut self) {
         self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
 

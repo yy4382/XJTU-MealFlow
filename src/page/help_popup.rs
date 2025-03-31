@@ -16,7 +16,7 @@ use crate::{
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
-use super::{EventLoopParticipant, Page, WidgetExt};
+use super::{EventLoopParticipant, Layer, WidgetExt};
 
 pub(crate) struct HelpPopup {
     help_msg: HelpMsg,
@@ -108,7 +108,7 @@ impl EventLoopParticipant for HelpPopup {
     }
 }
 
-impl Page for HelpPopup {}
+impl Layer for HelpPopup {}
 
 impl WidgetExt for HelpPopup {
     fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::prelude::Rect) {

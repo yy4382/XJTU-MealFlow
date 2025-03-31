@@ -11,7 +11,7 @@ use crate::component::input::{InputComp, InputMode};
 use crate::libs::transactions::TransactionManager;
 use crate::utils::help_msg::{HelpEntry, HelpMsg};
 
-use super::{EventLoopParticipant, Page, WidgetExt};
+use super::{EventLoopParticipant, Layer, WidgetExt};
 
 #[derive(Clone, Debug)]
 pub struct CookieInput {
@@ -164,7 +164,7 @@ impl EventLoopParticipant for CookieInput {
     }
 }
 
-impl Page for CookieInput {
+impl Layer for CookieInput {
     fn init(&mut self) {
         self.tx.send(
             self.account_input
