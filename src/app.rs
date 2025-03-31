@@ -190,10 +190,15 @@ impl App {
             Action::Layer(layer_action) => match layer_action {
                 LayerManageAction::SwapPage(target) => {
                     self.page.pop();
-                    self.page.push(self.get_layer(target));
+                    self.page
+                        .push(self.get_layer(target).expect("Failed to get layer"));
                 }
                 LayerManageAction::PushPage(target) => {
-                    self.page.push(self.get_layer(target));
+                    if let Some(page) = self.get_layer(target) {
+                        self.page.push(page);
+                    } else {
+                        warn!("Failed to get layer");
+                    }
                 }
                 LayerManageAction::PopPage => {
                     if self.page.len() > 1 {
@@ -216,7 +221,7 @@ impl App {
     /// Get the page from Layers enum
     ///
     /// Page is already initialized
-    fn get_layer(&self, layer: &Layers) -> Box<dyn Page> {
+    fn get_layer(&self, layer: &Layers) -> Option<Box<dyn Page>> {
         let mut page = match layer.clone() {
             Layers::Home => Box::new(Home {
                 tx: self.state.action_tx.clone().into(),
@@ -244,13 +249,19 @@ impl App {
                 self.state.manager.clone(),
                 self.state.input_mode,
             )),
-            Layers::Help(help_msg) => Box::new(HelpPopup::new(
-                self.state.action_tx.clone().into(),
-                help_msg.clone(),
-            )),
+            Layers::Help(help_msg) => {
+                let help = HelpPopup::new(self.state.action_tx.clone().into(), help_msg.clone());
+                match help {
+                    Some(help) => Box::new(help) as Box<dyn Page>,
+                    None => {
+                        warn!("Help message is empty");
+                        return None;
+                    }
+                }
+            }
         };
         page.init();
-        page
+        Some(page)
     }
 }
 

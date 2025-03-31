@@ -3,7 +3,8 @@ use color_eyre::eyre::Context;
 use crate::{
     component::input::InputAction,
     page::{
-        cookie_input::CookieInputAction, fetch::FetchingAction, transactions::TransactionAction,
+        cookie_input::CookieInputAction, fetch::FetchingAction, help_popup::HelpPopupAction,
+        transactions::TransactionAction,
     },
     utils::help_msg::HelpMsg,
 };
@@ -17,6 +18,7 @@ pub enum Action {
     Transaction(TransactionAction),
     Fetching(FetchingAction),
     CookieInput(CookieInputAction),
+    HelpPopup(HelpPopupAction),
 
     Comp((CompAction, u64)),
 
@@ -28,6 +30,7 @@ pub enum Action {
 }
 #[derive(Clone, Debug)]
 pub enum Layers {
+    #[allow(dead_code)]
     Home,
     Fetch,
     Transaction,

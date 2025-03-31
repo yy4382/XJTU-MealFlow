@@ -19,6 +19,15 @@ impl HelpEntry {
     }
 }
 
+impl std::fmt::Display for HelpEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HelpEntry::Plain(desc) => write!(f, "{}", desc),
+            HelpEntry::Key((key, desc)) => write!(f, "{}: {}", desc, key),
+        }
+    }
+}
+
 impl From<HelpEntry> for String {
     fn from(val: HelpEntry) -> Self {
         match val {
