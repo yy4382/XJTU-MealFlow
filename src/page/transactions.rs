@@ -85,19 +85,17 @@ impl Transactions {
     }
 
     fn get_help_msg(&self) -> HelpMsg {
-        let help_msg: HelpMsg = [
-            if self.filter_option.is_none() {
-                Some(HelpEntry::new('f', "Fetch"))
-            } else {
-                None
-            },
-            Some(HelpEntry::new('?', "Show help")),
-            Some(HelpEntry::new('l', "Load from local cache")),
-        ]
-        .into_iter()
-        .filter_map(|x| x)
-        .collect::<Vec<HelpEntry>>()
-        .into();
+        let mut help_msg = HelpMsg::default();
+
+        help_msg.push(HelpEntry::new('?', "Show help"));
+        if self.filter_option.is_some() {
+            help_msg.push(HelpEntry::new(KeyCode::Esc, "Back"));
+        } else {
+            help_msg.push(HelpEntry::new('f', "Fetch"));
+        }
+
+        help_msg.push(HelpEntry::new(' ', "Filter this merchant"));
+        help_msg.push(HelpEntry::new('l', "Load from local cache"));
 
         help_msg
     }
@@ -167,19 +165,17 @@ impl EventLoopParticipant for Transactions {
                         Layers::Help(self.get_help_msg()).into_push_config(true),
                     ));
                 }
-                (_, KeyCode::Enter) => match self.table_state.selected() {
+                (_, KeyCode::Char(' ')) => match self.table_state.selected() {
                     // TODO add help info
                     Some(index) => match self.transactions.get(index) {
                         Some(transaction) => {
-                            self.tx.send(LayerManageAction::PushPage(
-                                Layers::Transaction(Some(
-                                    self.filter_option
-                                        .clone()
-                                        .unwrap_or_default()
-                                        .merchant(transaction.merchant.clone()),
-                                ))
-                                .into_push_config(false),
+                            let layer = Layers::Transaction(Some(
+                                self.filter_option
+                                    .clone()
+                                    .unwrap_or_default()
+                                    .merchant(transaction.merchant.clone()),
                             ));
+                            self.tx.send(LayerManageAction::SwapPage(layer));
                         }
                         None => {}
                     },
@@ -485,7 +481,7 @@ mod test {
     fn push_filtered_page() {
         let (mut rx, mut transaction) = get_test_objs(None, 50);
         transaction.event_loop_once(&mut rx, 'j'.into());
-        transaction.handle_events(KeyCode::Enter.into()).unwrap();
+        transaction.handle_events(' '.into()).unwrap();
         while let Ok(action) = rx.try_recv() {
             if let Action::Layer(LayerManageAction::PushPage(PushPageConfig {
                 layer: Layers::Transaction(filter),

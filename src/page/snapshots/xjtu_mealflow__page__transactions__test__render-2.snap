@@ -25,5 +25,5 @@ expression: terminal.backend()
 "                                                                              █ "
 "                                                                                "
 "╭──────────────────────────────────────────────────────────────────────────────╮"
-"│ Fetch: f | Show help: ? | Load from local cache: l                           │"
+"│ Show help: ? | Fetch: f | Filter this merchant: space | Load from local cach │"
 "╰──────────────────────────────────────────────────────────────────────────────╯"

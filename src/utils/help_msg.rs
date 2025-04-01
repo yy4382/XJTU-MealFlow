@@ -10,6 +10,7 @@ enum HelpKeyEvent {
     Key(KeyEvent),
     Plain(String),
 }
+// TODO add a long_desc field to HelpEntry to show in popup
 
 #[derive(Debug, Clone)]
 pub(crate) struct HelpEntry {

@@ -235,7 +235,9 @@ impl App {
     fn perform_action(&mut self, action: Action) {
         match &action {
             Action::Render => self.tui.draw(|f| self.layer_manager.render(f)).unwrap(),
-            Action::Layer(layer_action) => self.layer_manager.handle_layer_action(layer_action, &self.state),
+            Action::Layer(layer_action) => self
+                .layer_manager
+                .handle_layer_action(layer_action, &self.state),
             _ => {}
         }
         self.state.update(&action).unwrap();
@@ -320,7 +322,12 @@ pub(super) mod test {
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
         assert!(app.layer_manager.last().unwrap().is::<Fetch>());
-        let fetch = app.layer_manager.last().unwrap().downcast_ref::<Fetch>().unwrap();
+        let fetch = app
+            .layer_manager
+            .last()
+            .unwrap()
+            .downcast_ref::<Fetch>()
+            .unwrap();
         assert!(matches!(fetch.get_client(), MealFetcher::Mock(_)));
     }
 
