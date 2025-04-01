@@ -121,13 +121,12 @@ impl Layer for HelpPopup {}
 
 impl WidgetExt for HelpPopup {
     fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::prelude::Rect) {
-        let width = max(
-            self.longest_desc + self.longest_key + 8,
-            min(50, frame.area().width - 4),
+        let width = min(
+            max(self.longest_desc + self.longest_key + 8, 50),
+            frame.area().width - 4,
         );
         let show_area = Rect {
-            // FIXME deal with subtract overflow
-            x: (area.width - width) / 2,
+            x: (area.width.saturating_sub(width)) / 2,
             y: area.height / 6,
             width,
             height: area.height * 2 / 3,
