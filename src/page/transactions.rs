@@ -2,13 +2,13 @@ use std::cmp::max;
 
 use crate::{
     actions::{Action, ActionSender, LayerManageAction, Layers},
-    libs::transactions::{Transaction, TransactionManager},
+    libs::transactions::{FilterOptions, Transaction, TransactionManager},
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
 use super::{EventLoopParticipant, Layer, WidgetExt};
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Context, Result};
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -16,8 +16,8 @@ use ratatui::{
     style::{Color, Modifier, Style, Stylize, palette::tailwind},
     text::Text,
     widgets::{
-        Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
-        TableState,
+        Cell, Clear, HighlightSpacing, Paragraph, Row, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Table, TableState,
     },
 };
 use unicode_width::UnicodeWidthStr;
@@ -52,10 +52,11 @@ const ITEM_HEIGHT: usize = 3;
 
 #[derive(Clone, Debug)]
 pub struct Transactions {
-    transactions: Vec<crate::libs::transactions::Transaction>,
-
+    filter_option: Option<FilterOptions>,
     tx: crate::actions::ActionSender,
     manager: TransactionManager,
+
+    transactions: Vec<crate::libs::transactions::Transaction>,
 
     table_state: TableState,
     scroll_state: ScrollbarState,
@@ -63,26 +64,41 @@ pub struct Transactions {
 }
 
 impl Transactions {
-    pub fn new(tx: ActionSender, manager: TransactionManager) -> Self {
-        Self {
-            transactions: Default::default(),
+    pub fn new(
+        filter_option: Option<FilterOptions>,
+        tx: ActionSender,
+        manager: TransactionManager,
+    ) -> Self {
+        let mut t = Self {
+            filter_option,
             tx,
             manager,
+
+            transactions: Default::default(),
 
             table_state: TableState::default(),
             scroll_state: ScrollbarState::default(),
             longest_item_lens: (0, 0, 0),
-        }
+        };
+        t.load_from_db();
+        t
     }
 
     fn get_help_msg(&self) -> HelpMsg {
-        let help_msg: HelpMsg = vec![
-            HelpEntry::new_plain("hjkl", "Move focus"),
-            HelpEntry::new('f', "Fetch"),
-            HelpEntry::new('?', "Show help"),
-            HelpEntry::new('l', "Load from local cache"),
+        let help_msg: HelpMsg = [
+            if self.filter_option.is_none() {
+                Some(HelpEntry::new('f', "Fetch"))
+            } else {
+                None
+            },
+            Some(HelpEntry::new('?', "Show help")),
+            Some(HelpEntry::new('l', "Load from local cache")),
         ]
+        .into_iter()
+        .filter_map(|x| x)
+        .collect::<Vec<HelpEntry>>()
         .into();
+
         help_msg
     }
 }
@@ -101,13 +117,31 @@ impl From<TransactionAction> for Action {
 
 impl WidgetExt for Transactions {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
-        let vertical = &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]);
-        let rects = vertical.split(area);
+        frame.render_widget(Clear, area);
+        let (main_area, help_area) = match &self.filter_option {
+            Some(opt) => {
+                let areas = &Layout::vertical([
+                    Constraint::Fill(1),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                ])
+                .split(area);
 
-        self.render_table(frame, rects[0]);
-        self.render_scrollbar(frame, rects[0]);
+                frame.render_widget(Paragraph::new(format!("\nFilters: {}\n", opt)), areas[1]);
 
-        self.get_help_msg().render(frame, rects[1]);
+                (areas[0], areas[2])
+            }
+            None => {
+                let areas =
+                    &Layout::vertical([Constraint::Fill(1), Constraint::Length(3)]).split(area);
+
+                (areas[0], areas[1])
+            }
+        };
+        self.render_table(frame, main_area);
+        self.render_scrollbar(frame, main_area);
+
+        self.get_help_msg().render(frame, help_area);
     }
 }
 
@@ -116,13 +150,39 @@ impl EventLoopParticipant for Transactions {
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
                 // navigate to fetch page
-                (_, KeyCode::Char('f')) => self.tx.send(LayerManageAction::SwapPage(Layers::Fetch)),
+                (_, KeyCode::Char('f')) => {
+                    if self.filter_option.is_none() {
+                        self.tx.send(LayerManageAction::SwapPage(Layers::Fetch))
+                    }
+                }
                 (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
-                (_, KeyCode::Char('j')) => self.tx.send(TransactionAction::ChangeRowFocus(1)),
-                (_, KeyCode::Char('k')) => self.tx.send(TransactionAction::ChangeRowFocus(-1)),
+                (_, KeyCode::Char('j')) | (_, KeyCode::Down) => {
+                    self.tx.send(TransactionAction::ChangeRowFocus(1))
+                }
+                (_, KeyCode::Char('k')) | (_, KeyCode::Up) => {
+                    self.tx.send(TransactionAction::ChangeRowFocus(-1))
+                }
                 (_, KeyCode::Char('?')) => self.tx.send(LayerManageAction::PushPage(Layers::Help(
                     self.get_help_msg(),
                 ))),
+                (_, KeyCode::Enter) => match self.table_state.selected() {
+                    // TODO add help info
+                    Some(index) => match self.transactions.get(index) {
+                        Some(transaction) => {
+                            self.tx
+                                .send(LayerManageAction::PushPage(Layers::Transaction(Some(
+                                    self.filter_option
+                                        .clone()
+                                        .unwrap_or_default()
+                                        .merchant(transaction.merchant.clone()),
+                                ))));
+                        }
+                        None => {}
+                    },
+                    None => {}
+                },
+                // TODO add help info
+                (_, KeyCode::Esc) => self.tx.send(LayerManageAction::PopPage),
                 _ => (),
             }
         };
@@ -133,12 +193,7 @@ impl EventLoopParticipant for Transactions {
         if let Action::Transaction(action) = action {
             match action {
                 TransactionAction::LoadTransactions => {
-                    self.transactions = self.manager.fetch_all().unwrap();
-                    self.transactions.sort_by(|a, b| b.time.cmp(&a.time));
-                    self.scroll_state = self
-                        .scroll_state
-                        .content_length(self.transactions.len() * ITEM_HEIGHT);
-                    self.longest_item_lens = constraint_len_calculator(&self.transactions);
+                    self.load_from_db();
                 }
                 TransactionAction::ChangeRowFocus(index) => {
                     let cur_index = self.table_state.selected().unwrap_or(0);
@@ -160,11 +215,7 @@ impl EventLoopParticipant for Transactions {
     }
 }
 
-impl Layer for Transactions {
-    fn init(&mut self) {
-        self.tx.send(TransactionAction::LoadTransactions)
-    }
-}
+impl Layer for Transactions {}
 
 impl Transactions {
     fn render_table(&mut self, frame: &mut Frame, area: Rect) {
@@ -237,6 +288,35 @@ impl Transactions {
             &mut self.scroll_state,
         );
     }
+
+    fn load_from_db(&mut self) {
+        match &self.filter_option {
+            Some(option) => {
+                self.transactions = self
+                    .manager
+                    .fetch_filtered(option)
+                    .with_context(|| {
+                        format!(
+                            "Failed to load transactions from database with filter: {:?}",
+                            option
+                        )
+                    })
+                    .unwrap();
+            }
+            None => {
+                self.transactions = self
+                    .manager
+                    .fetch_all()
+                    .context("Failed to load transactions from database")
+                    .unwrap();
+            }
+        }
+        self.transactions.sort_by(|a, b| b.time.cmp(&a.time));
+        self.scroll_state = self
+            .scroll_state
+            .content_length(self.transactions.len() * ITEM_HEIGHT);
+        self.longest_item_lens = constraint_len_calculator(&self.transactions);
+    }
 }
 
 fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) {
@@ -259,6 +339,8 @@ fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) 
 
 #[cfg(test)]
 mod test {
+    use core::panic;
+
     use crate::libs::fetcher;
 
     use super::*;
@@ -266,14 +348,17 @@ mod test {
     use ratatui::{Terminal, backend::TestBackend};
     use tokio::sync::mpsc::{self, UnboundedReceiver};
 
-    fn get_test_objs() -> (UnboundedReceiver<Action>, Transactions) {
+    fn get_test_objs(
+        filter_opt: Option<FilterOptions>,
+        load_data: u32,
+    ) -> (UnboundedReceiver<Action>, Transactions) {
         let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
 
         let manager = TransactionManager::new(None).unwrap();
-        let data = fetcher::test_utils::get_mock_data(50);
+        let data = fetcher::test_utils::get_mock_data(load_data);
         manager.insert(&data).unwrap();
 
-        let mut transaction = Transactions::new(tx.into(), manager);
+        let mut transaction = Transactions::new(filter_opt, tx.into(), manager);
         transaction.init();
 
         while let Ok(action) = rx.try_recv() {
@@ -287,7 +372,7 @@ mod test {
 
     #[test]
     fn order() {
-        let (_, transaction) = get_test_objs();
+        let (_, transaction) = get_test_objs(None, 50);
         transaction
             .transactions
             .iter()
@@ -302,7 +387,7 @@ mod test {
 
     #[test]
     fn navigation() {
-        let (mut rx, mut transaction) = get_test_objs();
+        let (mut rx, mut transaction) = get_test_objs(None, 50);
         assert_eq!(transaction.table_state.selected(), None);
 
         transaction.event_loop_once(&mut rx, 'j'.into());
@@ -320,7 +405,7 @@ mod test {
 
     #[test]
     fn render() {
-        let (mut rx, mut transaction) = get_test_objs();
+        let (mut rx, mut transaction) = get_test_objs(None, 50);
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
 
         terminal
@@ -333,5 +418,61 @@ mod test {
             .draw(|frame| transaction.render(frame, frame.area()))
             .unwrap();
         assert_snapshot!(terminal.backend());
+    }
+
+    #[test]
+    fn with_filter() {
+        let (mut rx, transaction) =
+            get_test_objs(Some(FilterOptions::default().merchant("寿司")), 200);
+        assert!(transaction.filter_option.is_some());
+        transaction.transactions.iter().for_each(|t| {
+            assert!(t.merchant.contains("寿司"));
+        });
+        transaction.handle_events('f'.into()).unwrap();
+        assert!(rx.try_recv().is_err());
+    }
+
+    #[test]
+    fn render_with_filter() {
+        let (mut rx, mut transaction) =
+            get_test_objs(Some(FilterOptions::default().merchant("寿司")), 200);
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+
+        terminal
+            .draw(|frame| transaction.render(frame, frame.area()))
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+
+        transaction.event_loop_once(&mut rx, 'k'.into());
+        terminal
+            .draw(|frame| transaction.render(frame, frame.area()))
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+
+    #[test]
+    fn push_filtered_page() {
+        let (mut rx, mut transaction) = get_test_objs(None, 50);
+        transaction.event_loop_once(&mut rx, 'j'.into());
+        transaction.handle_events(KeyCode::Enter.into()).unwrap();
+        while let Ok(action) = rx.try_recv() {
+            if let Action::Layer(LayerManageAction::PushPage(Layers::Transaction(filter))) = action
+            {
+                assert!(filter.is_some());
+                Some(assert_eq!(
+                    filter.unwrap(),
+                    FilterOptions::default().merchant(
+                        transaction
+                            .transactions
+                            .get(transaction.table_state.selected().unwrap())
+                            .unwrap()
+                            .merchant
+                            .clone()
+                    )
+                ));
+            } else {
+                panic!("Expected PushPage action");
+            }
+        }
     }
 }

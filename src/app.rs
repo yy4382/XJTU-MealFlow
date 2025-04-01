@@ -254,10 +254,11 @@ impl App {
                     }
                 }
                 LayerManageAction::PopPage => {
-                    if self.page.len() > 1 {
-                        self.page.pop();
-                    } else {
-                        self.state.should_quit = true;
+                    self.page.pop();
+                    if self.page.is_empty() {
+                        self.page.push(Box::new(Home {
+                            tx: self.state.action_tx.clone().into(),
+                        }));
                     }
                 }
             },
@@ -279,7 +280,8 @@ impl App {
             Layers::Home => Box::new(Home {
                 tx: self.state.action_tx.clone().into(),
             }) as Box<dyn Layer>,
-            Layers::Transaction => Box::new(Transactions::new(
+            Layers::Transaction(filter_opt) => Box::new(Transactions::new(
+                filter_opt,
                 self.state.action_tx.clone().into(),
                 self.state.manager.clone(),
             )),
@@ -413,7 +415,7 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::PopPage));
-        assert_eq!(app.state.should_quit, true);
+        assert!(app.page.last().unwrap().is::<Home>());
     }
 
     #[tokio::test]
@@ -421,7 +423,7 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::PushPage(
-            Layers::Transaction,
+            Layers::Transaction(None),
         )));
         assert_eq!(app.page.len(), 2);
         assert!(app.page.first().unwrap().is::<Home>());

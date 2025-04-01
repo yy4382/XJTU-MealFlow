@@ -76,7 +76,7 @@ impl EventLoopParticipant for Home {
                 ))),
                 KeyCode::Char('T') => {
                     self.tx
-                        .send(LayerManageAction::SwapPage(Layers::Transaction));
+                        .send(LayerManageAction::SwapPage(Layers::Transaction(None)));
                 }
                 _ => {}
             }

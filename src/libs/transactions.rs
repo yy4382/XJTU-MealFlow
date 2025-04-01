@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, FixedOffset, TimeZone};
 use color_eyre::eyre::{Context, ContextCompat, Result, bail};
 use rusqlite::{Connection, params};
 
@@ -132,7 +132,7 @@ impl TransactionManager {
         for transaction in transactions {
             stmt.execute(params![
                 transaction.id,
-                transaction.time.to_rfc3339(),
+                transaction.time,
                 transaction.amount,
                 transaction.merchant
             ])
@@ -153,13 +153,60 @@ impl TransactionManager {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare("SELECT id, time, amount, merchant FROM transactions")?;
         let transactions = stmt.query_map([], |row| {
-            let time_str: String = row.get(1)?;
-            let time = chrono::DateTime::parse_from_rfc3339(&time_str)
-                .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
-
             Ok(Transaction {
                 id: row.get(0)?,
-                time,
+                time: row.get(1)?,
+                amount: row.get(2)?,
+                merchant: row.get(3)?,
+            })
+        })?;
+
+        Ok(transactions.filter_map(|t| t.ok()).collect())
+    }
+
+    pub fn fetch_filtered(&self, filter_opt: &FilterOptions) -> Result<Vec<Transaction>> {
+        let conn = self.conn.lock().unwrap();
+
+        let mut conditions = Vec::new();
+        let mut params = Vec::new();
+
+        if let Some((start, end)) = &filter_opt.time {
+            conditions.push("time >= ? AND time < ?");
+            params.push(start.to_string());
+            params.push(end.to_string());
+        }
+
+        if let Some(merchant) = &filter_opt.merchant {
+            conditions.push("merchant = ?");
+            params.push(merchant.to_string());
+        }
+
+        if let Some((min, max)) = &filter_opt.amount {
+            conditions.push("amount >= ? AND amount < ?");
+            params.push(min.to_string());
+            params.push(max.to_string());
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        let query = format!(
+            "SELECT id, time, amount, merchant FROM transactions {}",
+            where_clause
+        );
+
+        let mut stmt = conn.prepare(&query)?;
+
+        let param_refs: Vec<&dyn rusqlite::ToSql> =
+            params.iter().map(|p| p as &dyn rusqlite::ToSql).collect();
+
+        let transactions = stmt.query_map(rusqlite::params_from_iter(param_refs), |row| {
+            Ok(Transaction {
+                id: row.get(0)?,
+                time: row.get(1)?,
                 amount: row.get(2)?,
                 merchant: row.get(3)?,
             })
@@ -250,6 +297,84 @@ impl TransactionManager {
             }
             None => bail!("No account and cookie found"),
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(crate) struct FilterOptions {
+    /// Time range, closed on left, open on right
+    time: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
+    /// Merchant name
+    merchant: Option<String>,
+    /// Amount range, closed on left, open on right
+    amount: Option<(f64, f64)>,
+}
+
+impl FilterOptions {
+    #[allow(dead_code)]
+    pub(crate) fn start(mut self, start: DateTime<FixedOffset>) -> Self {
+        self.time = Some(match self.time {
+            Some((_, end)) => (start, end),
+            None => (
+                start,
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(9999, 1, 1, 0, 0, 0)
+                    .unwrap(),
+            ),
+        });
+        self
+    }
+    #[allow(dead_code)]
+    pub(crate) fn end(mut self, end: DateTime<FixedOffset>) -> Self {
+        self.time = Some(match self.time {
+            Some((start, _)) => (start, end),
+            None => (
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(1970, 1, 1, 0, 0, 0)
+                    .unwrap(),
+                end,
+            ),
+        });
+        self
+    }
+    pub(crate) fn merchant<T: Into<String>>(mut self, merchant: T) -> Self {
+        self.merchant = Some(merchant.into());
+        self
+    }
+    #[allow(dead_code)]
+    pub(crate) fn min(mut self, amount: f64) -> Self {
+        self.amount = Some(match self.amount {
+            Some((_, max)) => (amount, max),
+            None => (amount, f64::INFINITY), // Use a safe default for the maximum value
+        });
+        self
+    }
+    #[allow(dead_code)]
+    pub(crate) fn max(mut self, amount: f64) -> Self {
+        self.amount = Some(match self.amount {
+            Some((min, _)) => (min, amount),
+            None => (f64::NEG_INFINITY, amount), // Use a safe default for the minimum value
+        });
+        self
+    }
+}
+
+impl std::fmt::Display for FilterOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut result = String::new();
+        if let Some((start, end)) = &self.time {
+            result.push_str(&format!("Time: {} - {}\n", start, end));
+        }
+        if let Some(merchant) = &self.merchant {
+            result.push_str(&format!("Merchant: {}\n", merchant));
+        }
+        if let Some((min, max)) = &self.amount {
+            result.push_str(&format!("Amount: {} - {}\n", min, max));
+        }
+        if result.is_empty() {
+            result.push_str("No filters applied\n");
+        }
+        write!(f, "{}", result)
     }
 }
 
@@ -434,5 +559,65 @@ mod tests {
         let fetched = manager.fetch_all().unwrap();
         assert_eq!(fetched.len(), 2);
         assert_eq!(fetched[0].id, 1);
+    }
+
+    #[test]
+    fn test_fetch_filtered() {
+        let manager = TransactionManager::new(None).unwrap();
+        manager.clear_db().unwrap();
+
+        // Insert test data
+        let transactions = vec![
+            Transaction::new(
+                -100.0,
+                "Amazon".to_string(),
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
+            ),
+            Transaction::new(
+                -200.0,
+                "Google".to_string(),
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 2, 0, 0, 0)
+                    .unwrap(),
+            ),
+            Transaction::new(
+                -300.0,
+                "Amazon".to_string(),
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 3, 0, 0, 0)
+                    .unwrap(),
+            ),
+        ];
+        manager.insert(&transactions).unwrap();
+
+        // Test filtering by merchant
+        let filter = FilterOptions::default().merchant("Amazon".to_string());
+        let results = manager.fetch_filtered(&filter).unwrap();
+        assert_eq!(results.len(), 2);
+        assert!(results.iter().all(|t| t.merchant == "Amazon"));
+
+        // Test filtering by amount range
+        let filter = FilterOptions::default().min(-250.0).max(-100.0);
+        let results = manager.fetch_filtered(&filter).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].amount, -200.0);
+
+        // Test filtering by time range
+        let filter = FilterOptions::default()
+            .start(
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
+                    .unwrap(),
+            )
+            .end(
+                OFFSET_UTC_PLUS8
+                    .with_ymd_and_hms(2025, 3, 2, 0, 0, 0)
+                    .unwrap(),
+            );
+        let results = manager.fetch_filtered(&filter).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].merchant, "Amazon");
     }
 }

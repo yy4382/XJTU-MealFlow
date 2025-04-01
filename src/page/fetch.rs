@@ -267,7 +267,7 @@ impl EventLoopParticipant for Fetch {
 
                     (_, KeyCode::Esc) => self
                         .tx
-                        .send(LayerManageAction::SwapPage(Layers::Transaction)),
+                        .send(LayerManageAction::SwapPage(Layers::Transaction(None))),
                     (_, KeyCode::Char('?')) => {
                         self.tx.send(LayerManageAction::PushPage(Layers::Help(
                             self.get_help_msg(),

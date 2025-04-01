@@ -1,0 +1,29 @@
+---
+source: src/page/transactions.rs
+expression: terminal.backend()
+---
+"   金额        时间                               商家                          " Hidden by multi-width symbols: [(4, " "), (6, " "), (16, " "), (18, " "), (51, " "), (53, " ")]
+"                                                                              █ "
+"     -18.72    2025-03-29 17:08                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                              █ "
+"                                                                              █ "
+"     -15.14    2025-03-21 11:18                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                              █ "
+"                                                                              █ "
+"     -15.91    2025-03-19 11:35                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                              █ "
+"                                                                              ║ "
+"     -17.68    2025-03-14 11:10                   寿司                        ║ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                              ║ "
+"                                                                              ║ "
+"     -16.26    2025-02-22 11:46                   寿司                        ║ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                              ║ "
+"                                                                              ║ "
+"     -16.63    2025-02-18 17:56                   寿司                        ║ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+"                                                                                "
+"                                                                                "
+"Filters: Merchant: 寿司                                                         " Hidden by multi-width symbols: [(20, " "), (22, " ")]
+"                                                                                "
+"╭──────────────────────────────────────────────────────────────────────────────╮"
+"│ Show help: ? | Load from local cache: l                                      │"
+"╰──────────────────────────────────────────────────────────────────────────────╯"
