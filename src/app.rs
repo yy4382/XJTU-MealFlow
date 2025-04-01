@@ -40,26 +40,20 @@
 //!
 //! When the last page is popped, the application exits.
 
-use std::{
-    ops::{Deref, DerefMut},
-    time::Duration,
-};
-
 use crate::{
-    actions::{Action, LayerManageAction, Layers},
+    actions::Action,
     config::Config,
-    libs::{fetcher::MockMealFetcher, transactions::TransactionManager},
-    page::{
-        Layer, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
-        transactions::Transactions,
-    },
+    libs::transactions::TransactionManager,
+    page::home::Home,
     tui::{self, TuiEnum},
 };
 use color_eyre::eyre::{Context, Result};
 use crossterm::event::KeyCode::Char;
-use ratatui::Frame;
+use layer_manager::LayerManager;
 use tokio::sync::mpsc;
-use tracing::{info, warn};
+use tracing::warn;
+
+mod layer_manager;
 
 pub(crate) struct RootState {
     /// Flag to indicate if the application should quit
@@ -141,191 +135,25 @@ impl RootState {
 }
 
 pub(super) struct App {
-    page: LayerManager,
+    layer_manager: LayerManager,
     state: RootState,
     tui: tui::TuiEnum,
 }
 
 impl App {
     pub fn new(state: RootState, tui: TuiEnum) -> Self {
-        let layer_home = LayerConfig {
-            layer: BoxedLayer(Box::new(Home {
+        Self {
+            layer_manager: LayerManager::new(Box::new(Home {
                 tx: state.action_tx.clone().into(),
             })),
-            render: true,
-        };
-        Self {
-            page: LayerManager {
-                layers: vec![layer_home],
-            },
             state,
             tui,
         }
     }
 }
 
-struct BoxedLayer(Box<dyn Layer>);
-impl Deref for BoxedLayer {
-    type Target = dyn Layer;
-
-    fn deref(&self) -> &Self::Target {
-        &*self.0
-    }
-}
-impl DerefMut for BoxedLayer {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self.0
-    }
-}
-impl From<Box<dyn Layer>> for BoxedLayer {
-    fn from(layer: Box<dyn Layer>) -> Self {
-        Self(layer)
-    }
-}
-impl BoxedLayer {
-    fn into_layer_config(self, render: bool) -> LayerConfig {
-        LayerConfig {
-            layer: self,
-            render,
-        }
-    }
-}
-
-struct LayerConfig {
-    layer: BoxedLayer,
-    render: bool,
-}
-
-impl Deref for LayerConfig {
-    type Target = BoxedLayer;
-
-    fn deref(&self) -> &Self::Target {
-        &self.layer
-    }
-}
-impl DerefMut for LayerConfig {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.layer
-    }
-}
-
-struct LayerManager {
-    layers: Vec<LayerConfig>,
-}
-impl Deref for LayerManager {
-    type Target = Vec<LayerConfig>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.layers
-    }
-}
-impl DerefMut for LayerManager {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.layers
-    }
-}
-
-impl LayerManager {
-    fn render(&mut self, f: &mut Frame) {
-        self.layers
-            .iter_mut()
-            .filter(|page| page.render)
-            .for_each(|page| page.render(f, f.area()));
-    }
-
-    fn handle_layer_action(&mut self, action: &LayerManageAction, state: &RootState) {
-        match action {
-            LayerManageAction::SwapPage(target) => {
-                self.layers.pop();
-                self.layers.push(
-                    self.get_layer(target, state)
-                        .expect("Failed to get layer")
-                        .into_layer_config(true),
-                );
-                info!(
-                    "Swapping page to {}, current layer stack length {}",
-                    target,
-                    self.layers.len()
-                );
-            }
-            LayerManageAction::PushPage(target) => {
-                self.layers.last_mut().unwrap().render = target.render_self;
-                self.layers.push(
-                    self.get_layer(&target.layer, state)
-                        .expect("Failed to get layer")
-                        .into_layer_config(true),
-                );
-                info!(
-                    "Pushing a {} page, current page will {} render, new layer stack length {}",
-                    target.layer,
-                    if target.render_self { "still" } else { "not" },
-                    self.layers.len()
-                );
-            }
-            LayerManageAction::PopPage => {
-                self.layers.pop();
-                if self.layers.is_empty() {
-                    self.layers.push(
-                        self.get_layer(&Layers::Home, state)
-                            .expect("Failed to get layer")
-                            .into_layer_config(true),
-                    );
-                }
-                self.layers.last_mut().unwrap().render = true;
-                info!(
-                    "Popping page, current layer stack length {}",
-                    self.layers.len()
-                );
-            }
-        }
-    }
-
-    fn get_layer(&self, layer: &Layers, state: &RootState) -> Option<BoxedLayer> {
-        let mut page = match layer.clone() {
-            Layers::Home => Box::new(Home {
-                tx: state.action_tx.clone().into(),
-            }) as Box<dyn Layer>,
-            Layers::Transaction(filter_opt) => Box::new(Transactions::new(
-                filter_opt,
-                state.action_tx.clone().into(),
-                state.manager.clone(),
-            )),
-            Layers::Fetch => Box::new(
-                Fetch::new(
-                    state.action_tx.clone().into(),
-                    state.manager.clone(),
-                    state.input_mode,
-                )
-                .client(if state.config.fetch.use_mock_data {
-                    MockMealFetcher::default()
-                        .set_sim_delay(Duration::from_secs(1))
-                        .per_page(50)
-                } else {
-                    Default::default()
-                }),
-            ),
-            Layers::CookieInput => Box::new(CookieInput::new(
-                state.action_tx.clone().into(),
-                state.manager.clone(),
-                state.input_mode,
-            )),
-            Layers::Help(help_msg) => {
-                let help = HelpPopup::new(state.action_tx.clone().into(), help_msg.clone());
-                match help {
-                    Some(help) => Box::new(help) as Box<dyn Layer>,
-                    None => {
-                        warn!("Help message is empty");
-                        return None;
-                    }
-                }
-            }
-        };
-        page.init();
-        Some(page.into())
-    }
-}
-
 impl App {
+    #[cfg(not(tarpaulin_include))]
     /// The main event loop for the application
     pub async fn run(&mut self) -> Result<()> {
         self.tui.enter()?;
@@ -374,8 +202,6 @@ impl App {
     /// and delegates the handling of page-specific events (remaining events, currently only key events)
     /// to the current page.
     fn handle_event(&self, event: tui::Event) -> Result<()> {
-        let last_page = self.page.last().expect("Page stack is empty");
-
         match event {
             tui::Event::Tick => self.send_action(Action::Tick),
             tui::Event::Render => self.send_action(Action::Render),
@@ -385,16 +211,14 @@ impl App {
             tui::Event::FocusGained => (),
             tui::Event::FocusLost => (),
             tui::Event::Init => (),
-            // tui::Event::Closed => action_tx.send(Action::Quit)?,
-            // tui::Event::Quit => action_tx.send(Action::Quit)?,
             tui::Event::Resize(_, _) => self.send_action(Action::Render),
 
             tui::Event::Key(key) => match key.code {
                 Char('q') => self.send_action(Action::Quit),
-                _ => last_page.handle_events(event).unwrap(),
+                _ => self.layer_manager.handle_event(event).unwrap(),
             },
 
-            _ => last_page.handle_events(event).unwrap(),
+            _ => self.layer_manager.handle_event(event).unwrap(),
         };
         Ok(())
     }
@@ -410,34 +234,36 @@ impl App {
     /// and delegates the handling of page-specific actions to the current page.
     fn perform_action(&mut self, action: Action) {
         match &action {
-            Action::Render => self.tui.draw(|f| self.page.render(f)).unwrap(),
-            Action::Layer(layer_action) => self.page.handle_layer_action(layer_action, &self.state),
+            Action::Render => self.tui.draw(|f| self.layer_manager.render(f)).unwrap(),
+            Action::Layer(layer_action) => self.layer_manager.handle_layer_action(layer_action, &self.state),
             _ => {}
         }
         self.state.update(&action).unwrap();
-        self.page
-            .last_mut()
-            .expect("Page stack is empty")
-            .update(action);
+        self.layer_manager.handle_action(action);
     }
 }
 
 #[cfg(test)]
-mod test {
+pub(super) mod test {
     use clap::Parser;
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use insta::assert_snapshot;
 
     use crate::{
+        actions::{LayerManageAction, Layers},
         cli::{ClapSource, Cli},
         libs::fetcher::MealFetcher,
+        page::{
+            cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup,
+            transactions::Transactions,
+        },
         tui::Event,
         utils::help_msg::HelpEntry,
     };
 
     use super::*;
 
-    fn get_config(mut args: Vec<&str>, append_to_default: bool) -> Config {
+    pub fn get_config(mut args: Vec<&str>, append_to_default: bool) -> Config {
         let mut default_args = vec!["test-config"];
         let args = if append_to_default {
             default_args.push("--db-in-mem");
@@ -460,7 +286,7 @@ mod test {
         assert_eq!(cookie, "hallticket=543210");
     }
 
-    fn get_app() -> App {
+    pub fn get_app() -> App {
         let config = get_config(vec!["--use-mock-data"], true);
         let state = RootState::new(config);
         let app = App::new(state, tui::TestTui::new().into());
@@ -473,19 +299,19 @@ mod test {
 
         // Navigate to Fetch page
         app.event_loop('T'.into()).unwrap();
-        assert!(app.page.last().unwrap().layer.is::<Transactions>());
+        assert!(app.layer_manager.last().unwrap().is::<Transactions>());
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
-        assert!(app.page.last().unwrap().layer.is::<Fetch>());
+        assert!(app.layer_manager.last().unwrap().is::<Fetch>());
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(
             Layers::CookieInput,
         )));
-        assert!(app.page.last().unwrap().layer.is::<CookieInput>());
+        assert!(app.layer_manager.last().unwrap().is::<CookieInput>());
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Help(
             vec![HelpEntry::new('?', "Help")].into(),
         ))));
-        assert!(app.page.last().unwrap().layer.is::<HelpPopup>());
+        assert!(app.layer_manager.last().unwrap().is::<HelpPopup>());
     }
 
     #[tokio::test]
@@ -493,14 +319,8 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
-        assert!(app.page.last().unwrap().layer.is::<Fetch>());
-        let fetch = app
-            .page
-            .last()
-            .unwrap()
-            .layer
-            .downcast_ref::<Fetch>()
-            .unwrap();
+        assert!(app.layer_manager.last().unwrap().is::<Fetch>());
+        let fetch = app.layer_manager.last().unwrap().downcast_ref::<Fetch>().unwrap();
         assert!(matches!(fetch.get_client(), MealFetcher::Mock(_)));
     }
 
@@ -517,7 +337,7 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::PopPage));
-        assert!(app.page.last().unwrap().is::<Home>());
+        assert!(app.layer_manager.last().unwrap().is::<Home>());
     }
 
     #[tokio::test]
@@ -527,12 +347,12 @@ mod test {
         app.perform_action(Action::Layer(LayerManageAction::PushPage(
             Layers::Transaction(None).into_push_config(false),
         )));
-        assert_eq!(app.page.len(), 2);
-        assert!(app.page.first().unwrap().is::<Home>());
-        assert!(app.page.last().unwrap().is::<Transactions>());
+        assert_eq!(app.layer_manager.len(), 2);
+        assert!(app.layer_manager.first().unwrap().is::<Home>());
+        assert!(app.layer_manager.last().unwrap().is::<Transactions>());
         app.perform_action(Action::Layer(LayerManageAction::PopPage));
-        assert_eq!(app.page.len(), 1);
-        assert!(app.page.first().unwrap().is::<Home>());
+        assert_eq!(app.layer_manager.len(), 1);
+        assert!(app.layer_manager.first().unwrap().is::<Home>());
     }
 
     #[tokio::test]
