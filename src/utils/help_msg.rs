@@ -5,40 +5,47 @@ use ratatui::widgets::{Block, BorderType, Borders, Padding};
 use super::key_events::KeyEvent;
 
 #[derive(Debug, Clone)]
-pub(crate) enum HelpEntry {
-    Plain((String, String)),
-    Key((KeyEvent, String)),
+
+enum HelpKeyEvent {
+    Key(KeyEvent),
+    Plain(String),
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct HelpEntry {
+    key: HelpKeyEvent,
+    desc: String,
 }
 
 impl HelpEntry {
     pub(crate) fn new<T: Into<String>, K: Into<KeyEvent>>(event: K, desc: T) -> Self {
-        Self::Key((event.into(), desc.into()))
+        Self {
+            key: HelpKeyEvent::Key(event.into()),
+            desc: desc.into(),
+        }
     }
     pub(crate) fn new_plain<T: Into<String>>(event: T, desc: T) -> Self {
-        Self::Plain((event.into(), desc.into()))
+        Self {
+            key: HelpKeyEvent::Plain(event.into()),
+            desc: desc.into(),
+        }
     }
 
     pub(crate) fn key(&self) -> String {
-        match self {
-            HelpEntry::Plain((_, desc)) => desc.to_string(),
-            HelpEntry::Key((key, _)) => key.to_string(),
+        match &self.key {
+            HelpKeyEvent::Key(key) => key.to_string(),
+            HelpKeyEvent::Plain(key) => key.clone(),
         }
     }
 
     pub(crate) fn desc(&self) -> &str {
-        match self {
-            HelpEntry::Plain((desc, _)) => desc,
-            HelpEntry::Key((_, desc)) => desc,
-        }
+        &self.desc
     }
 }
 
 impl std::fmt::Display for HelpEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HelpEntry::Plain((key, desc)) => write!(f, "{}: {}", desc, key),
-            HelpEntry::Key((key, desc)) => write!(f, "{}: {}", desc, key),
-        }
+        write!(f, "{}: {}", self.desc(), self.key())
     }
 }
 
@@ -116,5 +123,25 @@ impl From<&mut HelpMsg> for String {
             .map(|s| s.into())
             .collect::<Vec<String>>()
             .join(" | ")
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_help_entry_key() {
+        let entry = HelpEntry::new('c', "Create a new transaction");
+        assert_eq!(entry.key(), "c");
+        assert_eq!(entry.desc(), "Create a new transaction");
+        assert_eq!(entry.to_string(), "Create a new transaction: c");
+    }
+    #[test]
+    fn test_help_entry_plain() {
+        let entry = HelpEntry::new_plain("hjkl", "Move cursor");
+        assert_eq!(entry.key(), "hjkl");
+        assert_eq!(entry.desc(), "Move cursor");
+        assert_eq!(entry.to_string(), "Move cursor: hjkl");
     }
 }

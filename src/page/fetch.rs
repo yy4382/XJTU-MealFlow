@@ -93,9 +93,14 @@ impl Fetch {
 
 impl Fetch {
     fn get_help_msg(&self) -> HelpMsg {
+        if self.input_mode {
+            return self.input.get_help_msg();
+        }
+
         let mut help: HelpMsg = vec![
             HelpEntry::new_plain("hjkl", "Move focus"),
             HelpEntry::new('e', "Edit account & cookie"),
+            HelpEntry::new('?', "Show help"),
             HelpEntry::new('r', "Refresh local db count"),
             HelpEntry::new(KeyCode::Esc, "Back"),
             HelpEntry::new(' ', "Start fetch"),
@@ -263,6 +268,11 @@ impl EventLoopParticipant for Fetch {
                     (_, KeyCode::Esc) => self
                         .tx
                         .send(LayerManageAction::SwapPage(Layers::Transaction)),
+                    (_, KeyCode::Char('?')) => {
+                        self.tx.send(LayerManageAction::PushPage(Layers::Help(
+                            self.get_help_msg(),
+                        )));
+                    }
                     _ => (),
                 }
             }

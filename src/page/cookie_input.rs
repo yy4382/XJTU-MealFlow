@@ -45,6 +45,7 @@ impl CookieInput {
     pub fn get_help_msg(&self) -> crate::utils::help_msg::HelpMsg {
         let help_msg: HelpMsg = vec![
             HelpEntry::new_plain("hjkl", "Move focus"),
+            HelpEntry::new('?', "Help"),
             HelpEntry::new(KeyCode::Esc, "Back"),
         ]
         .into();
@@ -118,6 +119,11 @@ impl EventLoopParticipant for CookieInput {
                         .tx
                         .send(CookieInputAction::ChangeState(self.state.next())),
                     (_, KeyCode::Esc) => self.tx.send(LayerManageAction::SwapPage(Layers::Fetch)),
+                    (_, KeyCode::Char('?')) => {
+                        self.tx.send(LayerManageAction::PushPage(Layers::Help(
+                            self.get_help_msg(),
+                        )));
+                    }
                     _ => (),
                 }
             }
