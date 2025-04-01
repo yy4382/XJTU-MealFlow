@@ -6,7 +6,7 @@ expression: terminal.backend()
 "   金额        时间                               商家                        █ " Hidden by multi-width symbols: [(4, " "), (6, " "), (16, " "), (18, " "), (51, " "), (53, " ")]
 "                                                                              █ "
 "                                                                              █ "
-"     -18.72    2025-03-29 17:08                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
+" █   -18.72    2025-03-29 17:08                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]
 "                                                                              █ "
 "                                                                              █ "
 "     -15.14    2025-03-21 11:18                   寿司                        █ " Hidden by multi-width symbols: [(51, " "), (53, " ")]

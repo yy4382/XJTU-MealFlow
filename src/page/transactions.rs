@@ -166,7 +166,6 @@ impl EventLoopParticipant for Transactions {
                     ));
                 }
                 (_, KeyCode::Char(' ')) => match self.table_state.selected() {
-                    // TODO add help info
                     Some(index) => match self.transactions.get(index) {
                         Some(transaction) => {
                             let layer = Layers::Transaction(Some(
@@ -182,7 +181,6 @@ impl EventLoopParticipant for Transactions {
                     },
                     None => {}
                 },
-                // TODO add help info
                 (_, KeyCode::Esc) => self.tx.send(LayerManageAction::PopPage),
                 _ => (),
             }
@@ -317,6 +315,11 @@ impl Transactions {
             .scroll_state
             .content_length(self.transactions.len() * ITEM_HEIGHT);
         self.longest_item_lens = constraint_len_calculator(&self.transactions, HEADER_STR);
+        if self.transactions.is_empty() {
+            self.table_state.select(None);
+        } else {
+            self.table_state.select(Some(0));
+        }
     }
 }
 
@@ -415,7 +418,7 @@ mod test {
     #[test]
     fn navigation() {
         let (mut rx, mut transaction) = get_test_objs(None, 50);
-        assert_eq!(transaction.table_state.selected(), None);
+        assert_eq!(transaction.table_state.selected(), Some(0));
 
         transaction.event_loop_once(&mut rx, 'j'.into());
         assert_eq!(transaction.table_state.selected(), Some(1));
