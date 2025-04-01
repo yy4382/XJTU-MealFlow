@@ -175,7 +175,8 @@ impl EventLoopParticipant for Transactions {
                                     .unwrap_or_default()
                                     .merchant(transaction.merchant.clone()),
                             ));
-                            self.tx.send(LayerManageAction::SwapPage(layer));
+                            self.tx
+                                .send(LayerManageAction::PushPage(layer.into_push_config(false)));
                         }
                         None => {}
                     },
@@ -346,7 +347,6 @@ fn constraint_len_calculator(items: &Vec<Transaction>, header: &[&str]) -> (usiz
 
 #[cfg(test)]
 mod test {
-    use core::panic;
 
     use crate::{actions::PushPageConfig, libs::fetcher};
 
@@ -482,6 +482,7 @@ mod test {
         let (mut rx, mut transaction) = get_test_objs(None, 50);
         transaction.event_loop_once(&mut rx, 'j'.into());
         transaction.handle_events(' '.into()).unwrap();
+        let mut received_push_page = false;
         while let Ok(action) = rx.try_recv() {
             if let Action::Layer(LayerManageAction::PushPage(PushPageConfig {
                 layer: Layers::Transaction(filter),
@@ -500,9 +501,10 @@ mod test {
                             .clone()
                     )
                 ));
-            } else {
-                panic!("Expected PushPage action");
+                received_push_page = true;
             }
         }
+
+        assert!(received_push_page);
     }
 }
