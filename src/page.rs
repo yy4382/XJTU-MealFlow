@@ -25,11 +25,10 @@ use tokio::sync::mpsc::UnboundedReceiver;
 /// rendering, and event handling. Pages must be both Send and Sync safe.
 ///
 /// # Type Requirements
-/// - Must implement [`Send`] and [`Sync`]
 /// - Must implement [`WidgetExt`]
 /// - Must implement [`EventLoopParticipant`]
 /// - Must implement [`DowncastSync`]
-pub trait Layer: Send + Sync + WidgetExt + EventLoopParticipant + DowncastSync {
+pub trait Layer: WidgetExt + EventLoopParticipant + DowncastSync {
     /// Initialize the page
     fn init(&mut self) {}
 }
