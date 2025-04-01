@@ -6,7 +6,7 @@ use super::key_events::KeyEvent;
 
 #[derive(Debug, Clone)]
 pub(crate) enum HelpEntry {
-    Plain(String),
+    Plain((String, String)),
     Key((KeyEvent, String)),
 }
 
@@ -14,15 +14,29 @@ impl HelpEntry {
     pub(crate) fn new<T: Into<String>, K: Into<KeyEvent>>(event: K, desc: T) -> Self {
         Self::Key((event.into(), desc.into()))
     }
-    pub(crate) fn new_plain<T: Into<String>>(desc: T) -> Self {
-        Self::Plain(desc.into())
+    pub(crate) fn new_plain<T: Into<String>>(event: T, desc: T) -> Self {
+        Self::Plain((event.into(), desc.into()))
+    }
+
+    pub(crate) fn key(&self) -> String {
+        match self {
+            HelpEntry::Plain((_, desc)) => desc.to_string(),
+            HelpEntry::Key((key, _)) => key.to_string(),
+        }
+    }
+
+    pub(crate) fn desc(&self) -> &str {
+        match self {
+            HelpEntry::Plain((desc, _)) => desc,
+            HelpEntry::Key((_, desc)) => desc,
+        }
     }
 }
 
 impl std::fmt::Display for HelpEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            HelpEntry::Plain(desc) => write!(f, "{}", desc),
+            HelpEntry::Plain((key, desc)) => write!(f, "{}: {}", desc, key),
             HelpEntry::Key((key, desc)) => write!(f, "{}: {}", desc, key),
         }
     }
@@ -30,10 +44,7 @@ impl std::fmt::Display for HelpEntry {
 
 impl From<HelpEntry> for String {
     fn from(val: HelpEntry) -> Self {
-        match val {
-            HelpEntry::Plain(desc) => desc,
-            HelpEntry::Key((key, desc)) => format!("{}: {}", desc, key),
-        }
+        format!("{}", val)
     }
 }
 

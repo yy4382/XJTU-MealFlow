@@ -3,10 +3,10 @@ use std::cmp::{max, min};
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
-    layout::Rect,
-    style::{Color, Modifier, Style, palette::tailwind},
+    layout::{Constraint, Rect},
+    style::{Modifier, Style, palette::tailwind},
     text::{Line, Text},
-    widgets::{Block, BorderType, Borders, Clear, HighlightSpacing, List, ListItem, Padding},
+    widgets::{Block, BorderType, Borders, Cell, Clear, HighlightSpacing, Padding, Row, Table},
 };
 use unicode_width::UnicodeWidthStr;
 
@@ -21,8 +21,10 @@ use super::{EventLoopParticipant, Layer, WidgetExt};
 pub(crate) struct HelpPopup {
     help_msg: HelpMsg,
 
-    longest_entry_size: u16,
-    list_state: ratatui::widgets::ListState,
+    longest_key: u16,
+    longest_desc: u16,
+
+    table_state: ratatui::widgets::TableState,
 
     tx: ActionSender,
 }
@@ -32,17 +34,24 @@ impl HelpPopup {
         if msg.is_empty() {
             return None;
         }
-        // FIXME use real size
-        let longest = msg
+
+        let longest_key = msg
             .iter()
-            .map(|entry| UnicodeWidthStr::width(String::from(entry.clone()).as_str()))
+            .map(|entry| UnicodeWidthStr::width(entry.key().as_str()))
+            .max()
+            .unwrap();
+
+        let longest_desc = msg
+            .iter()
+            .map(|entry| UnicodeWidthStr::width(entry.desc()))
             .max()
             .unwrap();
 
         Some(Self {
             help_msg: msg,
-            longest_entry_size: longest as u16,
-            list_state: ratatui::widgets::ListState::default(),
+            longest_key: longest_key as u16,
+            longest_desc: longest_desc as u16,
+            table_state: ratatui::widgets::TableState::default().with_selected(0),
             tx,
         })
     }
@@ -93,16 +102,16 @@ impl EventLoopParticipant for HelpPopup {
         };
         match actions {
             HelpPopupAction::Up => {
-                self.list_state.select_previous();
+                self.table_state.select_previous();
             }
             HelpPopupAction::Down => {
-                self.list_state.select_next();
+                self.table_state.select_next();
             }
             HelpPopupAction::Start => {
-                self.list_state.select_first();
+                self.table_state.select_first();
             }
             HelpPopupAction::End => {
-                self.list_state.select_last();
+                self.table_state.select_last();
             }
         }
     }
@@ -112,7 +121,10 @@ impl Layer for HelpPopup {}
 
 impl WidgetExt for HelpPopup {
     fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::prelude::Rect) {
-        let width = max(self.longest_entry_size + 8, min(50, frame.area().width - 4));
+        let width = max(
+            self.longest_desc + self.longest_key + 8,
+            min(50, frame.area().width - 4),
+        );
         let show_area = Rect {
             // FIXME deal with subtract overflow
             x: (area.width - width) / 2,
@@ -150,7 +162,7 @@ impl HelpPopup {
     fn render_list(&mut self, frame: &mut Frame, area: Rect) {
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
-            .fg(LIST_COLORS.selected_row_style_fg);
+            .fg(tailwind::INDIGO.c300);
 
         let block = Block::new()
             .title(Line::raw("Help").centered())
@@ -159,53 +171,28 @@ impl HelpPopup {
             .padding(Padding::horizontal(1))
             .padding(Padding::vertical(1));
 
-        let items: Vec<ListItem> = self
-            .help_msg
-            .iter()
-            .map(|entry| ListItem::from(Text::raw(format!("  {}  ", entry))))
-            .collect();
+        let items = self.help_msg.iter().map(|entry| {
+            Row::new([
+                Cell::new(Text::raw(format!("  {}", entry.key())).right_aligned())
+                    .style(Style::default().fg(tailwind::BLUE.c400)),
+                Cell::new(entry.desc().to_string()),
+            ])
+        });
 
-        let list = List::new(items)
-            .block(block)
-            .highlight_style(selected_row_style)
-            .highlight_spacing(HighlightSpacing::Always);
+        let list = Table::new(
+            items,
+            [
+                Constraint::Length(self.longest_key + 2),
+                Constraint::Min(self.longest_desc),
+            ],
+        )
+        .block(block)
+        .row_highlight_style(selected_row_style)
+        .highlight_spacing(HighlightSpacing::Always)
+        .column_spacing(2);
 
-        frame.render_stateful_widget(list, area, &mut self.list_state);
+        frame.render_stateful_widget(list, area, &mut self.table_state);
     }
-}
-
-struct ListColors {
-    // buffer_bg: Color,
-    // header_bg: Color,
-    // header_fg: Color,
-    // row_fg: Color,
-    selected_row_style_fg: Color,
-    // selected_column_style_fg: Color,
-    // selected_cell_style_fg: Color,
-    // normal_row_color: Color,
-    // alt_row_color: Color,
-    // footer_border_color: Color,
-}
-
-impl Default for ListColors {
-    fn default() -> Self {
-        Self {
-            // buffer_bg: tailwind::GRAY.c950,
-            // header_bg: tailwind::INDIGO.c950,
-            // header_fg: tailwind::GRAY.c100,
-            // row_fg: tailwind::INDIGO.c200,
-            selected_row_style_fg: tailwind::INDIGO.c400,
-            // selected_column_style_fg: tailwind::INDIGO.c400,
-            // selected_cell_style_fg: tailwind::INDIGO.c600,
-            // normal_row_color: tailwind::SLATE.c950,
-            // alt_row_color: tailwind::SLATE.c900,
-            // footer_border_color: tailwind::INDIGO.c400,
-        }
-    }
-}
-
-lazy_static::lazy_static! {
-    static ref LIST_COLORS: ListColors = ListColors::default();
 }
 
 #[cfg(test)]
@@ -221,8 +208,9 @@ mod tests {
         let help_popup =
             HelpPopup::new(tx.into(), vec![HelpEntry::new('a', "test")].into()).unwrap();
         assert_eq!(help_popup.help_msg.len(), 1);
-        assert_eq!(help_popup.longest_entry_size, 7);
-        assert_eq!(help_popup.list_state.selected(), None);
+        assert_eq!(help_popup.longest_desc, 4);
+        assert_eq!(help_popup.longest_key, 1);
+        assert_eq!(help_popup.table_state.selected(), Some(0));
     }
 
     #[test]
@@ -247,10 +235,10 @@ mod tests {
                     help_popup.render(f, f.area());
                 })
                 .unwrap();
-            assert_eq!(help_popup.list_state.selected(), expected);
+            assert_eq!(help_popup.table_state.selected(), expected);
         };
 
-        test_loop('j', Some(0));
+        test_loop('j', Some(1));
         test_loop('k', Some(0));
         test_loop('G', Some(2));
         test_loop('k', Some(1));

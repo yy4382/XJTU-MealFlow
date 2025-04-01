@@ -44,7 +44,7 @@ impl CookieInput {
 
     pub fn get_help_msg(&self) -> crate::utils::help_msg::HelpMsg {
         let help_msg: HelpMsg = vec![
-            HelpEntry::new_plain("Move focus: hjkl"),
+            HelpEntry::new_plain("hjkl", "Move focus"),
             HelpEntry::new(KeyCode::Esc, "Back"),
         ]
         .into();

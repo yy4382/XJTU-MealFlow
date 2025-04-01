@@ -10,7 +10,6 @@ use crate::{
 use super::{EventLoopParticipant, Layer, WidgetExt};
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
-use lazy_static::lazy_static;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Margin, Rect},
@@ -29,33 +28,25 @@ struct TableColors {
     header_fg: Color,
     row_fg: Color,
     selected_row_style_fg: Color,
-    selected_column_style_fg: Color,
-    selected_cell_style_fg: Color,
+    // selected_column_style_fg: Color,
+    // selected_cell_style_fg: Color,
     normal_row_color: Color,
     alt_row_color: Color,
     // footer_border_color: Color,
 }
 
-impl Default for TableColors {
-    fn default() -> Self {
-        Self {
-            buffer_bg: Color::Reset,
-            header_bg: tailwind::INDIGO.c950,
-            header_fg: tailwind::GRAY.c100,
-            row_fg: tailwind::GRAY.c200,
-            selected_row_style_fg: tailwind::INDIGO.c300,
-            selected_column_style_fg: tailwind::INDIGO.c400,
-            selected_cell_style_fg: tailwind::INDIGO.c600,
-            normal_row_color: Color::Reset,
-            alt_row_color: tailwind::GRAY.c950,
-            // footer_border_color: tailwind::INDIGO.c400,
-        }
-    }
-}
-
-lazy_static! {
-    static ref TABLE_COLORS: TableColors = TableColors::default();
-}
+const TABLE_COLORS: TableColors = TableColors {
+    buffer_bg: Color::Reset,
+    header_bg: tailwind::INDIGO.c950,
+    header_fg: tailwind::GRAY.c100,
+    row_fg: tailwind::GRAY.c200,
+    selected_row_style_fg: tailwind::INDIGO.c300,
+    // selected_column_style_fg: tailwind::INDIGO.c400,
+    // selected_cell_style_fg: tailwind::INDIGO.c600,
+    normal_row_color: Color::Reset,
+    alt_row_color: tailwind::GRAY.c950,
+    // footer_border_color: tailwind::INDIGO.c400,
+};
 
 const ITEM_HEIGHT: usize = 3;
 
@@ -86,7 +77,7 @@ impl Transactions {
 
     fn get_help_msg(&self) -> HelpMsg {
         let help_msg: HelpMsg = vec![
-            HelpEntry::new_plain("Move focus: hjkl"),
+            HelpEntry::new_plain("hjkl", "Move focus"),
             HelpEntry::new('f', "Fetch"),
             HelpEntry::new('?', "Show help"),
             HelpEntry::new('l', "Load from local cache"),
@@ -183,10 +174,10 @@ impl Transactions {
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
             .fg(TABLE_COLORS.selected_row_style_fg);
-        let selected_col_style = Style::default().fg(TABLE_COLORS.selected_column_style_fg);
-        let selected_cell_style = Style::default()
-            .add_modifier(Modifier::REVERSED)
-            .fg(TABLE_COLORS.selected_cell_style_fg);
+        // let selected_col_style = Style::default().fg(TABLE_COLORS.selected_column_style_fg);
+        // let selected_cell_style = Style::default()
+        //     .add_modifier(Modifier::REVERSED)
+        //     .fg(TABLE_COLORS.selected_cell_style_fg);
 
         let header = ["金额", "时间", "商家"]
             .into_iter()
@@ -223,8 +214,8 @@ impl Transactions {
         )
         .header(header)
         .row_highlight_style(selected_row_style)
-        .column_highlight_style(selected_col_style)
-        .cell_highlight_style(selected_cell_style)
+        // .column_highlight_style(selected_col_style)
+        // .cell_highlight_style(selected_cell_style)
         .highlight_symbol(Text::from(vec!["".into(), bar.into(), "".into()]))
         .bg(TABLE_COLORS.buffer_bg)
         .highlight_spacing(HighlightSpacing::Always)
