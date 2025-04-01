@@ -40,7 +40,10 @@
 //!
 //! When the last page is popped, the application exits.
 
-use std::time::Duration;
+use std::{
+    ops::{Deref, DerefMut},
+    time::Duration,
+};
 
 use crate::{
     actions::{Action, LayerManageAction, Layers},
@@ -50,12 +53,13 @@ use crate::{
         Layer, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
         transactions::Transactions,
     },
-    tui,
+    tui::{self, TuiEnum},
 };
 use color_eyre::eyre::{Context, Result};
 use crossterm::event::KeyCode::Char;
+use ratatui::Frame;
 use tokio::sync::mpsc;
-use tracing::warn;
+use tracing::{info, warn};
 
 pub(crate) struct RootState {
     /// Flag to indicate if the application should quit
@@ -117,10 +121,6 @@ impl RootState {
         }
     }
 
-    pub fn clone_tx(&self) -> tokio::sync::mpsc::UnboundedSender<Action> {
-        self.action_tx.clone()
-    }
-
     /// Update the state based on the action
     pub(crate) fn update(&mut self, action: &Action) -> Result<()> {
         match action {
@@ -141,9 +141,188 @@ impl RootState {
 }
 
 pub(super) struct App {
-    pub page: Vec<Box<dyn Layer>>,
-    pub state: RootState,
-    pub tui: tui::TuiEnum,
+    page: LayerManager,
+    state: RootState,
+    tui: tui::TuiEnum,
+}
+
+impl App {
+    pub fn new(state: RootState, tui: TuiEnum) -> Self {
+        let layer_home = LayerConfig {
+            layer: BoxedLayer(Box::new(Home {
+                tx: state.action_tx.clone().into(),
+            })),
+            render: true,
+        };
+        Self {
+            page: LayerManager {
+                layers: vec![layer_home],
+            },
+            state,
+            tui,
+        }
+    }
+}
+
+struct BoxedLayer(Box<dyn Layer>);
+impl Deref for BoxedLayer {
+    type Target = dyn Layer;
+
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+impl DerefMut for BoxedLayer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut *self.0
+    }
+}
+impl From<Box<dyn Layer>> for BoxedLayer {
+    fn from(layer: Box<dyn Layer>) -> Self {
+        Self(layer)
+    }
+}
+impl BoxedLayer {
+    fn into_layer_config(self, render: bool) -> LayerConfig {
+        LayerConfig {
+            layer: self,
+            render,
+        }
+    }
+}
+
+struct LayerConfig {
+    layer: BoxedLayer,
+    render: bool,
+}
+
+impl Deref for LayerConfig {
+    type Target = BoxedLayer;
+
+    fn deref(&self) -> &Self::Target {
+        &self.layer
+    }
+}
+impl DerefMut for LayerConfig {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.layer
+    }
+}
+
+struct LayerManager {
+    layers: Vec<LayerConfig>,
+}
+impl Deref for LayerManager {
+    type Target = Vec<LayerConfig>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.layers
+    }
+}
+impl DerefMut for LayerManager {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.layers
+    }
+}
+
+impl LayerManager {
+    fn render(&mut self, f: &mut Frame) {
+        self.layers
+            .iter_mut()
+            .filter(|page| page.render)
+            .for_each(|page| page.render(f, f.area()));
+    }
+
+    fn handle_layer_action(&mut self, action: &LayerManageAction, state: &RootState) {
+        match action {
+            LayerManageAction::SwapPage(target) => {
+                self.layers.pop();
+                self.layers.push(
+                    self.get_layer(target, state)
+                        .expect("Failed to get layer")
+                        .into_layer_config(true),
+                );
+                info!(
+                    "Swapping page to {}, current layer stack length {}",
+                    target,
+                    self.layers.len()
+                );
+            }
+            LayerManageAction::PushPage(target) => {
+                self.layers.last_mut().unwrap().render = target.render_self;
+                self.layers.push(
+                    self.get_layer(&target.layer, state)
+                        .expect("Failed to get layer")
+                        .into_layer_config(true),
+                );
+                info!(
+                    "Pushing a {} page, current page will {} render, new layer stack length {}",
+                    target.layer,
+                    if target.render_self { "still" } else { "not" },
+                    self.layers.len()
+                );
+            }
+            LayerManageAction::PopPage => {
+                self.layers.pop();
+                if self.layers.is_empty() {
+                    self.layers.push(
+                        self.get_layer(&Layers::Home, state)
+                            .expect("Failed to get layer")
+                            .into_layer_config(true),
+                    );
+                }
+                self.layers.last_mut().unwrap().render = true;
+                info!(
+                    "Popping page, current layer stack length {}",
+                    self.layers.len()
+                );
+            }
+        }
+    }
+
+    fn get_layer(&self, layer: &Layers, state: &RootState) -> Option<BoxedLayer> {
+        let mut page = match layer.clone() {
+            Layers::Home => Box::new(Home {
+                tx: state.action_tx.clone().into(),
+            }) as Box<dyn Layer>,
+            Layers::Transaction(filter_opt) => Box::new(Transactions::new(
+                filter_opt,
+                state.action_tx.clone().into(),
+                state.manager.clone(),
+            )),
+            Layers::Fetch => Box::new(
+                Fetch::new(
+                    state.action_tx.clone().into(),
+                    state.manager.clone(),
+                    state.input_mode,
+                )
+                .client(if state.config.fetch.use_mock_data {
+                    MockMealFetcher::default()
+                        .set_sim_delay(Duration::from_secs(1))
+                        .per_page(50)
+                } else {
+                    Default::default()
+                }),
+            ),
+            Layers::CookieInput => Box::new(CookieInput::new(
+                state.action_tx.clone().into(),
+                state.manager.clone(),
+                state.input_mode,
+            )),
+            Layers::Help(help_msg) => {
+                let help = HelpPopup::new(state.action_tx.clone().into(), help_msg.clone());
+                match help {
+                    Some(help) => Box::new(help) as Box<dyn Layer>,
+                    None => {
+                        warn!("Help message is empty");
+                        return None;
+                    }
+                }
+            }
+        };
+        page.init();
+        Some(page.into())
+    }
 }
 
 impl App {
@@ -231,38 +410,8 @@ impl App {
     /// and delegates the handling of page-specific actions to the current page.
     fn perform_action(&mut self, action: Action) {
         match &action {
-            Action::Render => {
-                self.tui
-                    .draw(|f| {
-                        self.page
-                            .iter_mut()
-                            .for_each(|page| page.render(f, f.area()));
-                    })
-                    .unwrap();
-            }
-            Action::Layer(layer_action) => match layer_action {
-                LayerManageAction::SwapPage(target) => {
-                    self.page.pop();
-                    self.page
-                        .push(self.get_layer(target).expect("Failed to get layer"));
-                }
-                LayerManageAction::PushPage(target) => {
-                    if let Some(page) = self.get_layer(target) {
-                        self.page.push(page);
-                    } else {
-                        warn!("Failed to get layer");
-                    }
-                }
-                LayerManageAction::PopPage => {
-                    self.page.pop();
-                    if self.page.is_empty() {
-                        self.page.push(Box::new(Home {
-                            tx: self.state.action_tx.clone().into(),
-                        }));
-                    }
-                }
-            },
-
+            Action::Render => self.tui.draw(|f| self.page.render(f)).unwrap(),
+            Action::Layer(layer_action) => self.page.handle_layer_action(layer_action, &self.state),
             _ => {}
         }
         self.state.update(&action).unwrap();
@@ -270,53 +419,6 @@ impl App {
             .last_mut()
             .expect("Page stack is empty")
             .update(action);
-    }
-
-    /// Get the page from Layers enum
-    ///
-    /// Page is already initialized
-    fn get_layer(&self, layer: &Layers) -> Option<Box<dyn Layer>> {
-        let mut page = match layer.clone() {
-            Layers::Home => Box::new(Home {
-                tx: self.state.action_tx.clone().into(),
-            }) as Box<dyn Layer>,
-            Layers::Transaction(filter_opt) => Box::new(Transactions::new(
-                filter_opt,
-                self.state.action_tx.clone().into(),
-                self.state.manager.clone(),
-            )),
-            Layers::Fetch => Box::new(
-                Fetch::new(
-                    self.state.action_tx.clone().into(),
-                    self.state.manager.clone(),
-                    self.state.input_mode,
-                )
-                .client(if self.state.config.fetch.use_mock_data {
-                    MockMealFetcher::default()
-                        .set_sim_delay(Duration::from_secs(1))
-                        .per_page(50)
-                } else {
-                    Default::default()
-                }),
-            ),
-            Layers::CookieInput => Box::new(CookieInput::new(
-                self.state.action_tx.clone().into(),
-                self.state.manager.clone(),
-                self.state.input_mode,
-            )),
-            Layers::Help(help_msg) => {
-                let help = HelpPopup::new(self.state.action_tx.clone().into(), help_msg.clone());
-                match help {
-                    Some(help) => Box::new(help) as Box<dyn Layer>,
-                    None => {
-                        warn!("Help message is empty");
-                        return None;
-                    }
-                }
-            }
-        };
-        page.init();
-        Some(page)
     }
 }
 
@@ -361,13 +463,7 @@ mod test {
     fn get_app() -> App {
         let config = get_config(vec!["--use-mock-data"], true);
         let state = RootState::new(config);
-        let app = App {
-            page: vec![Box::new(Home {
-                tx: state.action_tx.clone().into(),
-            })],
-            state: state,
-            tui: tui::TestTui::new().into(),
-        };
+        let app = App::new(state, tui::TestTui::new().into());
         app
     }
 
@@ -377,19 +473,19 @@ mod test {
 
         // Navigate to Fetch page
         app.event_loop('T'.into()).unwrap();
-        assert!(app.page.last().unwrap().is::<Transactions>());
+        assert!(app.page.last().unwrap().layer.is::<Transactions>());
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
-        assert!(app.page.last().unwrap().is::<Fetch>());
+        assert!(app.page.last().unwrap().layer.is::<Fetch>());
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(
             Layers::CookieInput,
         )));
-        assert!(app.page.last().unwrap().is::<CookieInput>());
+        assert!(app.page.last().unwrap().layer.is::<CookieInput>());
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Help(
             vec![HelpEntry::new('?', "Help")].into(),
         ))));
-        assert!(app.page.last().unwrap().is::<HelpPopup>());
+        assert!(app.page.last().unwrap().layer.is::<HelpPopup>());
     }
 
     #[tokio::test]
@@ -397,8 +493,14 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
-        assert!(app.page.last().unwrap().is::<Fetch>());
-        let fetch = app.page.last().unwrap().downcast_ref::<Fetch>().unwrap();
+        assert!(app.page.last().unwrap().layer.is::<Fetch>());
+        let fetch = app
+            .page
+            .last()
+            .unwrap()
+            .layer
+            .downcast_ref::<Fetch>()
+            .unwrap();
         assert!(matches!(fetch.get_client(), MealFetcher::Mock(_)));
     }
 
@@ -423,7 +525,7 @@ mod test {
         let mut app = get_app();
 
         app.perform_action(Action::Layer(LayerManageAction::PushPage(
-            Layers::Transaction(None),
+            Layers::Transaction(None).into_push_config(false),
         )));
         assert_eq!(app.page.len(), 2);
         assert!(app.page.first().unwrap().is::<Home>());

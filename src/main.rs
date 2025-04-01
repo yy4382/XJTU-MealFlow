@@ -37,16 +37,13 @@ async fn run() -> Result<()> {
         }
         None => {
             let state = RootState::new(config);
-            let mut app = App {
-                page: vec![Box::new(page::home::Home {
-                    tx: state.clone_tx().into(),
-                })],
+            let mut app = App::new(
                 state,
-                tui: tui::Tui::new()?
+                tui::Tui::new()?
                     .tick_rate(args.tick_rate)
                     .frame_rate(args.frame_rate)
                     .into(),
-            };
+            );
 
             app.run().await?;
             Ok(())

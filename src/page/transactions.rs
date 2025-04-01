@@ -162,20 +162,24 @@ impl EventLoopParticipant for Transactions {
                 (_, KeyCode::Char('k')) | (_, KeyCode::Up) => {
                     self.tx.send(TransactionAction::ChangeRowFocus(-1))
                 }
-                (_, KeyCode::Char('?')) => self.tx.send(LayerManageAction::PushPage(Layers::Help(
-                    self.get_help_msg(),
-                ))),
+                (_, KeyCode::Char('?')) => {
+                    self.tx.send(LayerManageAction::PushPage(
+                        Layers::Help(self.get_help_msg()).into_push_config(true),
+                    ));
+                }
                 (_, KeyCode::Enter) => match self.table_state.selected() {
                     // TODO add help info
                     Some(index) => match self.transactions.get(index) {
                         Some(transaction) => {
-                            self.tx
-                                .send(LayerManageAction::PushPage(Layers::Transaction(Some(
+                            self.tx.send(LayerManageAction::PushPage(
+                                Layers::Transaction(Some(
                                     self.filter_option
                                         .clone()
                                         .unwrap_or_default()
                                         .merchant(transaction.merchant.clone()),
-                                ))));
+                                ))
+                                .into_push_config(false),
+                            ));
                         }
                         None => {}
                     },
@@ -348,7 +352,7 @@ fn constraint_len_calculator(items: &Vec<Transaction>, header: &[&str]) -> (usiz
 mod test {
     use core::panic;
 
-    use crate::libs::fetcher;
+    use crate::{actions::PushPageConfig, libs::fetcher};
 
     use super::*;
     use insta::assert_snapshot;
@@ -483,7 +487,10 @@ mod test {
         transaction.event_loop_once(&mut rx, 'j'.into());
         transaction.handle_events(KeyCode::Enter.into()).unwrap();
         while let Ok(action) = rx.try_recv() {
-            if let Action::Layer(LayerManageAction::PushPage(Layers::Transaction(filter))) = action
+            if let Action::Layer(LayerManageAction::PushPage(PushPageConfig {
+                layer: Layers::Transaction(filter),
+                render_self: false,
+            })) = action
             {
                 assert!(filter.is_some());
                 Some(assert_eq!(
