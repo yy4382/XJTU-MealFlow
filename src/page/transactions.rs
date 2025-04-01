@@ -230,12 +230,12 @@ impl Transactions {
         //     .add_modifier(Modifier::REVERSED)
         //     .fg(TABLE_COLORS.selected_cell_style_fg);
 
-        let header = ["金额", "时间", "商家"]
+        let header = HEADER_STR
             .into_iter()
-            .map(Cell::from)
+            .map(|r| Cell::from(format!("\n{}\n", r)))
             .collect::<Row>()
             .style(header_style)
-            .height(1);
+            .height(3);
 
         let rows = self.transactions.iter().enumerate().map(|(i, t)| {
             let color = match i % 2 {
@@ -315,12 +315,14 @@ impl Transactions {
         self.scroll_state = self
             .scroll_state
             .content_length(self.transactions.len() * ITEM_HEIGHT);
-        self.longest_item_lens = constraint_len_calculator(&self.transactions);
+        self.longest_item_lens = constraint_len_calculator(&self.transactions, HEADER_STR);
     }
 }
 
-fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) {
-    items.iter().fold((0, 0, 0), |acc, item| {
+const HEADER_STR: &[&str] = &["金额", "时间", "商家"];
+
+fn constraint_len_calculator(items: &Vec<Transaction>, header: &[&str]) -> (usize, usize, usize) {
+    let data_len = items.iter().fold((0, 0, 0), |acc, item| {
         let amount_len = max(
             acc.0,
             UnicodeWidthStr::width(item.amount.to_string().as_str()),
@@ -334,7 +336,12 @@ fn constraint_len_calculator(items: &Vec<Transaction>) -> (usize, usize, usize) 
             UnicodeWidthStr::width_cjk(item.merchant.to_string().as_str()),
         );
         (amount_len, time_len, merchant_len)
-    })
+    });
+    (
+        max(data_len.0, UnicodeWidthStr::width_cjk(header[0])),
+        max(data_len.1, UnicodeWidthStr::width_cjk(header[1])),
+        max(data_len.2, UnicodeWidthStr::width_cjk(header[2])),
+    )
 }
 
 #[cfg(test)]
@@ -368,6 +375,26 @@ mod test {
         assert!(!transaction.transactions.is_empty());
 
         (rx, transaction)
+    }
+
+    #[test]
+    fn table_length() {
+        let data = fetcher::test_utils::get_mock_data(5);
+        let result = constraint_len_calculator(&data, HEADER_STR);
+        println!("data: {:?}", data);
+        println!("result: {:?}", result);
+        assert_eq!(result.0, 6);
+        assert_eq!(result.1, 16);
+        assert_eq!(result.2, 16);
+    }
+
+    #[test]
+    fn table_length_only_header() {
+        let data = vec![];
+        let result = constraint_len_calculator(&data, HEADER_STR);
+        assert_eq!(result.0, 4);
+        assert_eq!(result.1, 4);
+        assert_eq!(result.2, 4);
     }
 
     #[test]
