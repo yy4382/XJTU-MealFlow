@@ -45,19 +45,25 @@ impl Default for Home {
 
 impl WidgetExt for Home {
     fn render(&mut self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let ascii_art = if area.width >= 100 {
+            include_str!("../../ascii-arts/xjtu-mealflow.txt")
+        } else if area.width >= 60 {
+            include_str!("../../ascii-arts/mealflow.txt")
+        } else {
+            "XJTU MealFlow"
+        };
+
         let area = &Layout::default()
             .constraints([Constraint::Fill(1), Constraint::Length(3)])
             .split(area);
 
-        // TODO use different ascii art for different screen sizes
-        let ascii_art = include_str!("../../ascii-arts/mealflow.txt");
         let height = ascii_art.lines().count() as u16;
         let [v_align_area] = &Layout::vertical([Constraint::Length(height + 1)])
             .flex(Flex::Center)
             .areas(area[0]);
 
         frame.render_widget(
-            Paragraph::new(include_str!("../../ascii-arts/mealflow.txt"))
+            Paragraph::new(ascii_art)
                 .style(Style::default().fg(Color::Cyan))
                 .alignment(Alignment::Center),
             *v_align_area,
@@ -109,6 +115,26 @@ mod tests {
     fn test_render() {
         let mut page = get_test_page();
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+        terminal
+            .draw(|frame| page.render(frame, frame.area()))
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+
+    #[test]
+    fn test_render_large() {
+        let mut page = get_test_page();
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        terminal
+            .draw(|frame| page.render(frame, frame.area()))
+            .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+
+    #[test]
+    fn test_render_small() {
+        let mut page = get_test_page();
+        let mut terminal = Terminal::new(TestBackend::new(40, 25)).unwrap();
         terminal
             .draw(|frame| page.render(frame, frame.area()))
             .unwrap();
