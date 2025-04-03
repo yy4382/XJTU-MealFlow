@@ -14,7 +14,7 @@
 //! - Events are converted to Actions
 //! - Actions are processed to update the application state
 //! - Rerender of the UI is triggered not by state changes, but by time-sequential events which
-//! is controlled by frame rate parameter
+//!   is controlled by frame rate parameter
 //!
 //! # State Management
 //!
@@ -92,7 +92,7 @@ impl RootState {
             .unwrap();
 
         if let Some(account) = &config.fetch.account {
-            manager.update_account(&account).unwrap();
+            manager.update_account(account).unwrap();
         }
         if let Some(hallticket) = &config.fetch.hallticket {
             manager.update_hallticket(hallticket).unwrap();
@@ -303,14 +303,12 @@ pub(super) mod test {
         app.event_loop('T'.into()).unwrap();
         assert!(app.layer_manager.last().unwrap().is::<Transactions>());
 
-        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
+        app.perform_action(Action::Layer(LayerManageAction::Swap(Layers::Fetch)));
         assert!(app.layer_manager.last().unwrap().is::<Fetch>());
 
-        app.perform_action(Action::Layer(LayerManageAction::SwapPage(
-            Layers::CookieInput,
-        )));
+        app.perform_action(Action::Layer(LayerManageAction::Swap(Layers::CookieInput)));
         assert!(app.layer_manager.last().unwrap().is::<CookieInput>());
-        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Help(
+        app.perform_action(Action::Layer(LayerManageAction::Swap(Layers::Help(
             vec![HelpEntry::new('?', "Help")].into(),
         ))));
         assert!(app.layer_manager.last().unwrap().is::<HelpPopup>());
@@ -320,7 +318,7 @@ pub(super) mod test {
     async fn app_nav_fetch_mock() {
         let mut app = get_app();
 
-        app.perform_action(Action::Layer(LayerManageAction::SwapPage(Layers::Fetch)));
+        app.perform_action(Action::Layer(LayerManageAction::Swap(Layers::Fetch)));
         assert!(app.layer_manager.last().unwrap().is::<Fetch>());
         let fetch = app
             .layer_manager
@@ -343,7 +341,7 @@ pub(super) mod test {
     async fn app_quit_due_to_last_layer_pop() {
         let mut app = get_app();
 
-        app.perform_action(Action::Layer(LayerManageAction::PopPage));
+        app.perform_action(Action::Layer(LayerManageAction::Pop));
         assert!(app.layer_manager.last().unwrap().is::<Home>());
     }
 
@@ -351,13 +349,13 @@ pub(super) mod test {
     async fn app_push_layer() {
         let mut app = get_app();
 
-        app.perform_action(Action::Layer(LayerManageAction::PushPage(
+        app.perform_action(Action::Layer(LayerManageAction::Push(
             Layers::Transaction(None).into_push_config(false),
         )));
         assert_eq!(app.layer_manager.len(), 2);
         assert!(app.layer_manager.first().unwrap().is::<Home>());
         assert!(app.layer_manager.last().unwrap().is::<Transactions>());
-        app.perform_action(Action::Layer(LayerManageAction::PopPage));
+        app.perform_action(Action::Layer(LayerManageAction::Pop));
         assert_eq!(app.layer_manager.len(), 1);
         assert!(app.layer_manager.first().unwrap().is::<Home>());
     }

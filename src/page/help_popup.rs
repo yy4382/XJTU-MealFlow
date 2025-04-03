@@ -72,10 +72,11 @@ impl From<HelpPopupAction> for Action {
 
 impl EventLoopParticipant for HelpPopup {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
+        #[allow(clippy::single_match)]
         match event {
             Event::Key(key) => match key.code {
                 KeyCode::Esc => {
-                    self.tx.send(LayerManageAction::PopPage);
+                    self.tx.send(LayerManageAction::Pop);
                 }
                 KeyCode::Char('j') => {
                     self.tx.send(HelpPopupAction::Down);

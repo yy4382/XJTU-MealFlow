@@ -22,7 +22,7 @@ pub(super) struct TimePeriodData {
 }
 
 impl TimePeriodData {
-    pub(super) fn new(data: &Vec<Transaction>) -> Self {
+    pub(super) fn new(data: &[Transaction]) -> Self {
         data.iter().fold(Self::default(), |mut acc, entry| {
             let time = entry.time.time();
             if Self::check_time_in(time, (5, 0), (10, 30)) {

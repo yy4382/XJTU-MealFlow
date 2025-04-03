@@ -202,7 +202,7 @@ fn api_response_to_transactions(s: &str) -> Result<Vec<Transaction>> {
     let row_map = |row: TransactionRow| {
         // Parse the date
         let time_str = &row.time.trim();
-        let Ok(time) = Transaction::parse_to_fixed_utc_plus8(&time_str, "%Y-%m-%d %H:%M:%S") else {
+        let Ok(time) = Transaction::parse_to_fixed_utc_plus8(time_str, "%Y-%m-%d %H:%M:%S") else {
             return None;
         };
 
@@ -297,9 +297,7 @@ impl Default for MockMealFetcher {
         ).unwrap();
 
         let parse_date = |date_str: &str| {
-            let date =
-                Transaction::parse_to_fixed_utc_plus8(date_str, "%Y-%m-%d %H:%M:%S").unwrap();
-            date
+            Transaction::parse_to_fixed_utc_plus8(date_str, "%Y-%m-%d %H:%M:%S").unwrap()
         };
 
         data.sort_by(|a, b| {

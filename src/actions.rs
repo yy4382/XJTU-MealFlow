@@ -65,9 +65,9 @@ pub enum CompAction {
 /// These actions should only be sent by page at the top of the stack
 /// and should only be handled by the root app.
 pub enum LayerManageAction {
-    PushPage(PushPageConfig),
-    SwapPage(Layers),
-    PopPage,
+    Push(PushPageConfig),
+    Swap(Layers),
+    Pop,
 }
 
 #[derive(Clone, Debug)]

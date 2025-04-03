@@ -50,13 +50,13 @@ enum AnalysisType {
 }
 
 impl AnalysisType {
-    fn next(&self, data: &Vec<Transaction>) -> Self {
+    fn next(&self, data: &[Transaction]) -> Self {
         match self {
             Self::TimePeriod(_) => Self::Merchant(MerchantData::new(data)),
             Self::Merchant(_) => Self::TimePeriod(TimePeriodData::new(data)),
         }
     }
-    fn previous(&self, data: &Vec<Transaction>) -> Self {
+    fn previous(&self, data: &[Transaction]) -> Self {
         match self {
             Self::TimePeriod(_) => Self::Merchant(MerchantData::new(data)),
             Self::Merchant(_) => Self::TimePeriod(TimePeriodData::new(data)),
@@ -95,10 +95,11 @@ impl Analysis {
 
 impl EventLoopParticipant for Analysis {
     fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
+        #[allow(clippy::single_match)]
         match event {
             Event::Key(key) => match key.code {
                 KeyCode::Esc => {
-                    self.tx.send(LayerManageAction::PopPage);
+                    self.tx.send(LayerManageAction::Pop);
                 }
                 KeyCode::Char('h') | KeyCode::Left => {
                     self.tx.send(AnalysisAction::MoveTypeFocus(false));
@@ -116,8 +117,8 @@ impl EventLoopParticipant for Analysis {
     }
 
     fn update(&mut self, action: crate::actions::Action) {
-        match action {
-            Action::Analysis(action) => match action {
+        if let Action::Analysis(action) = action {
+            match action {
                 AnalysisAction::MoveTypeFocus(dir) => {
                     if dir {
                         self.analysis_type = self.analysis_type.next(&self.data)
@@ -134,8 +135,7 @@ impl EventLoopParticipant for Analysis {
                         }
                     }
                 }
-            },
-            _ => (),
+            }
         }
     }
 }
@@ -152,7 +152,7 @@ impl WidgetExt for Analysis {
         .areas(area);
 
         let tabs = Tabs::new(AnalysisType::iter().map(|e| {
-            format!(" {} ", e.to_string())
+            format!(" {} ", e)
                 .fg(tailwind::GRAY.c500)
                 .bg(e.get_palette().c950)
         }))

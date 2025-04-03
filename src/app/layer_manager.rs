@@ -106,7 +106,7 @@ impl LayerManager {
     /// Handle LayerManageAction for root app, updating the layer stack
     pub(super) fn handle_layer_action(&mut self, action: &LayerManageAction, state: &RootState) {
         match action {
-            LayerManageAction::SwapPage(target) => {
+            LayerManageAction::Swap(target) => {
                 self.layers.pop();
                 self.layers.push(
                     LayerManager::get_layer(target, state)
@@ -119,7 +119,7 @@ impl LayerManager {
                     self.layers.len()
                 );
             }
-            LayerManageAction::PushPage(target) => {
+            LayerManageAction::Push(target) => {
                 self.layers.last_mut().unwrap().render = target.render_self;
                 self.layers.push(
                     LayerManager::get_layer(&target.layer, state)
@@ -133,7 +133,7 @@ impl LayerManager {
                     self.layers.len()
                 );
             }
-            LayerManageAction::PopPage => {
+            LayerManageAction::Pop => {
                 self.layers.pop();
                 if self.layers.is_empty() {
                     self.layers.push(

@@ -261,15 +261,15 @@ impl EventLoopParticipant for Fetch {
                         .tx
                         .send(FetchingAction::MoveFocus(self.current_focus.prev())),
                     (_, KeyCode::Char('r')) => self.tx.send(FetchingAction::LoadDbCount),
-                    (_, KeyCode::Char('e')) => self
-                        .tx
-                        .send(LayerManageAction::SwapPage(Layers::CookieInput)),
+                    (_, KeyCode::Char('e')) => {
+                        self.tx.send(LayerManageAction::Swap(Layers::CookieInput))
+                    }
 
                     (_, KeyCode::Esc) => self
                         .tx
-                        .send(LayerManageAction::SwapPage(Layers::Transaction(None))),
+                        .send(LayerManageAction::Swap(Layers::Transaction(None))),
                     (_, KeyCode::Char('?')) => {
-                        self.tx.send(LayerManageAction::PushPage(
+                        self.tx.send(LayerManageAction::Push(
                             Layers::Help(self.get_help_msg()).into_push_config(true),
                         ));
                     }
@@ -295,8 +295,7 @@ impl EventLoopParticipant for Fetch {
                             if let Ok((account, cookie)) = self.manager.get_account_cookie() {
                                 Fetch::fetch(tx, c.clone().account(account).cookie(cookie), *date);
                             } else {
-                                self.tx
-                                    .send(LayerManageAction::SwapPage(Layers::CookieInput));
+                                self.tx.send(LayerManageAction::Swap(Layers::CookieInput));
                             }
                         }
                         MealFetcher::Mock(c) => {

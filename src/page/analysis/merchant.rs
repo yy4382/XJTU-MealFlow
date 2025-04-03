@@ -18,7 +18,7 @@ pub(super) struct MerchantData {
     pub scroll_state: ScrollViewState,
 }
 impl MerchantData {
-    pub fn new(data: &Vec<Transaction>) -> Self {
+    pub fn new(data: &[Transaction]) -> Self {
         let hash_map = data.iter().fold(HashMap::new(), |mut acc, entry| {
             match acc.get(&entry.merchant) {
                 Some(v) => acc.insert(&entry.merchant, *v + entry.amount),
@@ -27,7 +27,7 @@ impl MerchantData {
             acc
         });
         let mut entries: Vec<_> = hash_map.iter().collect();
-        entries.sort_by(|a, b| a.1.total_cmp(&b.1));
+        entries.sort_by(|a, b| a.1.total_cmp(b.1));
         MerchantData {
             data: entries.iter().map(|e| ((*e.0).to_string(), *e.1)).collect(),
             scroll_state: ScrollViewState::default(),

@@ -150,7 +150,7 @@ impl EventLoopParticipant for Transactions {
                 // navigate to fetch page
                 (_, KeyCode::Char('f')) => {
                     if self.filter_option.is_none() {
-                        self.tx.send(LayerManageAction::SwapPage(Layers::Fetch))
+                        self.tx.send(LayerManageAction::Swap(Layers::Fetch))
                     }
                 }
                 (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
@@ -161,13 +161,13 @@ impl EventLoopParticipant for Transactions {
                     self.tx.send(TransactionAction::ChangeRowFocus(-1))
                 }
                 (_, KeyCode::Char('?')) => {
-                    self.tx.send(LayerManageAction::PushPage(
+                    self.tx.send(LayerManageAction::Push(
                         Layers::Help(self.get_help_msg()).into_push_config(true),
                     ));
                 }
-                (_, KeyCode::Char(' ')) => match self.table_state.selected() {
-                    Some(index) => match self.transactions.get(index) {
-                        Some(transaction) => {
+                (_, KeyCode::Char(' ')) => {
+                    if let Some(index) = self.table_state.selected() {
+                        if let Some(transaction) = self.transactions.get(index) {
                             let layer = Layers::Transaction(Some(
                                 self.filter_option
                                     .clone()
@@ -175,13 +175,11 @@ impl EventLoopParticipant for Transactions {
                                     .merchant(transaction.merchant.clone()),
                             ));
                             self.tx
-                                .send(LayerManageAction::PushPage(layer.into_push_config(false)));
+                                .send(LayerManageAction::Push(layer.into_push_config(false)));
                         }
-                        None => {}
-                    },
-                    None => {}
-                },
-                (_, KeyCode::Esc) => self.tx.send(LayerManageAction::PopPage),
+                    }
+                }
+                (_, KeyCode::Esc) => self.tx.send(LayerManageAction::Pop),
                 _ => (),
             }
         };
@@ -230,7 +228,7 @@ impl Transactions {
         //     .fg(TABLE_COLORS.selected_cell_style_fg);
 
         let header = HEADER_STR
-            .into_iter()
+            .iter()
             .map(|r| Cell::from(format!("\n{}\n", r)))
             .collect::<Row>()
             .style(header_style)
@@ -241,14 +239,11 @@ impl Transactions {
                 0 => TABLE_COLORS.normal_row_color,
                 _ => TABLE_COLORS.alt_row_color,
             };
-            Row::new(
-                vec![
-                    Text::from(format!("\n{}\n", t.amount)).alignment(Alignment::Right),
-                    Text::from(format!("\n{}\n", t.time.format("%Y-%m-%d %H:%M"))),
-                    Text::from(format!("\n{}\n", t.merchant)),
-                ]
-                .into_iter(),
-            )
+            Row::new(vec![
+                Text::from(format!("\n{}\n", t.amount)).alignment(Alignment::Right),
+                Text::from(format!("\n{}\n", t.time.format("%Y-%m-%d %H:%M"))),
+                Text::from(format!("\n{}\n", t.merchant)),
+            ])
             .style(Style::new().fg(TABLE_COLORS.row_fg).bg(color))
             .height(ITEM_HEIGHT as u16)
         });
@@ -325,7 +320,7 @@ impl Transactions {
 
 const HEADER_STR: &[&str] = &["金额", "时间", "商家"];
 
-fn constraint_len_calculator(items: &Vec<Transaction>, header: &[&str]) -> (usize, usize, usize) {
+fn constraint_len_calculator(items: &[Transaction], header: &[&str]) -> (usize, usize, usize) {
     let data_len = items.iter().fold((0, 0, 0), |acc, item| {
         let amount_len = max(
             acc.0,
@@ -487,7 +482,7 @@ mod test {
         transaction.handle_events(' '.into()).unwrap();
         let mut received_push_page = false;
         while let Ok(action) = rx.try_recv() {
-            if let Action::Layer(LayerManageAction::PushPage(PushPageConfig {
+            if let Action::Layer(LayerManageAction::Push(PushPageConfig {
                 layer: Layers::Transaction(filter),
                 render_self: false,
             })) = action

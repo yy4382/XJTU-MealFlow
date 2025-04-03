@@ -118,9 +118,9 @@ impl EventLoopParticipant for CookieInput {
                     (_, KeyCode::Char('j')) => self
                         .tx
                         .send(CookieInputAction::ChangeState(self.state.next())),
-                    (_, KeyCode::Esc) => self.tx.send(LayerManageAction::SwapPage(Layers::Fetch)),
+                    (_, KeyCode::Esc) => self.tx.send(LayerManageAction::Swap(Layers::Fetch)),
                     (_, KeyCode::Char('?')) => {
-                        self.tx.send(LayerManageAction::PushPage(
+                        self.tx.send(LayerManageAction::Push(
                             Layers::Help(self.get_help_msg()).into_push_config(true),
                         ));
                     }

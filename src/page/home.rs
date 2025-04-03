@@ -77,16 +77,16 @@ impl EventLoopParticipant for Home {
     fn handle_events(&self, _event: crate::tui::Event) -> Result<()> {
         if let Event::Key(key) = _event {
             match key.code {
-                KeyCode::Char('?') => self.tx.send(LayerManageAction::PushPage(
+                KeyCode::Char('?') => self.tx.send(LayerManageAction::Push(
                     Layers::Help(self.get_help_msg()).into_push_config(true),
                 )),
                 KeyCode::Char('a') => {
                     // TODO add help msg for this
-                    self.tx.send(LayerManageAction::SwapPage(Layers::Analysis));
+                    self.tx.send(LayerManageAction::Swap(Layers::Analysis));
                 }
                 KeyCode::Char('T') => {
                     self.tx
-                        .send(LayerManageAction::SwapPage(Layers::Transaction(None)));
+                        .send(LayerManageAction::Swap(Layers::Transaction(None)));
                 }
                 _ => {}
             }
@@ -152,7 +152,7 @@ mod tests {
         home.handle_events('?'.into()).unwrap();
         let mut should_receive_layer_opt = false;
         while let Ok(action) = _rx.try_recv() {
-            if let Action::Layer(LayerManageAction::PushPage(_)) = action {
+            if let Action::Layer(LayerManageAction::Push(_)) = action {
                 should_receive_layer_opt = true;
             }
         }
