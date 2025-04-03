@@ -183,3 +183,113 @@ impl Analysis {
         help
     }
 }
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{actions::Action, libs::fetcher};
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+    use tokio::sync::mpsc::{self, UnboundedReceiver};
+
+    fn get_test_objs() -> (UnboundedReceiver<Action>, Analysis) {
+        let (tx, _rx) = mpsc::unbounded_channel();
+        let manager = TransactionManager::new(None).unwrap();
+        let data = fetcher::test_utils::get_mock_data(50);
+        manager.insert(&data).unwrap();
+        let page = Analysis::new(tx.clone().into(), manager);
+        (_rx, page)
+    }
+
+    #[test]
+    fn test_initial_state() {
+        let (_, page) = get_test_objs();
+        assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
+        assert!(!page.data.is_empty());
+    }
+
+    #[test]
+    fn test_tab_navigation() {
+        let (mut rx, mut page) = get_test_objs();
+        // TODO
+        // Initial state should be TimePeriod
+        assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
+
+        // Test moving to next tab (Merchant)
+        page.event_loop_once(&mut rx, 'l'.into());
+        assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
+
+        // Test moving back to TimePeriod
+        page.event_loop_once(&mut rx, 'h'.into());
+        assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
+
+        // Test wrapping around
+        page.event_loop_once(&mut rx, 'h'.into());
+        assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
+    }
+
+    fn get_merchant_data(analysis_type: &AnalysisType) -> MerchantData {
+        if let AnalysisType::Merchant(data) = analysis_type {
+            return data.clone();
+        } else {
+            panic!("Should be merchant")
+        }
+    }
+
+    #[test]
+    fn test_scroll_merchant_data() {
+        let (mut rx, mut page) = get_test_objs();
+
+        // First switch to Merchant tab
+        page.event_loop_once(&mut rx, 'l'.into());
+
+        let initial_offset = get_merchant_data(&page.analysis_type)
+            .scroll_state
+            .offset()
+            .y;
+
+        // Test scrolling down
+        page.event_loop_once(&mut rx, 'j'.into());
+        assert_eq!(
+            get_merchant_data(&page.analysis_type)
+                .scroll_state
+                .offset()
+                .y,
+            initial_offset + 1
+        );
+
+        // Test scrolling up
+        page.event_loop_once(&mut rx, 'k'.into());
+        assert_eq!(
+            get_merchant_data(&page.analysis_type)
+                .scroll_state
+                .offset()
+                .y,
+            initial_offset
+        );
+    }
+
+    #[test]
+    fn test_render() {
+        let (mut rx, mut page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+
+        terminal
+            .draw(|f| {
+                page.render(f, f.area());
+            })
+            .unwrap();
+
+        assert_snapshot!(terminal.backend());
+
+        // Switch to Merchant tab and render again
+        page.event_loop_once(&mut rx, 'l'.into());
+
+        terminal
+            .draw(|f| {
+                page.render(f, f.area());
+            })
+            .unwrap();
+
+        assert_snapshot!(terminal.backend());
+    }
+}
