@@ -291,5 +291,16 @@ mod test {
             .unwrap();
 
         assert_snapshot!(terminal.backend());
+
+        let seq = "j".repeat(10);
+        seq.chars().for_each(|c| {
+            page.event_loop_once(&mut rx, c.into());
+        });
+        terminal
+            .draw(|f| {
+                page.render(f, f.area());
+            })
+            .unwrap();
+        assert_snapshot!(terminal.backend());
     }
 }
