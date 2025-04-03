@@ -49,6 +49,7 @@ clap = { version = "4.5.34", features = [
 unicode-width = "=0.2.0"
 downcast-rs = "2.0.1"
 strum = { version = "0.27.1", features = ["derive"] }
+tui-scrollview = "0.5.1"
 
 [dev-dependencies]
 insta = "1.42.2"

@@ -1,16 +1,12 @@
-use std::collections::HashMap;
-
-use chrono::NaiveTime;
 use crossterm::event::KeyCode;
+use merchant::MerchantData;
 use ratatui::{
     layout::{Constraint, Layout},
-    style::{Style, Stylize, palette::tailwind},
-    symbols,
-    text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Padding, Tabs},
+    style::{Stylize, palette::tailwind},
+    widgets::Tabs,
 };
 use strum::{Display, EnumIter, IntoEnumIterator};
-use tracing::info;
+use time_period::TimePeriodData;
 
 use crate::{
     actions::{Action, ActionSender, LayerManageAction},
@@ -21,6 +17,9 @@ use crate::{
 
 use super::{EventLoopParticipant, Layer, WidgetExt};
 
+mod merchant;
+mod time_period;
+
 pub(crate) struct Analysis {
     manager: crate::libs::transactions::TransactionManager,
     tx: ActionSender,
@@ -28,11 +27,12 @@ pub(crate) struct Analysis {
     analysis_type: AnalysisType,
     data: Vec<Transaction>,
 }
-/// false for left, true for right
+/// false for left/up, true for right/down
 type MoveDirection = bool;
 #[derive(Clone, Debug)]
 pub(crate) enum AnalysisAction {
     MoveTypeFocus(MoveDirection),
+    Scroll(MoveDirection),
 }
 impl From<AnalysisAction> for Action {
     fn from(value: AnalysisAction) -> Self {
@@ -76,103 +76,6 @@ impl AnalysisType {
     }
 }
 
-#[derive(Debug, Default, Clone)]
-struct TimePeriodData {
-    /// 5am - 10:30am
-    breakfast: u32,
-    /// 10:30am - 1:30pm
-    lunch: u32,
-    /// 4:30pm - 7:30pm
-    dinner: u32,
-    /// other
-    unknown: u32,
-}
-
-impl TimePeriodData {
-    fn new(data: &Vec<Transaction>) -> Self {
-        data.iter().fold(Self::default(), |acc, entry| {
-            let time = entry.time.time();
-            if Self::check_time_in(
-                time,
-                NaiveTime::from_hms_opt(5, 0, 0).unwrap(),
-                NaiveTime::from_hms_opt(10, 30, 0).unwrap(),
-            ) {
-                return Self {
-                    breakfast: acc.breakfast + 1,
-                    ..acc
-                };
-            }
-            if Self::check_time_in(
-                time,
-                NaiveTime::from_hms_opt(10, 30, 0).unwrap(),
-                NaiveTime::from_hms_opt(13, 30, 0).unwrap(),
-            ) {
-                return Self {
-                    lunch: acc.lunch + 1,
-                    ..acc
-                };
-            }
-
-            if Self::check_time_in(
-                time,
-                NaiveTime::from_hms_opt(16, 30, 0).unwrap(),
-                NaiveTime::from_hms_opt(19, 30, 0).unwrap(),
-            ) {
-                return Self {
-                    dinner: acc.dinner + 1,
-                    ..acc
-                };
-            }
-            Self {
-                unknown: acc.unknown + 1,
-                ..acc
-            }
-        })
-    }
-
-    fn check_time_in(time: NaiveTime, start: NaiveTime, end: NaiveTime) -> bool {
-        if time >= start && time < end {
-            return true;
-        }
-        false
-    }
-}
-impl IntoIterator for TimePeriodData {
-    type Item = (&'static str, u32);
-    type IntoIter = std::vec::IntoIter<Self::Item>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        vec![
-            ("Breakfast", self.breakfast),
-            ("Lunch", self.lunch),
-            ("Dinner", self.dinner),
-            ("Other", self.unknown),
-        ]
-        .into_iter()
-    }
-}
-
-#[derive(Default, Debug, Clone)]
-struct MerchantData {
-    data: Vec<(String, f64)>,
-}
-impl MerchantData {
-    fn new(data: &Vec<Transaction>) -> Self {
-        let mut hash_map: HashMap<&str, f64> = HashMap::new();
-        data.iter().for_each(|entry| {
-            match hash_map.get(entry.merchant.as_str()) {
-                Some(v) => hash_map.insert(&entry.merchant, *v + entry.amount),
-                None => hash_map.insert(&entry.merchant, entry.amount),
-            };
-        });
-        let mut entries: Vec<(&&str, &f64)> = hash_map.iter().collect();
-        entries.sort_by(|a, b| a.1.total_cmp(&b.1));
-        MerchantData {
-            data: entries.iter().map(|e| ((*e.0).to_string(), *e.1)).collect(),
-        }
-    }
-}
-
 impl Analysis {
     pub fn new(tx: ActionSender, manager: TransactionManager) -> Self {
         let mut new = Self {
@@ -203,6 +106,8 @@ impl EventLoopParticipant for Analysis {
                 KeyCode::Char('l') | KeyCode::Right => {
                     self.tx.send(AnalysisAction::MoveTypeFocus(true));
                 }
+                KeyCode::Char('j') | KeyCode::Down => self.tx.send(AnalysisAction::Scroll(true)),
+                KeyCode::Char('k') | KeyCode::Up => self.tx.send(AnalysisAction::Scroll(false)),
                 _ => {}
             },
             _ => {}
@@ -218,6 +123,15 @@ impl EventLoopParticipant for Analysis {
                         self.analysis_type = self.analysis_type.next(&self.data)
                     } else {
                         self.analysis_type = self.analysis_type.previous(&self.data)
+                    }
+                }
+                AnalysisAction::Scroll(dir) => {
+                    if let AnalysisType::Merchant(ref mut data) = self.analysis_type {
+                        if dir {
+                            data.scroll_state.scroll_down();
+                        } else {
+                            data.scroll_state.scroll_up();
+                        }
                     }
                 }
             },
@@ -249,60 +163,12 @@ impl WidgetExt for Analysis {
 
         frame.render_widget(tabs, header_area);
 
-        let block = Block::bordered()
-            .border_set(symbols::border::PROPORTIONAL_TALL)
-            .padding(Padding::horizontal(1))
-            .border_style(self.analysis_type.get_palette().c600);
+        let palette = self.analysis_type.get_palette();
 
-        let widget = match &self.analysis_type {
-            AnalysisType::TimePeriod(data) => {
-                let style = Style::default().fg(tailwind::BLUE.c300);
-                let bars: Vec<Bar> = data
-                    .clone()
-                    .into_iter()
-                    .map(|(name, value)| {
-                        Bar::default()
-                            .value(u64::from(value))
-                            .label(Line::from(name))
-                            .style(style)
-                            .value_style(style.reversed())
-                    })
-                    .collect();
-                let bar_chart = BarChart::default()
-                    .block(block)
-                    .data(BarGroup::default().bars(&bars))
-                    .bar_width(1)
-                    .bar_gap(1)
-                    .direction(ratatui::layout::Direction::Horizontal);
-                bar_chart
-            }
-
-            AnalysisType::Merchant(data) => {
-                let style = Style::default().fg(tailwind::BLUE.c300);
-                let bars: Vec<Bar> = data
-                    .clone()
-                    .data
-                    .into_iter()
-                    .map(|(name, value)| {
-                        info!("{}{}", value, value as u64);
-                        Bar::default()
-                            .value(((value.abs() * 100.0).round() as u64) / 100)
-                            .text_value(format!("{:.2}", value.abs()))
-                            .label(Line::from(name))
-                            .style(style)
-                            .value_style(style.reversed())
-                    })
-                    .collect();
-                let bar_chart = BarChart::default()
-                    .block(block)
-                    .data(BarGroup::default().bars(&bars))
-                    .bar_width(1)
-                    .bar_gap(1)
-                    .direction(ratatui::layout::Direction::Horizontal);
-                bar_chart
-            }
+        match &mut self.analysis_type {
+            AnalysisType::TimePeriod(data) => data.render(main_area, frame, palette),
+            AnalysisType::Merchant(data) => data.render(main_area, frame, palette),
         };
-        frame.render_widget(widget, main_area);
 
         self.get_help_message().render(frame, help_area);
     }

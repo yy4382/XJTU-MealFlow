@@ -4,7 +4,8 @@ use crate::{
     component::input::InputAction,
     libs::transactions::FilterOptions,
     page::{
-        analysis::AnalysisAction, cookie_input::CookieInputAction, fetch::FetchingAction, help_popup::HelpPopupAction, transactions::TransactionAction
+        analysis::AnalysisAction, cookie_input::CookieInputAction, fetch::FetchingAction,
+        help_popup::HelpPopupAction, transactions::TransactionAction,
     },
     utils::help_msg::HelpMsg,
 };
