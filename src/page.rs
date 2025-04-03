@@ -10,11 +10,12 @@ use downcast_rs::{DowncastSync, impl_downcast};
 use ratatui::Frame;
 use ratatui::layout::Rect;
 
-pub mod cookie_input;
-pub mod fetch;
-pub mod help_popup;
-pub mod home;
-pub mod transactions;
+pub(crate) mod cookie_input;
+pub(crate) mod fetch;
+pub(crate) mod help_popup;
+pub(crate) mod home;
+pub(crate) mod transactions;
+pub(crate) mod analysis;
 
 #[cfg(test)]
 use tokio::sync::mpsc::UnboundedReceiver;

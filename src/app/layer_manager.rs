@@ -7,8 +7,8 @@ use crate::{
     actions::{Action, LayerManageAction, Layers},
     libs::fetcher::MockMealFetcher,
     page::{
-        Layer, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup, home::Home,
-        transactions::Transactions,
+        Layer, analysis::Analysis, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup,
+        home::Home, transactions::Transactions,
     },
     tui::Event,
 };
@@ -202,6 +202,10 @@ impl LayerManager {
                     }
                 }
             }
+            Layers::Analysis => Box::new(Analysis::new(
+                state.action_tx.clone().into(),
+                state.manager.clone(),
+            )),
         };
         page.init();
         Some(page.into())

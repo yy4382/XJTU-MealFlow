@@ -4,8 +4,7 @@ use crate::{
     component::input::InputAction,
     libs::transactions::FilterOptions,
     page::{
-        cookie_input::CookieInputAction, fetch::FetchingAction, help_popup::HelpPopupAction,
-        transactions::TransactionAction,
+        analysis::AnalysisAction, cookie_input::CookieInputAction, fetch::FetchingAction, help_popup::HelpPopupAction, transactions::TransactionAction
     },
     utils::help_msg::HelpMsg,
 };
@@ -20,6 +19,7 @@ pub enum Action {
     Fetching(FetchingAction),
     CookieInput(CookieInputAction),
     HelpPopup(HelpPopupAction),
+    Analysis(AnalysisAction),
 
     Comp((CompAction, u64)),
 
@@ -37,6 +37,7 @@ pub enum Layers {
     Transaction(Option<FilterOptions>),
     CookieInput,
     Help(HelpMsg),
+    Analysis,
 }
 
 impl std::fmt::Display for Layers {
@@ -47,6 +48,7 @@ impl std::fmt::Display for Layers {
             Layers::Transaction(_) => write!(f, "Transaction"),
             Layers::CookieInput => write!(f, "CookieInput"),
             Layers::Help(_) => write!(f, "Help"),
+            Layers::Analysis => write!(f, "Analysis"),
         }
     }
 }

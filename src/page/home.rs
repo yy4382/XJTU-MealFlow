@@ -80,6 +80,10 @@ impl EventLoopParticipant for Home {
                 KeyCode::Char('?') => self.tx.send(LayerManageAction::PushPage(
                     Layers::Help(self.get_help_msg()).into_push_config(true),
                 )),
+                KeyCode::Char('a') => {
+                    // TODO add help msg for this
+                    self.tx.send(LayerManageAction::SwapPage(Layers::Analysis));
+                }
                 KeyCode::Char('T') => {
                     self.tx
                         .send(LayerManageAction::SwapPage(Layers::Transaction(None)));
