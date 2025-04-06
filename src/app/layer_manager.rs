@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     actions::{Action, LayerManageAction, Layers},
-    libs::fetcher::MockMealFetcher,
+    libs::fetcher::{MealFetcher, MockMealFetcher, RealMealFetcher},
     page::{
         Layer, analysis::Analysis, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup,
         home::Home, transactions::Transactions,
@@ -180,11 +180,13 @@ impl LayerManager {
                     state.input_mode,
                 )
                 .client(if state.config.fetch.use_mock_data {
-                    MockMealFetcher::default()
-                        .set_sim_delay(Duration::from_secs(1))
-                        .per_page(50)
+                    MealFetcher::Mock(
+                        MockMealFetcher::default()
+                            .set_sim_delay(Duration::from_secs(1))
+                            .per_page(50),
+                    )
                 } else {
-                    Default::default()
+                    MealFetcher::Real(RealMealFetcher::default())
                 }),
             ),
             Layers::CookieInput => Box::new(CookieInput::new(
