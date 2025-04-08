@@ -7,6 +7,7 @@ use ratatui::{
 };
 use strum::{Display, EnumIter, IntoEnumIterator};
 use time_period::TimePeriodData;
+use time_series::TimeSeriesData;
 
 use crate::{
     actions::{ActionSender, LayerManageAction},
@@ -20,6 +21,7 @@ use super::{EventLoopParticipant, Layer, WidgetExt};
 
 mod merchant;
 mod time_period;
+mod time_series;
 
 pub(crate) struct Analysis {
     manager: crate::libs::transactions::TransactionManager,
@@ -33,6 +35,8 @@ pub(crate) struct Analysis {
 enum AnalysisType {
     #[strum(to_string = "Time Period")]
     TimePeriod(TimePeriodData),
+    #[strum(to_string = "Time Series")]
+    TimeSeries(TimeSeriesData),
     #[strum(to_string = "Merchant")]
     Merchant(MerchantData),
     // MerchantCategory,
@@ -41,25 +45,29 @@ enum AnalysisType {
 impl AnalysisType {
     fn next(&self, data: &[Transaction]) -> Self {
         match self {
-            Self::TimePeriod(_) => Self::Merchant(MerchantData::new(data)),
+            Self::TimePeriod(_) => Self::TimeSeries(TimeSeriesData::new(data)),
+            Self::TimeSeries(_) => Self::Merchant(MerchantData::new(data)),
             Self::Merchant(_) => Self::TimePeriod(TimePeriodData::new(data)),
         }
     }
     fn previous(&self, data: &[Transaction]) -> Self {
         match self {
             Self::TimePeriod(_) => Self::Merchant(MerchantData::new(data)),
-            Self::Merchant(_) => Self::TimePeriod(TimePeriodData::new(data)),
+            Self::TimeSeries(_) => Self::TimePeriod(TimePeriodData::new(data)),
+            Self::Merchant(_) => Self::TimeSeries(TimeSeriesData::new(data)),
         }
     }
     fn to_index(&self) -> usize {
         match self {
             AnalysisType::TimePeriod(_) => 0,
-            AnalysisType::Merchant(_) => 1,
+            AnalysisType::TimeSeries(_) => 1,
+            AnalysisType::Merchant(_) => 2,
         }
     }
     fn get_palette(&self) -> tailwind::Palette {
         match self {
             AnalysisType::TimePeriod(_) => tailwind::BLUE,
+            AnalysisType::TimeSeries(_) => tailwind::GREEN,
             AnalysisType::Merchant(_) => tailwind::INDIGO,
         }
     }
@@ -147,6 +155,7 @@ impl WidgetExt for Analysis {
 
         match &mut self.analysis_type {
             AnalysisType::TimePeriod(data) => data.render(main_area, frame, palette),
+            AnalysisType::TimeSeries(data) => data.render(main_area, frame, palette),
             AnalysisType::Merchant(data) => data.render(main_area, frame, palette),
         };
 
