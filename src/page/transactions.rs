@@ -172,6 +172,7 @@ impl EventLoopParticipant for Transactions {
                     self.tx.send(LayerManageAction::Push(
                         Layers::Help(self.get_help_msg()).into_push_config(true),
                     ));
+                    status.consumed();
                 }
                 (_, KeyCode::Char(' ')) => {
                     if let Some(index) = self.table_state.selected() {
@@ -186,8 +187,12 @@ impl EventLoopParticipant for Transactions {
                                 .send(LayerManageAction::Push(layer.into_push_config(false)));
                         }
                     }
+                    status.consumed();
                 }
-                (_, KeyCode::Esc) => self.tx.send(LayerManageAction::Pop),
+                (_, KeyCode::Esc) => {
+                    self.tx.send(LayerManageAction::Pop);
+                    status.consumed();
+                }
                 _ => (),
             }
         };
@@ -438,13 +443,13 @@ mod test {
         let (_, mut transaction) = get_test_objs(None, 50);
         assert_eq!(transaction.table_state.selected(), Some(0));
 
-        transaction.handle_events(&'j'.into());
+        transaction.handle_event_with_status_check(&'j'.into());
         assert_eq!(transaction.table_state.selected(), Some(1));
 
-        transaction.handle_events(&'k'.into());
+        transaction.handle_event_with_status_check(&'k'.into());
         assert_eq!(transaction.table_state.selected(), Some(0));
 
-        transaction.handle_events(&'k'.into());
+        transaction.handle_event_with_status_check(&'k'.into());
         assert_eq!(
             transaction.table_state.selected(),
             Some(transaction.transactions.len() - 1)
@@ -461,7 +466,7 @@ mod test {
             .unwrap();
         assert_snapshot!(terminal.backend());
 
-        transaction.handle_events(&'k'.into());
+        transaction.handle_event_with_status_check(&'k'.into());
         terminal
             .draw(|frame| transaction.render(frame, frame.area()))
             .unwrap();
@@ -476,7 +481,8 @@ mod test {
         transaction.transactions.iter().for_each(|t| {
             assert!(t.merchant.contains("寿司"));
         });
-        transaction.handle_events(&'f'.into());
+        let s = transaction.handle_events(&'f'.into());
+        assert!(matches!(s, EventHandlingStatus::ShouldPropagate));
         assert!(rx.try_recv().is_err());
     }
 
@@ -491,7 +497,7 @@ mod test {
             .unwrap();
         assert_snapshot!(terminal.backend());
 
-        transaction.handle_events(&'k'.into());
+        transaction.handle_event_with_status_check(&'k'.into());
         terminal
             .draw(|frame| transaction.render(frame, frame.area()))
             .unwrap();
@@ -501,8 +507,8 @@ mod test {
     #[test]
     fn push_filtered_page() {
         let (mut rx, mut transaction) = get_test_objs(None, 50);
-        transaction.handle_events(&'j'.into());
-        transaction.handle_events(&' '.into());
+        transaction.handle_event_with_status_check(&'j'.into());
+        transaction.handle_event_with_status_check(&' '.into());
         let mut received_push_page = false;
         while let Ok(action) = rx.try_recv() {
             if let Action::Layer(LayerManageAction::Push(PushPageConfig {

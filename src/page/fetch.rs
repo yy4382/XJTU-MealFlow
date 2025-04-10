@@ -454,7 +454,7 @@ mod test {
         ];
 
         for (key, _result) in event_result.into_iter() {
-            page.handle_events(&key.into());
+            page.handle_event_with_status_check(&key.into());
             assert!(matches!(page.current_focus, ref _result))
         }
     }
@@ -462,12 +462,12 @@ mod test {
     #[test]
     fn test_user_input() {
         let (_, mut page) = get_test_objs();
-        page.handle_events(&'k'.into());
+        page.handle_event_with_status_check(&'k'.into());
         assert!(matches!(page.current_focus, Focus::UserInput));
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         let seq = "2025-03-02";
         seq.chars().for_each(|c| {
-            page.handle_events(&c.into());
+            page.handle_event_with_status_check(&c.into());
         });
         assert_eq!(
             page.fetch_start_date.unwrap(),
@@ -475,13 +475,13 @@ mod test {
                 .with_ymd_and_hms(2025, 3, 2, 0, 0, 0)
                 .unwrap()
         );
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
     }
     #[test]
     fn test_render() {
         let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(120, 20)).unwrap();
-        page.handle_events(&'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
         terminal
             .draw(|f| {
                 page.render(f, f.area());
@@ -566,17 +566,17 @@ mod test {
         page.manager.update_cookie("cookie").unwrap();
         let mut page = page.client(MealFetcher::Mock(fetcher::MockMealFetcher::default()));
 
-        page.handle_events(&'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
 
         let mut seq: Vec<Event> = vec![KeyCode::Enter.into()];
         seq.extend("2024-09-01".chars().map(|c| Event::from(c)));
         seq.push(KeyCode::Enter.into());
         seq.iter().for_each(|e| {
-            page.handle_events(&e);
+            page.handle_event_with_status_check(&e);
         });
 
         // start fetching
-        page.handle_events(&' '.into());
+        page.handle_event_with_status_check(&' '.into());
 
         let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
         tokio::pin!(timeout);

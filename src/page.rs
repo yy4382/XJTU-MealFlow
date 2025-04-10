@@ -50,24 +50,12 @@ pub(crate) trait WidgetExt {
 /// - `event_loop_once_with_action`: Processes a single action and subsequent actions
 pub(crate) trait EventLoopParticipant {
     /// Handle events
+    #[must_use]
     fn handle_events(&mut self, event: &Event) -> EventHandlingStatus;
 
-    // /// Perform Actions and update the state of the page
-    // fn update(&mut self, action: Action);
-
-    // #[cfg(test)]
-    // fn event_loop_once(&mut self, rx: &mut UnboundedReceiver<Action>, event: Event) {
-    //     self.handle_events(&event);
-    //     while let Ok(action) = rx.try_recv() {
-    //         self.update(action);
-    //     }
-    // }
-
-    // #[cfg(test)]
-    // fn event_loop_once_with_action(&mut self, rx: &mut UnboundedReceiver<Action>, action: Action) {
-    //     self.update(action);
-    //     while let Ok(action) = rx.try_recv() {
-    //         self.update(action);
-    //     }
-    // }
+    #[cfg(test)]
+    fn handle_event_with_status_check(&mut self, event: &Event) {
+        let status = self.handle_events(event);
+        assert!(matches!(status, EventHandlingStatus::Consumed));
+    }
 }

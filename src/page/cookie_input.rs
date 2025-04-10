@@ -182,16 +182,16 @@ mod test {
         assert!(matches!(page.state, Focus::Account));
         assert!(matches!(page.account_input.mode, InputMode::Focused));
 
-        page.handle_events(&'j'.into());
+        page.handle_event_with_status_check(&'j'.into());
         assert!(matches!(page.state, Focus::Cookie));
 
-        page.handle_events(&'j'.into());
+        page.handle_event_with_status_check(&'j'.into());
         assert!(matches!(page.state, Focus::Account));
 
-        page.handle_events(&'k'.into());
+        page.handle_event_with_status_check(&'k'.into());
         assert!(matches!(page.state, Focus::Cookie));
 
-        page.handle_events(&'k'.into());
+        page.handle_event_with_status_check(&'k'.into());
         assert!(matches!(page.state, Focus::Account));
     }
 
@@ -199,17 +199,17 @@ mod test {
     fn test_account_input() {
         let (_, mut page) = get_test_objs();
 
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         assert!(page.account_input.is_inputting());
-        page.handle_events(&'a'.into());
-        page.handle_events(&'j'.into());
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&'a'.into());
+        page.handle_event_with_status_check(&'j'.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().0, "aj");
 
-        page.handle_events(&KeyCode::Enter.into());
-        page.handle_events(&KeyCode::Left.into());
-        page.handle_events(&Event::Paste("kl".into()));
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&KeyCode::Left.into());
+        page.handle_event_with_status_check(&Event::Paste("kl".into()));
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         assert_eq!(
             page.manager.get_account_cookie_may_empty().unwrap().0,
             // cSpell:ignore aklj
@@ -221,12 +221,12 @@ mod test {
     fn test_cookie_input() {
         let (_, mut page) = get_test_objs();
 
-        page.handle_events(&'j'.into());
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&'j'.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         assert!(page.cookie_input.is_inputting());
-        page.handle_events(&'a'.into());
-        page.handle_events(&'j'.into());
-        page.handle_events(&KeyCode::Enter.into());
+        page.handle_event_with_status_check(&'a'.into());
+        page.handle_event_with_status_check(&'j'.into());
+        page.handle_event_with_status_check(&KeyCode::Enter.into());
         assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().1, "aj");
     }
 

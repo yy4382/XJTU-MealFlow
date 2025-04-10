@@ -156,6 +156,7 @@ impl InputComp {
 }
 
 impl InputComp {
+    #[must_use]
     pub fn handle_events(
         &mut self,
         event: &crate::tui::Event,
@@ -263,6 +264,7 @@ pub mod test {
             let mut output = None;
             seq.into_iter().for_each(|e| {
                 let status = self.handle_events(&e);
+                assert!(matches!(status.0, EventHandlingStatus::Consumed));
                 if let Some(s) = status.1 {
                     output = Some(s);
                 }
@@ -276,9 +278,11 @@ pub mod test {
         let mut input = get_input(false);
         assert!(matches!(input.mode, InputMode::Idle));
         input.set_mode(InputMode::Focused);
-        input.handle_events(&KeyCode::Enter.into());
+        let (s,_) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
         assert!(matches!(input.mode, InputMode::Inputting));
-        input.handle_events(&KeyCode::Enter.into());
+        let (s,_) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
         assert!(matches!(input.mode, InputMode::Focused));
     }
 
@@ -381,7 +385,7 @@ pub mod test {
         terminal.draw(|f| input.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Yellow);
 
-        input.handle_events(&KeyCode::Enter.into());
+        let _ = input.handle_events(&KeyCode::Enter.into());
         terminal.draw(|f| input.render(f, f.area())).unwrap();
         assert_snapshot!(terminal.backend());
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);

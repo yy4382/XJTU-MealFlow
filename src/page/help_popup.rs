@@ -228,7 +228,7 @@ mod tests {
         let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 25)).unwrap();
 
         let mut test_loop = |key: char, expected: Option<usize>| {
-            help_popup.handle_events(&key.into());
+            help_popup.handle_event_with_status_check(&key.into());
             // help_popup.event_loop_once(&mut rx, key.into());
             terminal
                 .draw(|f| {

@@ -195,15 +195,15 @@ mod test {
         assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
 
         // Test moving to next tab (Merchant)
-        page.handle_events(&'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
         assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
 
         // Test moving back to TimePeriod
-        page.handle_events(&'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
         assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
 
         // Test wrapping around
-        page.handle_events(&'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
         assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
     }
 
@@ -220,7 +220,7 @@ mod test {
         let (_, mut page) = get_test_objs();
 
         // First switch to Merchant tab
-        page.handle_events(&'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
 
         let initial_offset = get_merchant_data(&page.analysis_type)
             .scroll_state
@@ -228,7 +228,7 @@ mod test {
             .y;
 
         // Test scrolling down
-        page.handle_events(&'j'.into());
+        page.handle_event_with_status_check(&'j'.into());
         assert_eq!(
             get_merchant_data(&page.analysis_type)
                 .scroll_state
@@ -238,7 +238,7 @@ mod test {
         );
 
         // Test scrolling up
-        page.handle_events(&'k'.into());
+        page.handle_event_with_status_check(&'k'.into());
         assert_eq!(
             get_merchant_data(&page.analysis_type)
                 .scroll_state
@@ -262,7 +262,7 @@ mod test {
         assert_snapshot!(terminal.backend());
 
         // Switch to Merchant tab and render again
-        page.handle_events(&'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
 
         terminal
             .draw(|f| {
@@ -274,7 +274,7 @@ mod test {
 
         let seq = "j".repeat(10);
         seq.chars().for_each(|c| {
-            page.handle_events(&c.into());
+            page.handle_event_with_status_check(&c.into());
         });
         terminal
             .draw(|f| {

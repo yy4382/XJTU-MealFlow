@@ -162,7 +162,7 @@ mod tests {
     fn test_events() {
         let (tx, mut _rx) = mpsc::unbounded_channel::<Action>();
         let mut home = Home { tx: tx.into() };
-        home.handle_events(&'?'.into());
+        home.handle_event_with_status_check(&'?'.into());
         let mut should_receive_layer_opt = false;
         while let Ok(action) = _rx.try_recv() {
             if let Action::Layer(LayerManageAction::Push(_)) = action {
