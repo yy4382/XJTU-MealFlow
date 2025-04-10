@@ -11,7 +11,8 @@ use ratatui::{
 use unicode_width::UnicodeWidthStr;
 
 use crate::{
-    actions::{Action, ActionSender, LayerManageAction},
+    actions::{ActionSender, LayerManageAction},
+    app::layer_manager::EventHandlingStatus,
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
@@ -64,57 +65,38 @@ pub enum HelpPopupAction {
     Start,
     End,
 }
-impl From<HelpPopupAction> for Action {
-    fn from(value: HelpPopupAction) -> Self {
-        Action::HelpPopup(value)
-    }
-}
 
 impl EventLoopParticipant for HelpPopup {
-    fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
+    fn handle_events(&mut self, event: &crate::tui::Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
         #[allow(clippy::single_match)]
         match event {
             Event::Key(key) => match key.code {
                 KeyCode::Esc => {
                     self.tx.send(LayerManageAction::Pop);
+                    status.consumed();
                 }
                 KeyCode::Char('j') => {
-                    self.tx.send(HelpPopupAction::Down);
+                    self.update(HelpPopupAction::Down);
+                    status.consumed();
                 }
                 KeyCode::Char('k') => {
-                    self.tx.send(HelpPopupAction::Up);
+                    self.update(HelpPopupAction::Up);
+                    status.consumed();
                 }
                 KeyCode::Char('g') => {
-                    self.tx.send(HelpPopupAction::Start);
+                    self.update(HelpPopupAction::Start);
+                    status.consumed();
                 }
                 KeyCode::Char('G') => {
-                    self.tx.send(HelpPopupAction::End);
+                    self.update(HelpPopupAction::End);
+                    status.consumed();
                 }
                 _ => {}
             },
             _ => {}
         }
-        Ok(())
-    }
-
-    fn update(&mut self, action: crate::actions::Action) {
-        let Action::HelpPopup(actions) = action else {
-            return;
-        };
-        match actions {
-            HelpPopupAction::Up => {
-                self.table_state.select_previous();
-            }
-            HelpPopupAction::Down => {
-                self.table_state.select_next();
-            }
-            HelpPopupAction::Start => {
-                self.table_state.select_first();
-            }
-            HelpPopupAction::End => {
-                self.table_state.select_last();
-            }
-        }
+        status
     }
 }
 
@@ -193,6 +175,23 @@ impl HelpPopup {
 
         frame.render_stateful_widget(list, area, &mut self.table_state);
     }
+
+    fn update(&mut self, action: HelpPopupAction) {
+        match action {
+            HelpPopupAction::Up => {
+                self.table_state.select_previous();
+            }
+            HelpPopupAction::Down => {
+                self.table_state.select_next();
+            }
+            HelpPopupAction::Start => {
+                self.table_state.select_first();
+            }
+            HelpPopupAction::End => {
+                self.table_state.select_last();
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -215,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_navigation() {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+        let (tx, _) = tokio::sync::mpsc::unbounded_channel();
         let mut help_popup = HelpPopup::new(
             tx.into(),
             vec![
@@ -229,7 +228,8 @@ mod tests {
         let mut terminal = Terminal::new(ratatui::backend::TestBackend::new(80, 25)).unwrap();
 
         let mut test_loop = |key: char, expected: Option<usize>| {
-            help_popup.event_loop_once(&mut rx, key.into());
+            help_popup.handle_event_with_status_check(&key.into());
+            // help_popup.event_loop_once(&mut rx, key.into());
             terminal
                 .draw(|f| {
                     help_popup.render(f, f.area());

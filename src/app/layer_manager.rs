@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    actions::{Action, LayerManageAction, Layers},
+    actions::{LayerManageAction, Layers},
     libs::fetcher::{MealFetcher, MockMealFetcher, RealMealFetcher},
     page::{
         Layer, analysis::Analysis, cookie_input::CookieInput, fetch::Fetch, help_popup::HelpPopup,
@@ -12,7 +12,6 @@ use crate::{
     },
     tui::Event,
 };
-use color_eyre::Result;
 use ratatui::Frame;
 use tracing::{info, warn};
 
@@ -63,6 +62,21 @@ impl DerefMut for LayerConfig {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub enum EventHandlingStatus {
+    /// The layer has handled the event the manager should not send it to the underlying layers
+    Consumed,
+    /// The layer has not handled the event and the manager should send it to the underlying layers
+    #[default]
+    ShouldPropagate,
+}
+
+impl EventHandlingStatus {
+    pub fn consumed(&mut self) {
+        *self = EventHandlingStatus::Consumed;
+    }
+}
+
 pub(super) struct LayerManager {
     layers: Vec<LayerConfig>,
 }
@@ -97,10 +111,13 @@ impl LayerManager {
             .for_each(|page| page.render(f, f.area()));
     }
 
-    pub(super) fn handle_event(&self, event: Event) -> Result<()> {
-        // TODO currently, we only handle events for the top layer. Is it necessary to handle events for all layers?
-        let last_page = self.layers.last().expect("No page in stack");
-        last_page.handle_events(event)
+    pub(super) fn handle_event(&mut self, event: Event) {
+        for layer in self.layers.iter_mut().rev() {
+            let status = layer.handle_events(&event);
+            if matches!(status, EventHandlingStatus::Consumed) {
+                break;
+            }
+        }
     }
 
     /// Handle LayerManageAction for root app, updating the layer stack
@@ -151,17 +168,6 @@ impl LayerManager {
         }
     }
 
-    /// Passing the action to the layer who is interested in it (currently only the top layer)
-    pub(super) fn handle_action(&mut self, action: Action) {
-        // TODO currently we only handle actions for the top layer. Is it necessary to handle actions for all layers?
-        // Maybe we should add a `interested_actions` pattern to LayerConfig
-        // to filter out actions that are not interested in and let the layer handle it
-        self.layers
-            .last_mut()
-            .expect("No page in stack")
-            .update(action);
-    }
-
     /// Get a new layer based on the given layer type
     fn get_layer(layer: &Layers, state: &RootState) -> Option<BoxedLayer> {
         let mut page = match layer.clone() {
@@ -174,25 +180,21 @@ impl LayerManager {
                 state.manager.clone(),
             )),
             Layers::Fetch => Box::new(
-                Fetch::new(
-                    state.action_tx.clone().into(),
-                    state.manager.clone(),
-                    state.input_mode,
-                )
-                .client(if state.config.fetch.use_mock_data {
-                    MealFetcher::Mock(
-                        MockMealFetcher::default()
-                            .set_sim_delay(Duration::from_secs(1))
-                            .per_page(50),
-                    )
-                } else {
-                    MealFetcher::Real(RealMealFetcher::default())
-                }),
+                Fetch::new(state.action_tx.clone().into(), state.manager.clone()).client(
+                    if state.config.fetch.use_mock_data {
+                        MealFetcher::Mock(
+                            MockMealFetcher::default()
+                                .set_sim_delay(Duration::from_secs(1))
+                                .per_page(50),
+                        )
+                    } else {
+                        MealFetcher::Real(RealMealFetcher::default())
+                    },
+                ),
             ),
             Layers::CookieInput => Box::new(CookieInput::new(
                 state.action_tx.clone().into(),
                 state.manager.clone(),
-                state.input_mode,
             )),
             Layers::Help(help_msg) => {
                 let help = HelpPopup::new(state.action_tx.clone().into(), help_msg.clone());

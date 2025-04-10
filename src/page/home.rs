@@ -2,12 +2,12 @@ use std::vec;
 
 use crate::{
     actions::{Action, ActionSender, LayerManageAction, Layers},
+    app::layer_manager::EventHandlingStatus,
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
 use super::{EventLoopParticipant, Layer, WidgetExt};
-use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -74,27 +74,38 @@ impl WidgetExt for Home {
 }
 
 impl EventLoopParticipant for Home {
-    fn handle_events(&self, _event: crate::tui::Event) -> Result<()> {
+    fn handle_events(&mut self, _event: &crate::tui::Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
         if let Event::Key(key) = _event {
             match key.code {
-                KeyCode::Char('?') => self.tx.send(LayerManageAction::Push(
-                    Layers::Help(self.get_help_msg()).into_push_config(true),
-                )),
+                KeyCode::Char('?') => {
+                    self.tx.send(LayerManageAction::Push(
+                        Layers::Help(self.get_help_msg()).into_push_config(true),
+                    ));
+                    status.consumed();
+                }
                 KeyCode::Char('a') => {
                     // TODO add help msg for this
-                    self.tx.send(LayerManageAction::Swap(Layers::Analysis));
+                    self.tx.send(LayerManageAction::Push(
+                        Layers::Analysis.into_push_config(false),
+                    ));
+                    status.consumed();
                 }
                 KeyCode::Char('T') => {
-                    self.tx
-                        .send(LayerManageAction::Swap(Layers::Transaction(None)));
+                    self.tx.send(LayerManageAction::Push(
+                        Layers::Transaction(None).into_push_config(false),
+                    ));
+                    status.consumed();
+                }
+                KeyCode::Char('q') => {
+                    self.tx.send(Action::Quit);
+                    status.consumed();
                 }
                 _ => {}
             }
         }
-        Ok(())
+        status
     }
-
-    fn update(&mut self, _action: Action) {}
 }
 
 impl Layer for Home {}
@@ -104,6 +115,8 @@ mod tests {
     use insta::assert_snapshot;
     use ratatui::{Terminal, backend::TestBackend};
     use tokio::sync::mpsc;
+
+    use crate::actions::Action;
 
     use super::*;
 
@@ -148,11 +161,40 @@ mod tests {
     #[test]
     fn test_events() {
         let (tx, mut _rx) = mpsc::unbounded_channel::<Action>();
-        let home = Home { tx: tx.into() };
-        home.handle_events('?'.into()).unwrap();
+        let mut home = Home { tx: tx.into() };
+        home.handle_event_with_status_check(&'?'.into());
         let mut should_receive_layer_opt = false;
         while let Ok(action) = _rx.try_recv() {
-            if let Action::Layer(LayerManageAction::Push(_)) = action {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Help(_)));
+                should_receive_layer_opt = true;
+            }
+        }
+        assert!(should_receive_layer_opt);
+    }
+    #[test]
+    fn test_event_nav_to_analysis() {
+        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+        let mut home = Home { tx: tx.into() };
+        home.handle_event_with_status_check(&'a'.into());
+        let mut should_receive_layer_opt = false;
+        while let Ok(action) = rx.try_recv() {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Analysis));
+                should_receive_layer_opt = true;
+            }
+        }
+        assert!(should_receive_layer_opt);
+    }
+    #[test]
+    fn test_event_nav_to_transactions() {
+        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+        let mut home = Home { tx: tx.into() };
+        home.handle_event_with_status_check(&'T'.into());
+        let mut should_receive_layer_opt = false;
+        while let Ok(action) = rx.try_recv() {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Transaction(_)));
                 should_receive_layer_opt = true;
             }
         }

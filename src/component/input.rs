@@ -1,4 +1,3 @@
-use color_eyre::Result;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -8,7 +7,7 @@ use ratatui::{
 use tui_input::{Input, backend::crossterm::EventHandler};
 
 use crate::{
-    actions::{Action, ActionSender, CompAction},
+    app::layer_manager::EventHandlingStatus,
     page::WidgetExt,
     tui::Event,
     utils::{
@@ -24,17 +23,13 @@ use crate::{
 ///
 /// Get value: parse an action with [`InputComp::parse_submit_action`]
 pub(crate) struct InputComp {
-    id: u64,
     input: Input,
-    mode: InputMode,
-    inputting: bool,
+    pub mode: InputMode,
 
     title: Option<String>,
 
     auto_submit: bool,
     control_keys: InputCompCtrlKeys,
-
-    action_tx: ActionSender,
 }
 
 #[derive(Default, Clone, Debug)]
@@ -42,6 +37,7 @@ pub(crate) enum InputMode {
     #[default]
     Idle,
     Focused,
+    Inputting,
 }
 
 #[derive(Clone, Debug)]
@@ -61,48 +57,14 @@ impl Default for InputCompCtrlKeys {
     }
 }
 
-impl InputCompCtrlKeys {
-    #[allow(dead_code)]
-    pub fn with_enter_keys(mut self, enter_keys: Vec<KeyEvent>) -> Self {
-        self.enter_keys = enter_keys;
-        self
-    }
-    #[allow(dead_code)]
-    pub fn with_submit_keys(mut self, submit_keys: Vec<KeyEvent>) -> Self {
-        self.submit_keys = submit_keys;
-        self
-    }
-    #[allow(dead_code)]
-    pub fn with_exit_keys(mut self, exit_keys: Vec<KeyEvent>) -> Self {
-        self.exit_keys = exit_keys;
-        self
-    }
-}
-
-#[derive(Clone, Debug)]
-pub(crate) enum InputAction {
-    SwitchMode(InputMode),
-    HandleKey(KeyEvent),
-    HandlePaste(String),
-    Exit(),
-    DirectExit(),
-    SubmitExit(String),
-
-    /// the event owner should pay attention to
-    Submit(String),
-}
-
 impl InputComp {
-    pub fn new(id: u64, inputting: bool, action_tx: ActionSender) -> Self {
+    pub fn new() -> Self {
         Self {
-            id,
             input: Input::default(),
-            inputting,
             mode: InputMode::default(),
             title: Default::default(),
             auto_submit: false,
             control_keys: Default::default(),
-            action_tx,
         }
     }
 
@@ -136,48 +98,6 @@ impl InputComp {
         self
     }
 
-    pub fn get_switch_mode_action(&self, mode: InputMode) -> Action {
-        Action::Comp((CompAction::Input(InputAction::SwitchMode(mode)), self.id))
-    }
-
-    pub fn parse_submit_action(&self, action: &Action) -> Option<String> {
-        if let Some(input_action) = self.unwrap_action(action) {
-            match input_action {
-                InputAction::Submit(s) => Some(s),
-                _ => None,
-            }
-        } else {
-            None
-        }
-    }
-
-    fn get_action(&self, action: InputAction) -> Action {
-        Action::Comp((CompAction::Input(action), self.id))
-    }
-
-    fn unwrap_action(&self, action: &Action) -> Option<InputAction> {
-        if let Action::Comp((comp_action, id)) = action {
-            if *id != self.id {
-                return None;
-            };
-            if let CompAction::Input(action) = comp_action {
-                Some(action.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
-    }
-
-    fn send(&self, action: InputAction) {
-        self.action_tx.send(self.get_action(action));
-    }
-
-    fn send_raw(&self, action: Action) {
-        self.action_tx.send(action);
-    }
-
     pub fn auto_submit(self, b: bool) -> Self {
         Self {
             auto_submit: b,
@@ -187,8 +107,15 @@ impl InputComp {
 
     pub fn get_help_msg(&self) -> HelpMsg {
         let mut msg = HelpMsg::default();
-        if matches!(self.mode, InputMode::Focused) {
-            if self.inputting {
+        match self.mode {
+            InputMode::Idle => {}
+            InputMode::Focused => {
+                msg.push(HelpEntry::new(
+                    self.control_keys.enter_keys[0].clone(),
+                    "Start input",
+                ));
+            }
+            InputMode::Inputting => {
                 if self.auto_submit {
                     msg.push(HelpEntry::new(
                         self.control_keys.submit_keys[0].clone(),
@@ -204,98 +131,68 @@ impl InputComp {
                         "submit input",
                     ));
                 }
-            } else {
-                msg.push(HelpEntry::new(
-                    self.control_keys.enter_keys[0].clone(),
-                    "Start input",
-                ));
             }
-        }
+        };
         msg
     }
 }
 
-impl super::Component for InputComp {
-    fn get_id(&self) -> u64 {
-        self.id
-    }
-
-    fn handle_events(&self, event: &crate::tui::Event) -> Result<()> {
+impl InputComp {
+    #[must_use]
+    pub fn handle_events(
+        &mut self,
+        event: &crate::tui::Event,
+    ) -> (EventHandlingStatus, Option<String>) {
+        let mut status = EventHandlingStatus::default();
+        let mut output_string: Option<String> = None;
         match self.mode {
             InputMode::Idle => (),
             InputMode::Focused => {
-                if self.inputting {
-                    match event {
-                        Event::Key(key) => {
-                            if self.control_keys.submit_keys.contains(&(*key).into()) {
-                                self.send(InputAction::SubmitExit(self.input.value().to_string()))
-                            } else if self.control_keys.exit_keys.contains(&(*key).into()) {
-                                self.send(InputAction::DirectExit())
-                            } else {
-                                self.send(InputAction::HandleKey((*key).into()))
-                            }
-                        }
-                        Event::Paste(s) => self.send(InputAction::HandlePaste(s.clone())),
-                        _ => (),
-                    }
-                } else if let Event::Key(key) = event {
+                if let Event::Key(key) = event {
                     if self.control_keys.enter_keys.contains(&(*key).into()) {
-                        self.send_raw(Action::SwitchInputMode(true))
+                        self.mode = InputMode::Inputting;
+                        status.consumed();
                     }
                 }
             }
+            InputMode::Inputting => match event {
+                Event::Key(key) => {
+                    if self.control_keys.submit_keys.contains(&(*key).into()) {
+                        output_string = Some(self.input.value().to_string());
+                        self.mode = InputMode::Focused;
+                        status.consumed();
+                    } else if self.control_keys.exit_keys.contains(&(*key).into()) {
+                        self.input.reset();
+                        self.mode = InputMode::Focused;
+                        status.consumed();
+                    } else {
+                        self.input.handle_event(&crossterm::event::Event::Key(*key));
+                        if self.auto_submit {
+                            output_string = Some(self.input.value().to_string());
+                        }
+                        status.consumed();
+                    }
+                }
+                Event::Paste(s) => {
+                    s.chars().for_each(|c| {
+                        self.input.handle(tui_input::InputRequest::InsertChar(c));
+                    });
+                    if self.auto_submit {
+                        output_string = Some(self.input.value().to_string());
+                    }
+                    status.consumed();
+                }
+                _ => (),
+            },
         };
-        Ok(())
+        (status, output_string)
     }
 
-    fn update(&mut self, action: &crate::actions::Action) -> Result<()> {
-        if let Action::SwitchInputMode(mode) = action {
-            self.inputting = *mode;
-            return Ok(());
-        }
-
-        let Some(action) = self.unwrap_action(action) else {
-            return Ok(());
-        };
-
-        match action {
-            InputAction::SwitchMode(input_mode) => {
-                self.mode = input_mode;
-                Ok(())
-            }
-            InputAction::HandleKey(key_event) => {
-                self.input
-                    .handle_event(&crossterm::event::Event::Key(key_event.into()));
-                if self.auto_submit {
-                    self.send(InputAction::Submit(self.input.value().to_string()))
-                }
-                Ok(())
-            }
-            InputAction::HandlePaste(string) => {
-                string.chars().for_each(|c| {
-                    self.input.handle(tui_input::InputRequest::InsertChar(c));
-                });
-                if self.auto_submit {
-                    self.send(InputAction::Submit(self.input.value().to_string()))
-                }
-                Ok(())
-            }
-            InputAction::SubmitExit(string) => {
-                self.send(InputAction::Submit(string));
-                self.send(InputAction::Exit());
-                Ok(())
-            }
-            InputAction::DirectExit() => {
-                self.input.reset();
-                self.send(InputAction::Exit());
-                Ok(())
-            }
-            InputAction::Exit() => {
-                self.send_raw(Action::SwitchInputMode(false));
-                Ok(())
-            }
-            InputAction::Submit(_) => Ok(()),
-        }
+    pub fn set_mode(&mut self, mode: InputMode) {
+        self.mode = mode;
+    }
+    pub fn is_inputting(&self) -> bool {
+        matches!(self.mode, InputMode::Inputting)
     }
 }
 
@@ -304,13 +201,8 @@ impl WidgetExt for InputComp {
         let width = area.width.max(3) - 3;
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.mode {
-            InputMode::Focused => {
-                if self.inputting {
-                    Color::Yellow.into()
-                } else {
-                    Color::Cyan.into()
-                }
-            }
+            InputMode::Focused => Color::Cyan.into(),
+            InputMode::Inputting => Color::Yellow.into(),
             InputMode::Idle => Style::default(),
         };
 
@@ -327,7 +219,7 @@ impl WidgetExt for InputComp {
             );
         frame.render_widget(input_widget, area);
 
-        if matches!(self.mode, InputMode::Focused) && self.inputting {
+        if matches!(self.mode, InputMode::Inputting) {
             // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
@@ -337,246 +229,119 @@ impl WidgetExt for InputComp {
 }
 
 #[cfg(test)]
-impl InputComp {
-    pub fn get_mode(&self) -> InputMode {
-        self.mode.clone()
-    }
-    pub fn get_value(&self) -> &str {
-        self.input.value()
-    }
-}
-
-#[cfg(test)]
 pub mod test {
     use insta::assert_snapshot;
-    use ratatui::{Terminal, backend::TestBackend, layout::Rect};
-    use tokio::sync::mpsc;
-    use tokio::sync::mpsc::UnboundedReceiver;
-
-    use crate::{
-        component::Component,
-        page::{EventLoopParticipant, Layer},
-        utils::key_events::test_utils::{get_char_evt, get_key_evt},
-    };
+    use ratatui::{Terminal, backend::TestBackend};
 
     use super::*;
-    struct TestInputPage {
-        content: String,
-        input: InputComp,
-        inputting: bool,
-        tx: ActionSender,
+
+    fn get_input(auto_submit: bool) -> InputComp {
+        InputComp::new()
+            .auto_submit(auto_submit)
+            .title("Input Test")
     }
 
-    impl TestInputPage {
-        fn new(auto_submit: bool, action_tx: ActionSender) -> Self {
-            Self {
-                content: Default::default(),
-                input: InputComp::new(1, false, action_tx.clone())
-                    .auto_submit(auto_submit)
-                    .title("Input Test"),
-                inputting: false,
-                tx: action_tx,
-            }
-        }
-    }
-
-    #[derive(Debug, Clone)]
-    pub(crate) enum TestInputPageAction {
-        SetFocus(bool),
-    }
-
-    impl WidgetExt for TestInputPage {
-        fn render(&mut self, frame: &mut Frame, area: Rect) {
-            self.input.render(frame, area);
-        }
-    }
-
-    impl EventLoopParticipant for TestInputPage {
-        fn handle_events(&self, event: Event) -> Result<()> {
-            if !self.inputting {
-                if let Event::Key(key) = event {
-                    match key.code {
-                        KeyCode::Enter => {
-                            self.tx
-                                .send(Action::TestPage(TestInputPageAction::SetFocus(true)));
-                        }
-                        KeyCode::Esc => {
-                            self.tx
-                                .send(Action::TestPage(TestInputPageAction::SetFocus(false)));
-                        }
-                        _ => {}
-                    }
+    impl InputComp {
+        fn handle_seq(&mut self, seq: Vec<Event>) -> Option<String> {
+            let mut output = None;
+            seq.into_iter().for_each(|e| {
+                let status = self.handle_events(&e);
+                assert!(matches!(status.0, EventHandlingStatus::Consumed));
+                if let Some(s) = status.1 {
+                    output = Some(s);
                 }
-            };
-            self.input.handle_events(&event)?;
-            Ok(())
+            });
+            output
         }
-
-        fn update(&mut self, action: Action) {
-            if let Action::SwitchInputMode(mode) = &action {
-                self.inputting = *mode;
-            };
-
-            if let Action::TestPage(TestInputPageAction::SetFocus(focus)) = &action {
-                self.tx.send(self.input.get_switch_mode_action(if *focus {
-                    InputMode::Focused
-                } else {
-                    InputMode::Idle
-                }));
-            };
-            if let Some(text) = self.input.parse_submit_action(&action) {
-                self.content = text;
-            };
-            self.input.update(&action).unwrap();
-        }
-    }
-
-    impl Layer for TestInputPage {}
-
-    fn get_test_page(auto_submit: bool) -> (TestInputPage, UnboundedReceiver<Action>) {
-        let (tx, rx) = mpsc::unbounded_channel::<Action>();
-        let tx = ActionSender::from(tx);
-        let mut page = TestInputPage::new(auto_submit, tx.clone());
-        page.init();
-        (page, rx)
     }
 
     #[test]
     fn input_mode_change() {
-        let (mut page, mut rx) = get_test_page(false);
-        assert!(!page.inputting);
-        assert!(!page.input.inputting);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(true));
-        assert!(page.inputting);
-        assert!(page.input.inputting);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(false));
-        assert!(!page.inputting);
-        assert!(!page.input.inputting);
+        let mut input = get_input(false);
+        assert!(matches!(input.mode, InputMode::Idle));
+        input.set_mode(InputMode::Focused);
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Inputting));
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Focused));
     }
 
     #[test]
     fn test_input() {
-        let (mut page, mut rx) = get_test_page(false);
+        let mut input = get_input(false);
+        input.set_mode(InputMode::Focused);
 
         let seq: Vec<Event> = vec![
             KeyCode::Enter.into(),
+            'a'.into(),
+            'b'.into(),
+            KeyCode::Enter.into(),
+        ];
+        let output = input.handle_seq(seq.to_vec());
+
+        assert_eq!(output, Some("ab".to_string()));
+
+        let seq = [
+            KeyCode::Enter.into(),
+            KeyCode::Left.into(),
+            'c'.into(),
+            KeyCode::Enter.into(),
+        ];
+        let output = input.handle_seq(seq.to_vec());
+
+        assert_eq!(output, Some("acb".to_string()));
+    }
+
+    #[test]
+    fn test_input_auto_submit() {
+        let mut input = get_input(true);
+        input.set_mode(InputMode::Focused);
+
+        let seq: Vec<Event> = vec![KeyCode::Enter.into(), 'a'.into(), 'b'.into()];
+        let output = input.handle_seq(seq.to_vec());
+
+        assert_eq!(output, Some("ab".to_string()));
+
+        let seq = [KeyCode::Left.into(), 'c'.into()];
+        let output = input.handle_seq(seq.to_vec());
+
+        assert_eq!(output, Some("acb".to_string()));
+    }
+
+    #[test]
+    fn test_input_paste() {
+        let mut input = get_input(false);
+        input.set_mode(InputMode::Focused);
+
+        let seq = [
             KeyCode::Enter.into(),
             'a'.into(),
             'b'.into(),
             KeyCode::Enter.into(),
         ];
 
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "ab");
+        assert_eq!(input.handle_seq(seq.to_vec()), Some("ab".to_string()));
 
         let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Left),
-            get_char_evt('c'),
-            get_key_evt(KeyCode::Enter),
-        ];
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "acb")
-    }
-
-    #[test]
-    fn test_input_auto_submit() {
-        let (mut page, mut rx) = get_test_page(true);
-
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Enter),
-            get_char_evt('a'),
-            get_char_evt('b'),
-        ];
-
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "ab");
-
-        let seq = [get_key_evt(KeyCode::Left), get_char_evt('c')];
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "acb")
-    }
-
-    #[test]
-    fn test_input_paste() {
-        let (mut page, mut rx) = get_test_page(false);
-
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Enter),
-            get_char_evt('a'),
-            get_char_evt('b'),
-            get_key_evt(KeyCode::Enter),
-        ];
-
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "ab");
-
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Left),
+            KeyCode::Enter.into(),
+            KeyCode::Left.into(),
             Event::Paste("ccc".into()),
-            get_key_evt(KeyCode::Enter),
+            KeyCode::Enter.into(),
         ];
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
         // cSpell:ignore acccb
-        assert_eq!(page.content, "acccb")
+        assert_eq!(input.handle_seq(seq.to_vec()), Some("acccb".to_string()));
     }
 
     #[test]
-    fn test_input_paste_auto_submit() {
-        let (mut page, mut rx) = get_test_page(true);
+    fn test_input_paste_auto_commit() {
+        let mut input = get_input(true);
+        input.set_mode(InputMode::Focused);
 
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Enter),
-            get_char_evt('a'),
-            get_char_evt('b'),
-        ];
+        let seq = [KeyCode::Enter.into(), Event::Paste("ccc".into())];
 
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "ab");
-
-        let seq = [get_key_evt(KeyCode::Left), Event::Paste("ccc".into())];
-
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "acccb")
-    }
-
-    #[test]
-    fn test_input_quit() {
-        let (mut page, mut rx) = get_test_page(false);
-
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_key_evt(KeyCode::Enter),
-            get_char_evt('a'),
-            get_char_evt('b'),
-            get_key_evt(KeyCode::Esc),
-        ];
-
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        assert_eq!(page.content, "");
-        assert_eq!(page.input.get_value(), "")
+        assert_eq!(input.handle_seq(seq.to_vec()), Some("ccc".to_string()));
     }
 
     fn get_buffer_color(t: &Terminal<TestBackend>) -> Color {
@@ -593,75 +358,86 @@ pub mod test {
 
     #[test]
     fn test_render() {
-        let (mut page, mut rx) = get_test_page(false);
+        let mut input = get_input(false);
 
         let mut terminal = Terminal::new(TestBackend::new(40, 10)).unwrap();
         terminal
-            .draw(|frame| page.render(frame, frame.area()))
+            .draw(|frame| input.render(frame, frame.area()))
             .unwrap();
         assert_snapshot!(terminal.backend());
         assert_eq!(get_buffer_color(&terminal), Color::Reset);
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        terminal.draw(|f| page.render(f, f.area())).unwrap();
+        input.set_mode(InputMode::Focused);
+        terminal.draw(|f| input.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
 
-        let seq = [
-            get_key_evt(KeyCode::Enter),
-            get_char_evt('a'),
-            get_char_evt('b'),
-        ];
+        let seq = [KeyCode::Enter.into(), 'a'.into(), 'b'.into()];
+        input.handle_seq(seq.to_vec());
 
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
-
-        terminal.draw(|f| page.render(f, f.area())).unwrap();
+        terminal.draw(|f| input.render(f, f.area())).unwrap();
         assert_eq!(get_buffer_color(&terminal), Color::Yellow);
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        terminal.draw(|f| page.render(f, f.area())).unwrap();
+        let _ = input.handle_events(&KeyCode::Enter.into());
+        terminal.draw(|f| input.render(f, f.area())).unwrap();
         assert_snapshot!(terminal.backend());
         assert_eq!(get_buffer_color(&terminal), Color::Cyan);
-
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Esc));
-        terminal.draw(|f| page.render(f, f.area())).unwrap();
-        assert_eq!(get_buffer_color(&terminal), Color::Reset);
     }
 
     #[test]
     fn test_help_msg() {
-        let (mut page, mut rx) = get_test_page(false);
-        fn get_help_msg(page: &TestInputPage) -> String {
-            <HelpMsg as Into<String>>::into(page.input.get_help_msg())
-        }
-        assert_eq!(get_help_msg(&page,), "");
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        assert_eq!(get_help_msg(&page,), "Start input: enter");
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
+        let mut input = get_input(false);
+        assert_eq!(input.get_help_msg().to_string(), "");
+
+        input.set_mode(InputMode::Focused);
+        assert_eq!(input.get_help_msg().to_string(), "Start input: enter");
+        input.set_mode(InputMode::Inputting);
         assert_eq!(
-            get_help_msg(&page,),
+            input.get_help_msg().to_string(),
             "quit input: esc | submit input: enter"
         );
     }
 
     #[test]
     fn test_help_msg_auto_commit() {
-        let (mut page, mut rx) = get_test_page(true);
-        fn get_help_msg(page: &TestInputPage) -> String {
-            <HelpMsg as Into<String>>::into(page.input.get_help_msg())
-        }
-        assert_eq!(get_help_msg(&page,), "", "not inputting, not focused");
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        assert_eq!(
-            get_help_msg(&page,),
-            "Start input: enter",
-            "not inputting, focused"
-        );
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        assert_eq!(
-            get_help_msg(&page,),
-            "quit input: enter",
-            "inputting, focused"
-        );
+        let mut input = get_input(true);
+        assert_eq!(input.get_help_msg().to_string(), "");
+
+        input.set_mode(InputMode::Focused);
+        assert_eq!(input.get_help_msg().to_string(), "Start input: enter");
+        input.set_mode(InputMode::Inputting);
+        assert_eq!(input.get_help_msg().to_string(), "quit input: enter");
+    }
+
+    #[test]
+    fn test_key_configurations() {
+        let mut input = get_input(false);
+        input.set_mode(InputMode::Focused);
+
+        // Test custom enter keys
+        let custom_enter = vec![KeyCode::Char('e').into()];
+        input = input.enter_keys(custom_enter.clone());
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::ShouldPropagate));
+        let (s, _) = input.handle_events(&KeyCode::Char('e').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Inputting));
+
+        // Test custom submit keys
+        let custom_submit = vec![KeyCode::Char('s').into()];
+        input = input.submit_keys(custom_submit.clone());
+        let (s, output) = input.handle_events(&KeyCode::Char('s').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(output.is_some());
+        assert!(matches!(input.mode, InputMode::Focused));
+
+        // Test custom exit keys
+        input.set_mode(InputMode::Inputting);
+        let custom_exit = vec![KeyCode::Char('q').into()];
+        input = input.exit_keys(custom_exit.clone());
+        let (s, _) = input.handle_events(&KeyCode::Esc.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        let (s, _) = input.handle_events(&KeyCode::Char('q').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Focused));
     }
 }

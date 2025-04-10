@@ -9,7 +9,8 @@ use strum::{Display, EnumIter, IntoEnumIterator};
 use time_period::TimePeriodData;
 
 use crate::{
-    actions::{Action, ActionSender, LayerManageAction},
+    actions::{ActionSender, LayerManageAction},
+    app::layer_manager::EventHandlingStatus,
     libs::transactions::{Transaction, TransactionManager},
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
@@ -26,18 +27,6 @@ pub(crate) struct Analysis {
 
     analysis_type: AnalysisType,
     data: Vec<Transaction>,
-}
-/// false for left/up, true for right/down
-type MoveDirection = bool;
-#[derive(Clone, Debug)]
-pub(crate) enum AnalysisAction {
-    MoveTypeFocus(MoveDirection),
-    Scroll(MoveDirection),
-}
-impl From<AnalysisAction> for Action {
-    fn from(value: AnalysisAction) -> Self {
-        Action::Analysis(value)
-    }
 }
 
 #[derive(Display, EnumIter)]
@@ -94,49 +83,40 @@ impl Analysis {
 }
 
 impl EventLoopParticipant for Analysis {
-    fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
+    fn handle_events(&mut self, event: &crate::tui::Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
         #[allow(clippy::single_match)]
         match event {
             Event::Key(key) => match key.code {
                 KeyCode::Esc => {
                     self.tx.send(LayerManageAction::Pop);
+                    status.consumed();
                 }
                 KeyCode::Char('h') | KeyCode::Left => {
-                    self.tx.send(AnalysisAction::MoveTypeFocus(false));
+                    self.analysis_type = self.analysis_type.previous(&self.data);
+                    status.consumed();
                 }
                 KeyCode::Char('l') | KeyCode::Right => {
-                    self.tx.send(AnalysisAction::MoveTypeFocus(true));
+                    self.analysis_type = self.analysis_type.next(&self.data);
+                    status.consumed();
                 }
-                KeyCode::Char('j') | KeyCode::Down => self.tx.send(AnalysisAction::Scroll(true)),
-                KeyCode::Char('k') | KeyCode::Up => self.tx.send(AnalysisAction::Scroll(false)),
+                KeyCode::Char('j') | KeyCode::Down => {
+                    if let AnalysisType::Merchant(ref mut data) = self.analysis_type {
+                        data.scroll_state.scroll_down();
+                        status.consumed();
+                    }
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    if let AnalysisType::Merchant(ref mut data) = self.analysis_type {
+                        data.scroll_state.scroll_up();
+                        status.consumed();
+                    }
+                }
                 _ => {}
             },
             _ => {}
         };
-        Ok(())
-    }
-
-    fn update(&mut self, action: crate::actions::Action) {
-        if let Action::Analysis(action) = action {
-            match action {
-                AnalysisAction::MoveTypeFocus(dir) => {
-                    if dir {
-                        self.analysis_type = self.analysis_type.next(&self.data)
-                    } else {
-                        self.analysis_type = self.analysis_type.previous(&self.data)
-                    }
-                }
-                AnalysisAction::Scroll(dir) => {
-                    if let AnalysisType::Merchant(ref mut data) = self.analysis_type {
-                        if dir {
-                            data.scroll_state.scroll_down();
-                        } else {
-                            data.scroll_state.scroll_up();
-                        }
-                    }
-                }
-            }
-        }
+        status
     }
 }
 
@@ -183,6 +163,7 @@ impl Analysis {
         help
     }
 }
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -209,21 +190,20 @@ mod test {
 
     #[test]
     fn test_tab_navigation() {
-        let (mut rx, mut page) = get_test_objs();
-        // TODO
+        let (_, mut page) = get_test_objs();
         // Initial state should be TimePeriod
         assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
 
         // Test moving to next tab (Merchant)
-        page.event_loop_once(&mut rx, 'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
         assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
 
         // Test moving back to TimePeriod
-        page.event_loop_once(&mut rx, 'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
         assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
 
         // Test wrapping around
-        page.event_loop_once(&mut rx, 'h'.into());
+        page.handle_event_with_status_check(&'h'.into());
         assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
     }
 
@@ -237,10 +217,10 @@ mod test {
 
     #[test]
     fn test_scroll_merchant_data() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
 
         // First switch to Merchant tab
-        page.event_loop_once(&mut rx, 'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
 
         let initial_offset = get_merchant_data(&page.analysis_type)
             .scroll_state
@@ -248,7 +228,7 @@ mod test {
             .y;
 
         // Test scrolling down
-        page.event_loop_once(&mut rx, 'j'.into());
+        page.handle_event_with_status_check(&'j'.into());
         assert_eq!(
             get_merchant_data(&page.analysis_type)
                 .scroll_state
@@ -258,7 +238,7 @@ mod test {
         );
 
         // Test scrolling up
-        page.event_loop_once(&mut rx, 'k'.into());
+        page.handle_event_with_status_check(&'k'.into());
         assert_eq!(
             get_merchant_data(&page.analysis_type)
                 .scroll_state
@@ -270,7 +250,7 @@ mod test {
 
     #[test]
     fn test_render() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
 
         terminal
@@ -282,7 +262,7 @@ mod test {
         assert_snapshot!(terminal.backend());
 
         // Switch to Merchant tab and render again
-        page.event_loop_once(&mut rx, 'l'.into());
+        page.handle_event_with_status_check(&'l'.into());
 
         terminal
             .draw(|f| {
@@ -294,7 +274,7 @@ mod test {
 
         let seq = "j".repeat(10);
         seq.chars().for_each(|c| {
-            page.event_loop_once(&mut rx, c.into());
+            page.handle_event_with_status_check(&c.into());
         });
         terminal
             .draw(|f| {
