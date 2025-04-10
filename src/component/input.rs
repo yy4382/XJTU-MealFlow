@@ -278,10 +278,10 @@ pub mod test {
         let mut input = get_input(false);
         assert!(matches!(input.mode, InputMode::Idle));
         input.set_mode(InputMode::Focused);
-        let (s,_) = input.handle_events(&KeyCode::Enter.into());
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
         assert!(matches!(s, EventHandlingStatus::Consumed));
         assert!(matches!(input.mode, InputMode::Inputting));
-        let (s,_) = input.handle_events(&KeyCode::Enter.into());
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
         assert!(matches!(s, EventHandlingStatus::Consumed));
         assert!(matches!(input.mode, InputMode::Focused));
     }
