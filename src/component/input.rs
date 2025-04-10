@@ -57,24 +57,6 @@ impl Default for InputCompCtrlKeys {
     }
 }
 
-impl InputCompCtrlKeys {
-    #[allow(dead_code)]
-    pub fn with_enter_keys(mut self, enter_keys: Vec<KeyEvent>) -> Self {
-        self.enter_keys = enter_keys;
-        self
-    }
-    #[allow(dead_code)]
-    pub fn with_submit_keys(mut self, submit_keys: Vec<KeyEvent>) -> Self {
-        self.submit_keys = submit_keys;
-        self
-    }
-    #[allow(dead_code)]
-    pub fn with_exit_keys(mut self, exit_keys: Vec<KeyEvent>) -> Self {
-        self.exit_keys = exit_keys;
-        self
-    }
-}
-
 impl InputComp {
     pub fn new() -> Self {
         Self {
@@ -237,7 +219,7 @@ impl WidgetExt for InputComp {
             );
         frame.render_widget(input_widget, area);
 
-        if matches!(self.mode, InputMode::Focused) && self.is_inputting() {
+        if matches!(self.mode, InputMode::Inputting) {
             // Ratatui hides the cursor unless it's explicitly set. Position the  cursor past the
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
@@ -352,6 +334,16 @@ pub mod test {
         assert_eq!(input.handle_seq(seq.to_vec()), Some("acccb".to_string()));
     }
 
+    #[test]
+    fn test_input_paste_auto_commit() {
+        let mut input = get_input(true);
+        input.set_mode(InputMode::Focused);
+
+        let seq = [KeyCode::Enter.into(), Event::Paste("ccc".into())];
+
+        assert_eq!(input.handle_seq(seq.to_vec()), Some("ccc".to_string()));
+    }
+
     fn get_buffer_color(t: &Terminal<TestBackend>) -> Color {
         let cell = t
             .backend()
@@ -414,5 +406,38 @@ pub mod test {
         assert_eq!(input.get_help_msg().to_string(), "Start input: enter");
         input.set_mode(InputMode::Inputting);
         assert_eq!(input.get_help_msg().to_string(), "quit input: enter");
+    }
+
+    #[test]
+    fn test_key_configurations() {
+        let mut input = get_input(false);
+        input.set_mode(InputMode::Focused);
+
+        // Test custom enter keys
+        let custom_enter = vec![KeyCode::Char('e').into()];
+        input = input.enter_keys(custom_enter.clone());
+        let (s, _) = input.handle_events(&KeyCode::Enter.into());
+        assert!(matches!(s, EventHandlingStatus::ShouldPropagate));
+        let (s, _) = input.handle_events(&KeyCode::Char('e').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Inputting));
+
+        // Test custom submit keys
+        let custom_submit = vec![KeyCode::Char('s').into()];
+        input = input.submit_keys(custom_submit.clone());
+        let (s, output) = input.handle_events(&KeyCode::Char('s').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(output.is_some());
+        assert!(matches!(input.mode, InputMode::Focused));
+
+        // Test custom exit keys
+        input.set_mode(InputMode::Inputting);
+        let custom_exit = vec![KeyCode::Char('q').into()];
+        input = input.exit_keys(custom_exit.clone());
+        let (s, _) = input.handle_events(&KeyCode::Esc.into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        let (s, _) = input.handle_events(&KeyCode::Char('q').into());
+        assert!(matches!(s, EventHandlingStatus::Consumed));
+        assert!(matches!(input.mode, InputMode::Focused));
     }
 }

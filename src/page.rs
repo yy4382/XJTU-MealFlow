@@ -54,6 +54,7 @@ pub(crate) trait EventLoopParticipant {
     fn handle_events(&mut self, event: &Event) -> EventHandlingStatus;
 
     #[cfg(test)]
+    /// Handle the event and check the returned status as [`EventHandlingStatus::Consumed`].
     fn handle_event_with_status_check(&mut self, event: &Event) {
         let status = self.handle_events(event);
         assert!(matches!(status, EventHandlingStatus::Consumed));

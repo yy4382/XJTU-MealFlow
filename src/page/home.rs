@@ -165,7 +165,36 @@ mod tests {
         home.handle_event_with_status_check(&'?'.into());
         let mut should_receive_layer_opt = false;
         while let Ok(action) = _rx.try_recv() {
-            if let Action::Layer(LayerManageAction::Push(_)) = action {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Help(_)));
+                should_receive_layer_opt = true;
+            }
+        }
+        assert!(should_receive_layer_opt);
+    }
+    #[test]
+    fn test_event_nav_to_analysis() {
+        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+        let mut home = Home { tx: tx.into() };
+        home.handle_event_with_status_check(&'a'.into());
+        let mut should_receive_layer_opt = false;
+        while let Ok(action) = rx.try_recv() {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Analysis));
+                should_receive_layer_opt = true;
+            }
+        }
+        assert!(should_receive_layer_opt);
+    }
+    #[test]
+    fn test_event_nav_to_transactions() {
+        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+        let mut home = Home { tx: tx.into() };
+        home.handle_event_with_status_check(&'T'.into());
+        let mut should_receive_layer_opt = false;
+        while let Ok(action) = rx.try_recv() {
+            if let Action::Layer(LayerManageAction::Push(act)) = action {
+                assert!(matches!(act.layer, Layers::Transaction(_)));
                 should_receive_layer_opt = true;
             }
         }
