@@ -81,7 +81,7 @@ impl HelpMsg {
     }
 
     pub(crate) fn render(&mut self, frame: &mut ratatui::Frame, area: ratatui::layout::Rect) {
-        let help_msg: String = self.into();
+        let help_msg: String = self.to_string();
         let paragraph = ratatui::widgets::Paragraph::new(help_msg).block(
             Block::default()
                 .borders(Borders::ALL)
@@ -106,24 +106,17 @@ impl DerefMut for HelpMsg {
     }
 }
 
-impl From<HelpMsg> for String {
-    fn from(val: HelpMsg) -> Self {
-        val.slices
-            .into_iter()
-            .map(|s| s.into())
-            .collect::<Vec<String>>()
-            .join(" | ")
-    }
-}
-
-impl From<&mut HelpMsg> for String {
-    fn from(val: &mut HelpMsg) -> Self {
-        val.slices
-            .clone()
-            .into_iter()
-            .map(|s| s.into())
-            .collect::<Vec<String>>()
-            .join(" | ")
+impl std::fmt::Display for HelpMsg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.slices
+                .iter()
+                .map(|s| s.clone().into())
+                .collect::<Vec<String>>()
+                .join(" | ")
+        )
     }
 }
 

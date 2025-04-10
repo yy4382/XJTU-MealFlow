@@ -1,14 +1,15 @@
 use std::cmp::max;
 
 use crate::{
-    actions::{Action, ActionSender, LayerManageAction, Layers},
+    actions::{ActionSender, LayerManageAction, Layers},
+    app::layer_manager::EventHandlingStatus,
     libs::transactions::{FilterOptions, Transaction, TransactionManager},
     tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 
 use super::{EventLoopParticipant, Layer, WidgetExt};
-use color_eyre::eyre::{Context, Result};
+use color_eyre::eyre::Context;
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -101,17 +102,17 @@ impl Transactions {
     }
 }
 
-#[derive(Clone, Debug)]
-pub enum TransactionAction {
-    LoadTransactions,
-    ChangeRowFocus(isize),
-}
+// #[derive(Clone, Debug)]
+// pub enum TransactionAction {
+//     LoadTransactions,
+//     ChangeRowFocus(isize),
+// }
 
-impl From<TransactionAction> for Action {
-    fn from(val: TransactionAction) -> Self {
-        Action::Transaction(val)
-    }
-}
+// impl From<TransactionAction> for Action {
+//     fn from(val: TransactionAction) -> Self {
+//         Action::Transaction(val)
+//     }
+// }
 
 impl WidgetExt for Transactions {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
@@ -144,21 +145,28 @@ impl WidgetExt for Transactions {
 }
 
 impl EventLoopParticipant for Transactions {
-    fn handle_events(&self, event: Event) -> Result<()> {
+    fn handle_events(&mut self, event: &Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
         if let Event::Key(key) = event {
             match (key.modifiers, key.code) {
                 // navigate to fetch page
                 (_, KeyCode::Char('f')) => {
                     if self.filter_option.is_none() {
-                        self.tx.send(LayerManageAction::Swap(Layers::Fetch))
+                        self.tx.send(LayerManageAction::Swap(Layers::Fetch));
+                        status.consumed();
                     }
                 }
-                (_, KeyCode::Char('l')) => self.tx.send(TransactionAction::LoadTransactions),
+                (_, KeyCode::Char('l')) => {
+                    self.load_from_db();
+                    status.consumed();
+                }
                 (_, KeyCode::Char('j')) | (_, KeyCode::Down) => {
-                    self.tx.send(TransactionAction::ChangeRowFocus(1))
+                    self.change_focus(1);
+                    status.consumed();
                 }
                 (_, KeyCode::Char('k')) | (_, KeyCode::Up) => {
-                    self.tx.send(TransactionAction::ChangeRowFocus(-1))
+                    self.change_focus(-1);
+                    status.consumed();
                 }
                 (_, KeyCode::Char('?')) => {
                     self.tx.send(LayerManageAction::Push(
@@ -183,33 +191,33 @@ impl EventLoopParticipant for Transactions {
                 _ => (),
             }
         };
-        Ok(())
+        status
     }
 
-    fn update(&mut self, action: Action) {
-        if let Action::Transaction(action) = action {
-            match action {
-                TransactionAction::LoadTransactions => {
-                    self.load_from_db();
-                }
-                TransactionAction::ChangeRowFocus(index) => {
-                    let cur_index = self.table_state.selected().unwrap_or(0);
-                    let max = self.transactions.len();
-                    if max == 0 {
-                        return;
-                    }
-                    // add index to current index, wrap around from 0  to max
-                    let new_index = if index < 0 {
-                        (cur_index as isize + index + max as isize) as usize % max
-                    } else {
-                        (cur_index as isize + index) as usize % max
-                    };
-                    self.table_state.select(Some(new_index));
-                    self.scroll_state = self.scroll_state.position(new_index * ITEM_HEIGHT);
-                }
-            }
-        }
-    }
+    // fn update(&mut self, action: Action) {
+    //     if let Action::Transaction(action) = action {
+    //         match action {
+    //             TransactionAction::LoadTransactions => {
+    //                 self.load_from_db();
+    //             }
+    //             TransactionAction::ChangeRowFocus(index) => {
+    //                 let cur_index = self.table_state.selected().unwrap_or(0);
+    //                 let max = self.transactions.len();
+    //                 if max == 0 {
+    //                     return;
+    //                 }
+    //                 // add index to current index, wrap around from 0  to max
+    //                 let new_index = if index < 0 {
+    //                     (cur_index as isize + index + max as isize) as usize % max
+    //                 } else {
+    //                     (cur_index as isize + index) as usize % max
+    //                 };
+    //                 self.table_state.select(Some(new_index));
+    //                 self.scroll_state = self.scroll_state.position(new_index * ITEM_HEIGHT);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 impl Layer for Transactions {}
@@ -308,13 +316,30 @@ impl Transactions {
         self.transactions.sort_by(|a, b| b.time.cmp(&a.time));
         self.scroll_state = self
             .scroll_state
-            .content_length(self.transactions.len() * ITEM_HEIGHT);
+            .content_length(self.transactions.len() * ITEM_HEIGHT)
+            .position(0);
         self.longest_item_lens = constraint_len_calculator(&self.transactions, HEADER_STR);
         if self.transactions.is_empty() {
             self.table_state.select(None);
         } else {
             self.table_state.select(Some(0));
         }
+    }
+
+    fn change_focus(&mut self, index: isize) {
+        let cur_index = self.table_state.selected().unwrap_or(0);
+        let max = self.transactions.len();
+        if max == 0 {
+            return;
+        }
+        // add index to current index, wrap around from 0  to max
+        let new_index = if index < 0 {
+            (cur_index as isize + index + max as isize) as usize % max
+        } else {
+            (cur_index as isize + index) as usize % max
+        };
+        self.table_state.select(Some(new_index));
+        self.scroll_state = self.scroll_state.position(new_index * ITEM_HEIGHT);
     }
 }
 
@@ -345,8 +370,10 @@ fn constraint_len_calculator(items: &[Transaction], header: &[&str]) -> (usize, 
 
 #[cfg(test)]
 mod test {
-
-    use crate::{actions::PushPageConfig, libs::fetcher};
+    use crate::{
+        actions::{Action, PushPageConfig},
+        libs::fetcher,
+    };
 
     use super::*;
     use insta::assert_snapshot;
@@ -357,7 +384,7 @@ mod test {
         filter_opt: Option<FilterOptions>,
         load_data: u32,
     ) -> (UnboundedReceiver<Action>, Transactions) {
-        let (tx, mut rx) = mpsc::unbounded_channel::<Action>();
+        let (tx, rx) = mpsc::unbounded_channel::<Action>();
 
         let manager = TransactionManager::new(None).unwrap();
         let data = fetcher::test_utils::get_mock_data(load_data);
@@ -365,10 +392,6 @@ mod test {
 
         let mut transaction = Transactions::new(filter_opt, tx.into(), manager);
         transaction.init();
-
-        while let Ok(action) = rx.try_recv() {
-            transaction.update(action);
-        }
 
         assert!(!transaction.transactions.is_empty());
 
@@ -412,16 +435,16 @@ mod test {
 
     #[test]
     fn navigation() {
-        let (mut rx, mut transaction) = get_test_objs(None, 50);
+        let (_, mut transaction) = get_test_objs(None, 50);
         assert_eq!(transaction.table_state.selected(), Some(0));
 
-        transaction.event_loop_once(&mut rx, 'j'.into());
+        transaction.handle_events(&'j'.into());
         assert_eq!(transaction.table_state.selected(), Some(1));
 
-        transaction.event_loop_once(&mut rx, 'k'.into());
+        transaction.handle_events(&'k'.into());
         assert_eq!(transaction.table_state.selected(), Some(0));
 
-        transaction.event_loop_once(&mut rx, 'k'.into());
+        transaction.handle_events(&'k'.into());
         assert_eq!(
             transaction.table_state.selected(),
             Some(transaction.transactions.len() - 1)
@@ -430,7 +453,7 @@ mod test {
 
     #[test]
     fn render() {
-        let (mut rx, mut transaction) = get_test_objs(None, 50);
+        let (_, mut transaction) = get_test_objs(None, 50);
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
 
         terminal
@@ -438,7 +461,7 @@ mod test {
             .unwrap();
         assert_snapshot!(terminal.backend());
 
-        transaction.event_loop_once(&mut rx, 'k'.into());
+        transaction.handle_events(&'k'.into());
         terminal
             .draw(|frame| transaction.render(frame, frame.area()))
             .unwrap();
@@ -447,19 +470,19 @@ mod test {
 
     #[test]
     fn with_filter() {
-        let (mut rx, transaction) =
+        let (mut rx, mut transaction) =
             get_test_objs(Some(FilterOptions::default().merchant("寿司")), 200);
         assert!(transaction.filter_option.is_some());
         transaction.transactions.iter().for_each(|t| {
             assert!(t.merchant.contains("寿司"));
         });
-        transaction.handle_events('f'.into()).unwrap();
+        transaction.handle_events(&'f'.into());
         assert!(rx.try_recv().is_err());
     }
 
     #[test]
     fn render_with_filter() {
-        let (mut rx, mut transaction) =
+        let (_, mut transaction) =
             get_test_objs(Some(FilterOptions::default().merchant("寿司")), 200);
         let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
 
@@ -468,7 +491,7 @@ mod test {
             .unwrap();
         assert_snapshot!(terminal.backend());
 
-        transaction.event_loop_once(&mut rx, 'k'.into());
+        transaction.handle_events(&'k'.into());
         terminal
             .draw(|frame| transaction.render(frame, frame.area()))
             .unwrap();
@@ -478,8 +501,8 @@ mod test {
     #[test]
     fn push_filtered_page() {
         let (mut rx, mut transaction) = get_test_objs(None, 50);
-        transaction.event_loop_once(&mut rx, 'j'.into());
-        transaction.handle_events(' '.into()).unwrap();
+        transaction.handle_events(&'j'.into());
+        transaction.handle_events(&' '.into());
         let mut received_push_page = false;
         while let Ok(action) = rx.try_recv() {
             if let Action::Layer(LayerManageAction::Push(PushPageConfig {

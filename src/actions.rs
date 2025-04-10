@@ -1,34 +1,13 @@
 use color_eyre::eyre::Context;
 
-use crate::{
-    component::input::InputAction,
-    libs::transactions::FilterOptions,
-    page::{
-        analysis::AnalysisAction, cookie_input::CookieInputAction, fetch::FetchingAction,
-        help_popup::HelpPopupAction, transactions::TransactionAction,
-    },
-    utils::help_msg::HelpMsg,
-};
+use crate::{libs::transactions::FilterOptions, utils::help_msg::HelpMsg};
 
 #[derive(Clone, Debug)]
 pub enum Action {
-    Tick,
     Layer(LayerManageAction),
-    SwitchInputMode(bool),
-
-    Transaction(TransactionAction),
-    Fetching(FetchingAction),
-    CookieInput(CookieInputAction),
-    HelpPopup(HelpPopupAction),
-    Analysis(AnalysisAction),
-
-    Comp((CompAction, u64)),
 
     Quit,
     Render,
-
-    #[cfg(test)]
-    TestPage(crate::component::input::test::TestInputPageAction),
 }
 #[derive(Clone, Debug)]
 pub enum Layers {
@@ -52,13 +31,6 @@ impl std::fmt::Display for Layers {
             Layers::Analysis => write!(f, "Analysis"),
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub enum CompAction {
-    Input(InputAction),
-    #[allow(dead_code)]
-    Placeholder,
 }
 
 #[derive(Clone, Debug)]
@@ -94,7 +66,6 @@ impl From<LayerManageAction> for Action {
         Action::Layer(value)
     }
 }
-
 #[derive(Clone, Debug)]
 pub struct ActionSender(pub tokio::sync::mpsc::UnboundedSender<Action>);
 

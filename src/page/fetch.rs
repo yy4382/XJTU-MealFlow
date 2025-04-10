@@ -7,12 +7,15 @@ use ratatui::{
     text::Text,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
-use tracing::{info, instrument};
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
+use tracing::{info, instrument, warn};
 
 use crate::{
-    actions::{Action, ActionSender, LayerManageAction, Layers},
-    component::{Component, input::InputComp},
+    actions::{ActionSender, LayerManageAction, Layers},
+    app::layer_manager::EventHandlingStatus,
+    component::input::InputComp,
     libs::{fetcher::MealFetcher, transactions::OFFSET_UTC_PLUS8},
+    tui::Event,
     utils::help_msg::{HelpEntry, HelpMsg},
 };
 use crate::{
@@ -38,29 +41,21 @@ pub struct FetchProgress {
 
 #[derive(Clone, Debug)]
 pub enum FetchingAction {
-    StartFetching(DateTime<FixedOffset>),
     UpdateFetchStatus(FetchingState),
     InsertTransaction(Vec<transactions::Transaction>),
-
-    LoadDbCount,
-    MoveFocus(Focus),
 }
 
-impl From<FetchingAction> for Action {
-    fn from(val: FetchingAction) -> Self {
-        Action::Fetching(val)
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Fetch {
     fetching_state: FetchingState,
     local_db_cnt: u64,
     fetch_start_date: Option<DateTime<FixedOffset>>,
     current_focus: Focus,
 
+    self_rx: UnboundedReceiver<FetchingAction>,
+    self_tx: UnboundedSender<FetchingAction>,
+
     input: InputComp,
-    input_mode: bool,
     tx: ActionSender,
     manager: transactions::TransactionManager,
 
@@ -68,21 +63,20 @@ pub struct Fetch {
 }
 
 impl Fetch {
-    pub fn new(
-        tx: ActionSender,
-        manager: transactions::TransactionManager,
-        input_mode: bool,
-    ) -> Self {
+    pub fn new(tx: ActionSender, manager: transactions::TransactionManager) -> Self {
+        let (self_tx, self_rx) = mpsc::unbounded_channel::<FetchingAction>();
         Self {
             fetching_state: Default::default(),
             local_db_cnt: Default::default(),
             fetch_start_date: Default::default(),
             current_focus: Default::default(),
 
-            input: InputComp::new(rand::random::<u64>(), input_mode, tx.clone())
+            self_rx,
+            self_tx,
+
+            input: InputComp::new()
                 .title("Custom Start Date (2025-03-02 style input)")
                 .auto_submit(true),
-            input_mode,
             tx,
             manager,
 
@@ -93,7 +87,7 @@ impl Fetch {
 
 impl Fetch {
     fn get_help_msg(&self) -> HelpMsg {
-        if self.input_mode {
+        if self.input.is_inputting() {
             return self.input.get_help_msg();
         }
 
@@ -245,132 +239,72 @@ impl WidgetExt for Fetch {
 }
 
 impl EventLoopParticipant for Fetch {
-    fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
-        if let crate::tui::Event::Key(key) = event {
-            if !self.input_mode {
-                match (key.modifiers, key.code) {
-                    (_, KeyCode::Char(' ')) => {
-                        if let Some(date) = self.fetch_start_date {
-                            self.tx.send(FetchingAction::StartFetching(date))
-                        }
-                    }
-                    (_, KeyCode::Char('j')) | (_, KeyCode::Char('l')) => self
-                        .tx
-                        .send(FetchingAction::MoveFocus(self.current_focus.next())),
-                    (_, KeyCode::Char('k')) | (_, KeyCode::Char('h')) => self
-                        .tx
-                        .send(FetchingAction::MoveFocus(self.current_focus.prev())),
-                    (_, KeyCode::Char('r')) => self.tx.send(FetchingAction::LoadDbCount),
-                    (_, KeyCode::Char('e')) => {
-                        self.tx.send(LayerManageAction::Swap(Layers::CookieInput))
-                    }
+    fn handle_events(&mut self, event: &Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
 
-                    (_, KeyCode::Esc) => self
-                        .tx
-                        .send(LayerManageAction::Swap(Layers::Transaction(None))),
-                    (_, KeyCode::Char('?')) => {
-                        self.tx.send(LayerManageAction::Push(
-                            Layers::Help(self.get_help_msg()).into_push_config(true),
-                        ));
-                    }
-                    _ => (),
+        let (input_status, input_result) = self.input.handle_events(event);
+        if let Some(result) = input_result {
+            self.fetch_start_date = Fetch::parse_user_input(&result)
+        }
+        if matches!(input_status, EventHandlingStatus::Consumed) {
+            return input_status;
+        }
+
+        match event {
+            Event::Tick => {
+                while let Ok(action) = self.self_rx.try_recv() {
+                    self.update(action);
                 }
             }
-        };
-        self.input.handle_events(&event)?;
-        Ok(())
-    }
-
-    fn update(&mut self, action: crate::actions::Action) {
-        if let Action::SwitchInputMode(mode) = &action {
-            self.input_mode = *mode;
-        }
-        if let Action::Fetching(action) = &action {
-            match action {
-                FetchingAction::StartFetching(date) => {
-                    let tx = self.tx.clone();
-
-                    match &self.client {
-                        MealFetcher::Real(c) => {
-                            if let Ok((account, cookie)) = self.manager.get_account_cookie() {
-                                Fetch::fetch(tx, c.clone().account(account).cookie(cookie), *date);
-                            } else {
-                                self.tx.send(LayerManageAction::Swap(Layers::CookieInput));
-                            }
-                        }
-                        MealFetcher::Mock(c) => {
-                            Fetch::fetch(tx, c.clone(), *date);
-                        }
+            Event::Key(key) => match (key.modifiers, key.code) {
+                (_, KeyCode::Char(' ')) => {
+                    if let Some(date) = self.fetch_start_date {
+                        self.start_fetch(date);
+                        status.consumed();
                     }
                 }
-
-                FetchingAction::InsertTransaction(transactions) => {
-                    self.manager
-                        .insert(transactions)
-                        .context("Error when inserting fetched transactions into database")
-                        .unwrap();
-                    self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
+                (_, KeyCode::Char('j')) | (_, KeyCode::Char('l')) => {
+                    self.move_focus(self.current_focus.next());
+                    status.consumed();
                 }
-
-                FetchingAction::UpdateFetchStatus(state) => {
-                    self.fetching_state = state.clone();
-                    self.tx.send(Action::Render);
+                (_, KeyCode::Char('k')) | (_, KeyCode::Char('h')) => {
+                    self.move_focus(self.current_focus.prev());
+                    status.consumed();
                 }
-
-                FetchingAction::MoveFocus(focus) => {
-                    self.current_focus = focus.clone();
-                    self.fetch_start_date = match &self.current_focus {
-                        Focus::P1Year => Some(
-                            Local::now()
-                                .fixed_offset()
-                                .checked_sub_signed(chrono::Duration::days(365))
-                                .unwrap(),
-                        ),
-                        Focus::P1Month => Some(
-                            Local::now()
-                                .fixed_offset()
-                                .checked_sub_signed(chrono::Duration::days(30))
-                                .unwrap(),
-                        ),
-                        Focus::P3Months => Some(
-                            Local::now()
-                                .fixed_offset()
-                                .checked_sub_signed(chrono::Duration::days(90))
-                                .unwrap(),
-                        ),
-                        Focus::UserInput => None,
-                    };
-
-                    if let Focus::UserInput = &self.current_focus {
-                        self.tx
-                            .send(self.input.get_switch_mode_action(InputMode::Focused));
-                    } else {
-                        self.tx
-                            .send(self.input.get_switch_mode_action(InputMode::Idle));
-                    }
-                }
-                FetchingAction::LoadDbCount => {
+                (_, KeyCode::Char('r')) => {
                     self.local_db_cnt = self.manager.fetch_count().unwrap();
-                    self.tx.send(Action::Render);
+                    status.consumed()
                 }
-            }
-        }
+                (_, KeyCode::Char('e')) => {
+                    self.tx.send(LayerManageAction::Swap(Layers::CookieInput));
+                    status.consumed();
+                }
 
-        if let Some(input) = self.input.parse_submit_action(&action) {
-            self.fetch_start_date = Fetch::parse_user_input(&input);
-        }
-
-        self.input.update(&action).unwrap();
+                (_, KeyCode::Esc) => {
+                    self.tx
+                        .send(LayerManageAction::Swap(Layers::Transaction(None)));
+                    status.consumed();
+                }
+                (_, KeyCode::Char('?')) => {
+                    self.tx.send(LayerManageAction::Push(
+                        Layers::Help(self.get_help_msg()).into_push_config(true),
+                    ));
+                    status.consumed();
+                }
+                _ => (),
+            },
+            _ => (),
+        };
+        status
     }
 }
 
 impl Layer for Fetch {
     fn init(&mut self) {
-        self.tx.send(Action::Fetching(FetchingAction::LoadDbCount));
+        self.local_db_cnt = self.manager.fetch_count().unwrap();
 
         // make sure to load start_fetch_date
-        self.tx
-            .send(FetchingAction::MoveFocus(self.current_focus.clone()));
+        self.move_focus(self.current_focus.clone());
     }
 }
 
@@ -388,31 +322,95 @@ impl Fetch {
             })
     }
 
-    fn fetch<T: Into<MealFetcher>>(tx: ActionSender, client: T, date: DateTime<FixedOffset>) {
+    fn fetch<T: Into<MealFetcher>>(
+        tx: UnboundedSender<FetchingAction>,
+        client: T,
+        date: DateTime<FixedOffset>,
+    ) {
         let client = client.into();
 
         let tx2 = tx.clone();
         let update_progress = move |progress: FetchProgress| {
-            tx.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                FetchingState::Fetching(progress),
-            )));
-            tx.send(Action::Render);
+            tx.send(FetchingAction::UpdateFetchStatus(FetchingState::Fetching(
+                progress,
+            )))
+            .context("Updating progress failed because layer was dropped while fetching")
         };
 
         tokio::task::spawn_blocking(move || {
-            info!("Start fetching with client {:?}", client);
-
-            let records = fetcher::fetch(date, client, update_progress)
+            let records = match fetcher::fetch(date, client, update_progress)
                 .context("Error fetching in Fetch page")
-                .unwrap();
+            {
+                Ok(data) => data,
+                Err(e) => {
+                    warn!("Error fetching data: {}", e);
+                    return;
+                }
+            };
 
             info!("Fetch stopped with {} records", records.len());
 
-            tx2.send(Action::Fetching(FetchingAction::UpdateFetchStatus(
-                FetchingState::Idle, // 更新状态为 Idle
-            )));
-            tx2.send(Action::Fetching(FetchingAction::InsertTransaction(records)));
+            // This may fail if the layer is dropped while fetching
+            // but we don't care about the error here
+            let _ = tx2.send(FetchingAction::UpdateFetchStatus(FetchingState::Idle));
+            let _ = tx2.send(FetchingAction::InsertTransaction(records));
         });
+    }
+
+    fn update(&mut self, action: FetchingAction) {
+        match action {
+            FetchingAction::InsertTransaction(transactions) => {
+                self.manager
+                    .insert(&transactions)
+                    .context("Error when inserting fetched transactions into database")
+                    .unwrap();
+                self.local_db_cnt = self.manager.fetch_count().unwrap();
+            }
+
+            FetchingAction::UpdateFetchStatus(state) => {
+                self.fetching_state = state.clone();
+            }
+        }
+    }
+    fn move_focus(&mut self, focus: Focus) {
+        self.current_focus = focus.clone();
+
+        let get_date_from_now = |days| {
+            Local::now()
+                .fixed_offset()
+                .checked_sub_signed(chrono::Duration::days(days))
+                .unwrap()
+        };
+
+        self.fetch_start_date = match &self.current_focus {
+            Focus::P1Year => Some(get_date_from_now(365)),
+            Focus::P1Month => Some(get_date_from_now(30)),
+            Focus::P3Months => Some(get_date_from_now(90)),
+            Focus::UserInput => None,
+        };
+
+        if let Focus::UserInput = &self.current_focus {
+            self.input.set_mode(InputMode::Focused);
+        } else {
+            self.input.set_mode(InputMode::Idle);
+        }
+    }
+
+    fn start_fetch(&mut self, date: DateTime<FixedOffset>) {
+        let tx = self.self_tx.clone();
+
+        match &self.client {
+            MealFetcher::Real(c) => {
+                if let Ok((account, cookie)) = self.manager.get_account_cookie() {
+                    Fetch::fetch(tx, c.clone().account(account).cookie(cookie), date);
+                } else {
+                    self.tx.send(LayerManageAction::Swap(Layers::CookieInput));
+                }
+            }
+            MealFetcher::Mock(c) => {
+                Fetch::fetch(tx, c.clone(), date);
+            }
+        }
     }
 }
 
@@ -425,68 +423,51 @@ mod test {
     use tokio::sync::mpsc::{self, UnboundedReceiver};
 
     use crate::{
+        actions::Action,
         libs::transactions::{OFFSET_UTC_PLUS8, TransactionManager},
         tui::Event,
-        utils::key_events::KeyEvent,
     };
 
     use super::*;
     fn get_test_objs() -> (UnboundedReceiver<Action>, Fetch) {
-        let (tx, mut rx) = mpsc::unbounded_channel();
-        let mut page = Fetch::new(
-            tx.clone().into(),
-            TransactionManager::new(None).unwrap(),
-            false,
-        );
+        let (tx, rx) = mpsc::unbounded_channel();
+        let mut page = Fetch::new(tx.clone().into(), TransactionManager::new(None).unwrap());
         page.init();
-        while let Ok(action) = rx.try_recv() {
-            page.update(action);
-        }
         (rx, page)
     }
 
     #[test]
     fn test_navigation() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
         assert!(matches!(page.current_focus, Focus::P1Year));
-        page.event_loop_once(&mut rx, 'j'.into());
-        assert!(matches!(page.current_focus, Focus::P3Months));
-        page.event_loop_once(&mut rx, 'j'.into());
-        assert!(matches!(page.current_focus, Focus::P1Month));
-        page.event_loop_once(&mut rx, 'l'.into());
-        assert!(matches!(page.current_focus, Focus::UserInput));
-        page.event_loop_once(&mut rx, 'l'.into());
-        assert!(matches!(page.current_focus, Focus::P1Year));
-        page.event_loop_once(&mut rx, 'k'.into());
-        assert!(matches!(page.current_focus, Focus::UserInput));
-        page.event_loop_once(&mut rx, 'k'.into());
-        assert!(matches!(page.current_focus, Focus::P1Month));
-        page.event_loop_once(&mut rx, 'h'.into());
-        assert!(matches!(page.current_focus, Focus::P3Months));
-        page.event_loop_once(&mut rx, 'h'.into());
-        assert!(matches!(page.current_focus, Focus::P1Year));
-    }
 
-    #[test]
-    fn test_input_mode_change() {
-        let (mut rx, mut page) = get_test_objs();
-        assert!(!page.input_mode);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(true));
-        assert!(page.input_mode);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(false));
-        assert!(!page.input_mode);
+        let event_result = [
+            ('j', Focus::P3Months),
+            ('j', Focus::P1Month),
+            ('l', Focus::UserInput),
+            ('l', Focus::P1Year),
+            ('l', Focus::UserInput),
+            ('k', Focus::UserInput),
+            ('k', Focus::P1Month),
+            ('h', Focus::P3Months),
+            ('h', Focus::P1Year),
+        ];
+
+        for (key, _result) in event_result.into_iter() {
+            page.handle_events(&key.into());
+            assert!(matches!(page.current_focus, ref _result))
+        }
     }
 
     #[test]
     fn test_user_input() {
-        let (mut rx, mut page) = get_test_objs();
-        page.event_loop_once(&mut rx, Event::Key(KeyEvent::from('k').into()));
+        let (_, mut page) = get_test_objs();
+        page.handle_events(&'k'.into());
         assert!(matches!(page.current_focus, Focus::UserInput));
-        page.event_loop_once(&mut rx, Event::Key(KeyEvent::from(KeyCode::Enter).into()));
-        assert!(page.input_mode);
+        page.handle_events(&KeyCode::Enter.into());
         let seq = "2025-03-02";
         seq.chars().for_each(|c| {
-            page.event_loop_once(&mut rx, Event::Key(KeyEvent::from(c).into()));
+            page.handle_events(&c.into());
         });
         assert_eq!(
             page.fetch_start_date.unwrap(),
@@ -494,14 +475,13 @@ mod test {
                 .with_ymd_and_hms(2025, 3, 2, 0, 0, 0)
                 .unwrap()
         );
-        page.event_loop_once(&mut rx, KeyCode::Enter.into());
-        assert!(!page.input_mode);
+        page.handle_events(&KeyCode::Enter.into());
     }
     #[test]
     fn test_render() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(120, 20)).unwrap();
-        page.event_loop_once(&mut rx, 'h'.into());
+        page.handle_events(&'h'.into());
         terminal
             .draw(|f| {
                 page.render(f, f.area());
@@ -513,7 +493,7 @@ mod test {
 
     #[tokio::test]
     async fn test_fetch() {
-        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Action>();
+        let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<FetchingAction>();
 
         let client = MealFetcher::Mock(fetcher::MockMealFetcher::default());
         let date = OFFSET_UTC_PLUS8
@@ -534,7 +514,7 @@ mod test {
             tokio::select! {
                 Some(action) = rx.recv() => {
                     match action {
-                        Action::Fetching(FetchingAction::UpdateFetchStatus(state)) => {
+                        FetchingAction::UpdateFetchStatus(state) => {
                             match state {
                                 FetchingState::Fetching(prog) => {
                                     println!("Fetching... Current Page: {}", prog.current_page);
@@ -547,11 +527,10 @@ mod test {
                                 }
                             }
                         }
-                        Action::Fetching(FetchingAction::InsertTransaction(transactions)) => {
+                        FetchingAction::InsertTransaction(transactions) => {
                             assert!(!transactions.is_empty(), "Should receive some transactions");
                             received_insert = true;
                         }
-                        _ => {}
                     }
 
                     // Exit loop when we've received all expected actions
@@ -581,24 +560,23 @@ mod test {
 
     #[tokio::test]
     async fn test_fetch_progress() {
-        let (mut rx, page) = get_test_objs();
+        let (_, page) = get_test_objs();
 
         page.manager.update_account("account").unwrap();
         page.manager.update_cookie("cookie").unwrap();
         let mut page = page.client(MealFetcher::Mock(fetcher::MockMealFetcher::default()));
 
-        page.event_loop_once_with_action(
-            &mut rx,
-            Action::Fetching(FetchingAction::MoveFocus(Focus::UserInput)),
-        );
+        page.handle_events(&'h'.into());
+
         let mut seq: Vec<Event> = vec![KeyCode::Enter.into()];
         seq.extend("2024-09-01".chars().map(|c| Event::from(c)));
         seq.push(KeyCode::Enter.into());
-        seq.iter()
-            .for_each(|e| page.event_loop_once(&mut rx, e.clone()));
+        seq.iter().for_each(|e| {
+            page.handle_events(&e);
+        });
 
         // start fetching
-        page.handle_events(' '.into()).unwrap();
+        page.handle_events(&' '.into());
 
         let timeout = tokio::time::sleep(std::time::Duration::from_secs(10));
         tokio::pin!(timeout);
@@ -608,10 +586,10 @@ mod test {
 
         loop {
             tokio::select! {
-                Some(action) = rx.recv() => {
+                Some(action) = page.self_rx.recv() => {
 
                     match &action {
-                        Action::Fetching(FetchingAction::InsertTransaction(transactions)) => {
+                        FetchingAction::InsertTransaction(transactions) => {
                             assert!(!transactions.is_empty(), "Should receive some transactions");
                             received_insert = true;
                         }

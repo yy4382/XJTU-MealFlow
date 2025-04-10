@@ -111,21 +111,3 @@ impl std::fmt::Display for KeyEvent {
         write!(f, "{}", key_event_to_string(self))
     }
 }
-
-#[cfg(test)]
-pub mod test_utils {
-    use crate::tui::Event;
-
-    use super::*;
-    use crossterm::event::{KeyCode, KeyModifiers};
-
-    pub fn get_key_evt(key: KeyCode) -> Event {
-        Event::Key(crosstermKeyEvent::new(key, KeyModifiers::NONE))
-    }
-    pub fn get_char_evt(key: char) -> Event {
-        Event::Key(crosstermKeyEvent::new(
-            KeyCode::Char(key),
-            KeyModifiers::NONE,
-        ))
-    }
-}

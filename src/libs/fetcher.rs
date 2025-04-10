@@ -226,7 +226,7 @@ pub fn fetch<F>(
     progress_cb: F,
 ) -> Result<Vec<Transaction>>
 where
-    F: Fn(FetchProgress),
+    F: Fn(FetchProgress) -> Result<()>,
 {
     let mut all_transactions: Vec<Transaction> = Vec::new();
     let max_pages = 200;
@@ -235,7 +235,7 @@ where
         current_page: 0,
         total_entries_fetched: 0,
         oldest_date: None,
-    });
+    })?;
 
     for page in 1..=max_pages {
         let page_transactions = match &client {
@@ -263,7 +263,7 @@ where
                 current_page: page,
                 total_entries_fetched: all_transactions.len() as u32,
                 oldest_date: Some(last_transaction.time),
-            });
+            })?;
 
             let last_timestamp = last_transaction.time.timestamp();
             if last_timestamp <= end_time.timestamp() {
@@ -398,7 +398,7 @@ mod tests {
             .with_ymd_and_hms(2025, 3, 1, 0, 0, 0)
             .unwrap();
 
-        let transactions = fetch(end_time, MealFetcher::Mock(fetcher), |_| ()).unwrap();
+        let transactions = fetch(end_time, MealFetcher::Mock(fetcher), |_| Ok(())).unwrap();
         assert!(!transactions.is_empty());
         transactions.iter().for_each(|t| {
             assert!(t.time.timestamp() > end_time.timestamp());
@@ -415,7 +415,8 @@ mod tests {
                 .with_ymd_and_hms(2025, 3, 6, 0, 0, 0)
                 .unwrap();
             let result = fetch(end_time, MealFetcher::Mock(fetcher), |fp| {
-                tx.blocking_send(fp).unwrap()
+                tx.blocking_send(fp)?;
+                Ok(())
             })
             .unwrap();
             c_tx.send(result.len() as u32).unwrap();
@@ -516,7 +517,7 @@ mod tests {
         let end_time = Local::now().fixed_offset() - CDuration::days(7);
         let fetch = RealMealFetcher::default().account(account).cookie(cookie);
 
-        let transactions = super::fetch(end_time, MealFetcher::Real(fetch), |_| ()).unwrap();
+        let transactions = super::fetch(end_time, MealFetcher::Real(fetch), |_| Ok(())).unwrap();
         println!("{:?}", transactions);
         assert!(!transactions.is_empty());
     }

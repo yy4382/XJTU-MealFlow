@@ -48,12 +48,11 @@ use crate::{
     tui::{self, TuiEnum},
 };
 use color_eyre::eyre::{Context, Result};
-use crossterm::event::KeyCode::Char;
 use layer_manager::LayerManager;
 use tokio::sync::mpsc;
 use tracing::warn;
 
-mod layer_manager;
+pub(crate) mod layer_manager;
 
 pub(crate) struct RootState {
     /// Flag to indicate if the application should quit
@@ -65,9 +64,6 @@ pub(crate) struct RootState {
 
     /// Transaction manager for interacting with the database
     manager: crate::libs::transactions::TransactionManager,
-
-    /// Flag to indicate if the application is in input mode
-    input_mode: bool,
 
     /// Configuration for the application
     config: Config,
@@ -103,7 +99,6 @@ impl RootState {
             action_tx,
             action_rx,
             manager,
-            input_mode: false,
             config,
         }
     }
@@ -116,21 +111,13 @@ impl RootState {
     }
 
     /// Update the state based on the action
-    pub(crate) fn update(&mut self, action: &Action) -> Result<()> {
+    pub(crate) fn update(&mut self, action: &Action) {
         match action {
-            Action::Tick => {
-                // Make sure all children's input modes are up to date
-                self.send_action(Action::SwitchInputMode(self.input_mode));
-            }
             Action::Quit => {
                 self.should_quit = true;
             }
-            Action::SwitchInputMode(mode) => {
-                self.input_mode = *mode;
-            }
             _ => {}
         }
-        Ok(())
     }
 }
 
@@ -177,8 +164,7 @@ impl App {
     ///
     /// Takes in a [`tui::Event`] and handles it, updating the application state
     fn event_loop(&mut self, e: tui::Event) -> Result<()> {
-        self.handle_event(e.clone())
-            .with_context(|| format!("failed to handle event {:?}", e))?;
+        self.handle_event(e);
 
         while let Ok(action) = self.state.action_rx.try_recv() {
             self.perform_action(action);
@@ -201,9 +187,8 @@ impl App {
     /// and switching between input modes,
     /// and delegates the handling of page-specific events (remaining events, currently only key events)
     /// to the current page.
-    fn handle_event(&self, event: tui::Event) -> Result<()> {
+    fn handle_event(&mut self, event: tui::Event) {
         match event {
-            tui::Event::Tick => self.send_action(Action::Tick),
             tui::Event::Render => self.send_action(Action::Render),
 
             // TODO impl these events
@@ -213,14 +198,8 @@ impl App {
             tui::Event::Init => (),
             tui::Event::Resize(_, _) => self.send_action(Action::Render),
 
-            tui::Event::Key(key) => match key.code {
-                Char('q') => self.send_action(Action::Quit),
-                _ => self.layer_manager.handle_event(event).unwrap(),
-            },
-
-            _ => self.layer_manager.handle_event(event).unwrap(),
+            _ => self.layer_manager.handle_event(event),
         };
-        Ok(())
     }
 
     /// Perform an action
@@ -240,8 +219,7 @@ impl App {
                 .handle_layer_action(layer_action, &self.state),
             _ => {}
         }
-        self.state.update(&action).unwrap();
-        self.layer_manager.handle_action(action);
+        self.state.update(&action);
     }
 }
 

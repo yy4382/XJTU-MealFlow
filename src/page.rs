@@ -3,9 +3,8 @@
 //! This module provides traits and implementations for managing different pages
 //! in the TUI application, including their rendering, event handling, and state management.
 
-use crate::actions::Action;
+use crate::app::layer_manager::EventHandlingStatus;
 use crate::tui::Event;
-use color_eyre::Result;
 use downcast_rs::{DowncastSync, impl_downcast};
 use ratatui::Frame;
 use ratatui::layout::Rect;
@@ -16,9 +15,6 @@ pub(crate) mod fetch;
 pub(crate) mod help_popup;
 pub(crate) mod home;
 pub(crate) mod transactions;
-
-#[cfg(test)]
-use tokio::sync::mpsc::UnboundedReceiver;
 
 /// A trait that represents a UI layer/page in the application.
 ///
@@ -54,24 +50,24 @@ pub(crate) trait WidgetExt {
 /// - `event_loop_once_with_action`: Processes a single action and subsequent actions
 pub(crate) trait EventLoopParticipant {
     /// Handle events
-    fn handle_events(&self, event: Event) -> Result<()>;
+    fn handle_events(&mut self, event: &Event) -> EventHandlingStatus;
 
-    /// Perform Actions and update the state of the page
-    fn update(&mut self, action: Action);
+    // /// Perform Actions and update the state of the page
+    // fn update(&mut self, action: Action);
 
-    #[cfg(test)]
-    fn event_loop_once(&mut self, rx: &mut UnboundedReceiver<Action>, event: Event) {
-        self.handle_events(event).unwrap();
-        while let Ok(action) = rx.try_recv() {
-            self.update(action);
-        }
-    }
+    // #[cfg(test)]
+    // fn event_loop_once(&mut self, rx: &mut UnboundedReceiver<Action>, event: Event) {
+    //     self.handle_events(&event);
+    //     while let Ok(action) = rx.try_recv() {
+    //         self.update(action);
+    //     }
+    // }
 
-    #[cfg(test)]
-    fn event_loop_once_with_action(&mut self, rx: &mut UnboundedReceiver<Action>, action: Action) {
-        self.update(action);
-        while let Ok(action) = rx.try_recv() {
-            self.update(action);
-        }
-    }
+    // #[cfg(test)]
+    // fn event_loop_once_with_action(&mut self, rx: &mut UnboundedReceiver<Action>, action: Action) {
+    //     self.update(action);
+    //     while let Ok(action) = rx.try_recv() {
+    //         self.update(action);
+    //     }
+    // }
 }

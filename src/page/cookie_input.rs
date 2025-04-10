@@ -4,9 +4,9 @@ use ratatui::layout::Rect;
 use ratatui::layout::{Constraint, Layout};
 
 use crate::actions::ActionSender;
+use crate::actions::LayerManageAction;
 use crate::actions::Layers;
-use crate::actions::{Action, LayerManageAction};
-use crate::component::Component;
+use crate::app::layer_manager::EventHandlingStatus;
 use crate::component::input::{InputComp, InputMode};
 use crate::libs::transactions::TransactionManager;
 use crate::utils::help_msg::{HelpEntry, HelpMsg};
@@ -18,7 +18,6 @@ pub struct CookieInput {
     state: Focus,
     manager: TransactionManager,
 
-    input_mode: bool,
     tx: ActionSender,
 
     cookie_input: InputComp,
@@ -26,18 +25,13 @@ pub struct CookieInput {
 }
 
 impl CookieInput {
-    pub fn new(action_tx: ActionSender, manager: TransactionManager, input_mode: bool) -> Self {
+    pub fn new(action_tx: ActionSender, manager: TransactionManager) -> Self {
         let (account, cookie) = manager.get_account_cookie_may_empty().unwrap_or_default();
         Self {
             state: Default::default(),
             manager,
-            input_mode,
-            cookie_input: InputComp::new(1, input_mode, action_tx.clone())
-                .init_text(cookie)
-                .title("Cookie"),
-            account_input: InputComp::new(2, input_mode, action_tx.clone())
-                .init_text(account)
-                .title("Account"),
+            cookie_input: InputComp::new().init_text(cookie).title("Cookie"),
+            account_input: InputComp::new().init_text(account).title("Account"),
             tx: action_tx,
         }
     }
@@ -78,17 +72,6 @@ impl Focus {
     }
 }
 
-#[derive(Clone, Debug)]
-pub(crate) enum CookieInputAction {
-    ChangeState(Focus),
-}
-
-impl From<CookieInputAction> for Action {
-    fn from(val: CookieInputAction) -> Self {
-        Action::CookieInput(val)
-    }
-}
-
 impl WidgetExt for CookieInput {
     fn render(&mut self, frame: &mut Frame, area: Rect) {
         let chunks = &Layout::default()
@@ -108,74 +91,71 @@ impl WidgetExt for CookieInput {
 }
 
 impl EventLoopParticipant for CookieInput {
-    fn handle_events(&self, event: crate::tui::Event) -> color_eyre::eyre::Result<()> {
+    fn handle_events(&mut self, event: &crate::tui::Event) -> EventHandlingStatus {
+        let mut status = EventHandlingStatus::default();
+
+        let (account_state, account_result) = self.account_input.handle_events(event);
+        if let Some(result) = account_result {
+            self.manager.update_account(&result).unwrap();
+        }
+        if matches!(account_state, EventHandlingStatus::Consumed) {
+            return account_state;
+        }
+
+        let (cookie_state, cookie_result) = self.cookie_input.handle_events(event);
+        if let Some(result) = cookie_result {
+            self.manager.update_cookie(&result).unwrap();
+        }
+        if matches!(cookie_state, EventHandlingStatus::Consumed) {
+            return cookie_state;
+        }
+
         if let crate::tui::Event::Key(key) = &event {
-            if !self.input_mode {
-                match (key.modifiers, key.code) {
-                    (_, KeyCode::Char('k')) => self
-                        .tx
-                        .send(CookieInputAction::ChangeState(self.state.prev())),
-                    (_, KeyCode::Char('j')) => self
-                        .tx
-                        .send(CookieInputAction::ChangeState(self.state.next())),
-                    (_, KeyCode::Esc) => self.tx.send(LayerManageAction::Swap(Layers::Fetch)),
-                    (_, KeyCode::Char('?')) => {
-                        self.tx.send(LayerManageAction::Push(
-                            Layers::Help(self.get_help_msg()).into_push_config(true),
-                        ));
-                    }
-                    _ => (),
+            match (key.modifiers, key.code) {
+                (_, KeyCode::Char('k')) => {
+                    self.change_focus(self.state.prev());
+                    status.consumed();
                 }
+                (_, KeyCode::Char('j')) => {
+                    self.change_focus(self.state.next());
+                    status.consumed();
+                }
+                (_, KeyCode::Esc) => self.tx.send(LayerManageAction::Swap(Layers::Fetch)),
+                (_, KeyCode::Char('?')) => {
+                    self.tx.send(LayerManageAction::Push(
+                        Layers::Help(self.get_help_msg()).into_push_config(true),
+                    ));
+                }
+                _ => (),
             }
         };
-        self.account_input.handle_events(&event)?;
-        self.cookie_input.handle_events(&event)?;
-        Ok(())
-    }
-
-    fn update(&mut self, action: crate::actions::Action) {
-        if let Action::SwitchInputMode(mode) = &action {
-            self.input_mode = *mode;
-        }
-
-        if let Action::CookieInput(CookieInputAction::ChangeState(next_state)) = &action {
-            self.state = next_state.clone();
-
-            self.tx.send(self.account_input.get_switch_mode_action(
-                if matches!(self.state, Focus::Account) {
-                    InputMode::Focused
-                } else {
-                    InputMode::Idle
-                },
-            ));
-
-            self.tx.send(self.cookie_input.get_switch_mode_action(
-                if matches!(self.state, Focus::Cookie) {
-                    InputMode::Focused
-                } else {
-                    InputMode::Idle
-                },
-            ));
-        }
-
-        if let Some(string) = self.account_input.parse_submit_action(&action) {
-            self.manager.update_account(&string).unwrap();
-        };
-        if let Some(string) = self.cookie_input.parse_submit_action(&action) {
-            self.manager.update_cookie(&string).unwrap();
-        }
-
-        self.account_input.update(&action).unwrap();
-        self.cookie_input.update(&action).unwrap();
+        status
     }
 }
 
 impl Layer for CookieInput {
     fn init(&mut self) {
-        self.tx.send(
-            self.account_input
-                .get_switch_mode_action(InputMode::Focused),
-        );
+        self.account_input.set_mode(InputMode::Focused);
+    }
+}
+
+impl CookieInput {
+    fn change_focus(&mut self, focus: Focus) {
+        self.state = focus.clone();
+
+        self.account_input
+            .set_mode(if matches!(self.state, Focus::Account) {
+                InputMode::Focused
+            } else {
+                InputMode::Idle
+            });
+
+        self.cookie_input
+            .set_mode(if matches!(self.state, Focus::Cookie) {
+                InputMode::Focused
+            } else {
+                InputMode::Idle
+            });
     }
 }
 
@@ -187,67 +167,49 @@ mod test {
     use tokio::sync::mpsc::{self, UnboundedReceiver};
 
     use super::*;
-    use crate::tui::Event;
-    use crate::utils::key_events::test_utils::{get_char_evt, get_key_evt};
+    use crate::{actions::Action, tui::Event};
 
     fn get_test_objs() -> (UnboundedReceiver<Action>, CookieInput) {
-        let (tx, mut rx) = mpsc::unbounded_channel();
-        let mut page = CookieInput::new(
-            tx.clone().into(),
-            TransactionManager::new(None).unwrap(),
-            false,
-        );
+        let (tx, rx) = mpsc::unbounded_channel();
+        let mut page = CookieInput::new(tx.clone().into(), TransactionManager::new(None).unwrap());
         page.init();
-        while let Ok(action) = rx.try_recv() {
-            page.update(action);
-        }
         (rx, page)
     }
 
     #[test]
     fn test_navigation() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
         assert!(matches!(page.state, Focus::Account));
-        assert!(matches!(page.account_input.get_mode(), InputMode::Focused));
+        assert!(matches!(page.account_input.mode, InputMode::Focused));
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Char('j')));
+        page.handle_events(&'j'.into());
         assert!(matches!(page.state, Focus::Cookie));
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Char('j')));
+        page.handle_events(&'j'.into());
         assert!(matches!(page.state, Focus::Account));
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Char('k')));
+        page.handle_events(&'k'.into());
         assert!(matches!(page.state, Focus::Cookie));
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Char('k')));
+        page.handle_events(&'k'.into());
         assert!(matches!(page.state, Focus::Account));
-    }
-
-    #[test]
-    fn test_input_mode_change() {
-        let (mut rx, mut page) = get_test_objs();
-        assert!(!page.input_mode);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(true));
-        assert!(page.input_mode);
-        page.event_loop_once_with_action(&mut rx, Action::SwitchInputMode(false));
-        assert!(!page.input_mode);
     }
 
     #[test]
     fn test_account_input() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        assert!(page.input_mode);
-        page.event_loop_once(&mut rx, get_char_evt('a'));
-        page.event_loop_once(&mut rx, get_char_evt('j'));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
+        page.handle_events(&KeyCode::Enter.into());
+        assert!(page.account_input.is_inputting());
+        page.handle_events(&'a'.into());
+        page.handle_events(&'j'.into());
+        page.handle_events(&KeyCode::Enter.into());
         assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().0, "aj");
 
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Left));
-        page.event_loop_once(&mut rx, Event::Paste("kl".into()));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
+        page.handle_events(&KeyCode::Enter.into());
+        page.handle_events(&KeyCode::Left.into());
+        page.handle_events(&Event::Paste("kl".into()));
+        page.handle_events(&KeyCode::Enter.into());
         assert_eq!(
             page.manager.get_account_cookie_may_empty().unwrap().0,
             // cSpell:ignore aklj
@@ -257,15 +219,14 @@ mod test {
 
     #[test]
     fn test_cookie_input() {
-        let (mut rx, mut page) = get_test_objs();
+        let (_, mut page) = get_test_objs();
 
-        page.event_loop_once(&mut rx, get_char_evt('j'));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        assert!(page.input_mode);
-        page.event_loop_once(&mut rx, get_char_evt('a'));
-        page.event_loop_once(&mut rx, get_char_evt('j'));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Enter));
-        page.event_loop_once(&mut rx, get_key_evt(KeyCode::Esc));
+        page.handle_events(&'j'.into());
+        page.handle_events(&KeyCode::Enter.into());
+        assert!(page.cookie_input.is_inputting());
+        page.handle_events(&'a'.into());
+        page.handle_events(&'j'.into());
+        page.handle_events(&KeyCode::Enter.into());
         assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().1, "aj");
     }
 
