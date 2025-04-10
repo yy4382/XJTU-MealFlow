@@ -478,6 +478,14 @@ mod test {
         page.handle_event_with_status_check(&KeyCode::Enter.into());
     }
     #[test]
+    fn test_consume_navigation_events() {
+        let (_rx, mut page) = get_test_objs();
+        page.handle_event_with_status_check(&'?'.into());
+        page.handle_event_with_status_check(&'e'.into());
+        page.handle_event_with_status_check(&KeyCode::Esc.into());
+    }
+
+    #[test]
     fn test_render() {
         let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(120, 20)).unwrap();
