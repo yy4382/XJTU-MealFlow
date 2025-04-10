@@ -1,8 +1,3 @@
-//! Page module handles different UI pages and their behaviors.
-//!
-//! This module provides traits and implementations for managing different pages
-//! in the TUI application, including their rendering, event handling, and state management.
-
 use crate::app::layer_manager::EventHandlingStatus;
 use crate::tui::Event;
 use downcast_rs::{DowncastSync, impl_downcast};
