@@ -42,6 +42,9 @@ impl MerchantData {
         frame: &mut Frame,
         color: tailwind::Palette,
     ) {
+        if self.data.len() == 0 {
+            return;
+        }
         let style = Style::default().fg(tailwind::BLUE.c300);
         let bars: Vec<Bar> = self
             .data
