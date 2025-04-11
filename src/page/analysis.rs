@@ -203,9 +203,9 @@ mod test {
         // Initial state should be TimePeriod
         assert!(matches!(page.analysis_type, AnalysisType::TimePeriod(_)));
 
-        // Test moving to next tab (Merchant)
+        // Test moving to next tab
         page.handle_event_with_status_check(&'l'.into());
-        assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
+        assert!(matches!(page.analysis_type, AnalysisType::TimeSeries(_)));
 
         // Test moving back to TimePeriod
         page.handle_event_with_status_check(&'h'.into());
@@ -229,7 +229,7 @@ mod test {
         let (_, mut page) = get_test_objs();
 
         // First switch to Merchant tab
-        page.handle_event_with_status_check(&'l'.into());
+        page.handle_event_with_status_check(&'h'.into());
 
         let initial_offset = get_merchant_data(&page.analysis_type)
             .scroll_state
@@ -258,7 +258,7 @@ mod test {
     }
 
     #[test]
-    fn test_render() {
+    fn test_render_time_period() {
         let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
 
@@ -269,9 +269,13 @@ mod test {
             .unwrap();
 
         assert_snapshot!(terminal.backend());
-
+    }
+    #[test]
+    fn test_render_merchant() {
+        let (_, mut page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
         // Switch to Merchant tab and render again
-        page.handle_event_with_status_check(&'l'.into());
+        page.handle_event_with_status_check(&'h'.into());
 
         terminal
             .draw(|f| {
@@ -290,6 +294,22 @@ mod test {
                 page.render(f, f.area());
             })
             .unwrap();
+        assert_snapshot!(terminal.backend());
+    }
+    #[test]
+    fn test_render_time_series() {
+        let (_, mut page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+
+        // Switch to TimeSeries tab and render again
+        page.handle_event_with_status_check(&'l'.into());
+
+        terminal
+            .draw(|f| {
+                page.render(f, f.area());
+            })
+            .unwrap();
+
         assert_snapshot!(terminal.backend());
     }
 }

@@ -2,7 +2,7 @@
 source: src/page/analysis.rs
 expression: terminal.backend()
 ---
-" Time Period   Merchant                                                         "
+" Time Period   Time Series   Merchant                                           "
 "█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█"
 "█ Breakfast 4█████████████                                                     █"
 "█                                                                              █"
