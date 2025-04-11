@@ -6,7 +6,7 @@ use ratatui::{
     style::{Style, Stylize as _, palette::tailwind},
     symbols,
     text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Clear, Padding},
+    widgets::{Bar, BarChart, BarGroup, Block, Clear, Padding, Paragraph},
 };
 use tui_scrollview::{ScrollView, ScrollViewState, ScrollbarVisibility};
 
@@ -42,9 +42,19 @@ impl MerchantData {
         frame: &mut Frame,
         color: tailwind::Palette,
     ) {
+        let block = Block::bordered()
+            .border_set(symbols::border::PROPORTIONAL_TALL)
+            .border_style(color.c600)
+            .padding(Padding::horizontal(1));
+
         if self.data.len() == 0 {
+            frame.render_widget(
+                Paragraph::new("No data available yet").block(block.clone()),
+                main_area,
+            );
             return;
         }
+
         let style = Style::default().fg(tailwind::BLUE.c300);
         let bars: Vec<Bar> = self
             .data
@@ -73,13 +83,7 @@ impl MerchantData {
             width: main_area.width - 2,
             height: main_area.height - 2,
         };
-        frame.render_widget(
-            Block::bordered()
-                .border_set(symbols::border::PROPORTIONAL_TALL)
-                .padding(Padding::horizontal(1))
-                .border_style(color.c600),
-            main_area,
-        );
+        frame.render_widget(block.clone(), main_area);
         frame.render_widget(Clear, chart_area);
 
         let chart_height = ((self.data.len()) * 2 - 1) as u16;
@@ -93,5 +97,23 @@ impl MerchantData {
         );
 
         frame.render_stateful_widget(scroll_view, chart_area, &mut self.scroll_state);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+
+    use super::*;
+
+    #[test]
+    fn test_empty_render() {
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut data = MerchantData::default();
+        terminal
+            .draw(|f| data.render(f.area(), f, tailwind::BLUE))
+            .unwrap();
+        assert_snapshot!(terminal.backend())
     }
 }

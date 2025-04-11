@@ -6,7 +6,7 @@ use ratatui::{
     style::{Style, Stylize as _, palette::tailwind},
     symbols,
     text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Padding},
+    widgets::{Bar, BarChart, BarGroup, Block, Padding, Paragraph},
 };
 use tracing::info;
 
@@ -93,7 +93,16 @@ impl TimeSeriesData {
         frame: &mut Frame,
         color: tailwind::Palette,
     ) {
+        let block = Block::bordered()
+            .border_set(symbols::border::PROPORTIONAL_TALL)
+            .border_style(color.c600)
+            .padding(Padding::horizontal(1));
+
         if self.data.len() == 0 {
+            frame.render_widget(
+                Paragraph::new("No data available yet").block(block.clone()),
+                area,
+            );
             return;
         }
 
@@ -112,17 +121,30 @@ impl TimeSeriesData {
             .collect();
 
         let bar_chart = BarChart::default()
-            .block(
-                Block::bordered()
-                    .border_set(symbols::border::PROPORTIONAL_TALL)
-                    .border_style(color.c600)
-                    .padding(Padding::horizontal(1)),
-            )
+            .block(block)
             .data(BarGroup::default().bars(&bars))
             .bar_width(7)
             .bar_gap(1)
             .bar_style(style);
 
         frame.render_widget(bar_chart, area);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+
+    use super::*;
+
+    #[test]
+    fn test_empty_render() {
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let data = TimeSeriesData::default();
+        terminal
+            .draw(|f| data.render(f.area(), f, tailwind::BLUE))
+            .unwrap();
+        assert_snapshot!(terminal.backend())
     }
 }
