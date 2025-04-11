@@ -2,15 +2,15 @@
 source: src/page/analysis.rs
 expression: terminal.backend()
 ---
-" Time Period   Merchant                                                         "
+" Time Period   Time Series   Merchant                                           "
 "█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█"
-"█ 啵啵鱼           15.51███                                                   ▲█" Hidden by multi-width symbols: [(3, "r"), (5, "a"), (7, " ")]
+"█ 啵啵鱼           15.51███                                                   ▲█" Hidden by multi-width symbols: [(3, " "), (5, " "), (7, " ")]
 "█                                                                             ║█"
-"█ 荷叶饼夹馍组     11.70█                                                     ║█" Hidden by multi-width symbols: [(3, "u"), (5, "c"), (7, " "), (9, " "), (11, " "), (13, " ")]
+"█ 荷叶饼夹馍组     11.70█                                                     ║█" Hidden by multi-width symbols: [(3, " "), (5, " "), (7, " "), (9, " "), (11, " "), (13, " ")]
 "█                                                                             ║█"
-"█ 时光水吧         10.90                                                      ║█" Hidden by multi-width symbols: [(3, "i"), (5, "n"), (7, "r"), (9, " ")]
+"█ 时光水吧         10.90                                                      ║█" Hidden by multi-width symbols: [(3, " "), (5, " "), (7, " "), (9, " ")]
 "█                                                                             ██"
-"█ 凉皮饸络组       8.99                                                       ██" Hidden by multi-width symbols: [(3, "t"), (5, "e"), (7, " "), (9, " "), (11, " ")]
+"█ 凉皮饸络组       8.99                                                       ██" Hidden by multi-width symbols: [(3, " "), (5, " "), (7, " "), (9, " "), (11, " ")]
 "█                                                                             ██"
 "█ 西14西15东12浴室 8.57                                                       ██" Hidden by multi-width symbols: [(3, " "), (7, " "), (11, " "), (15, " "), (17, " ")]
 "█                                                                             ██"

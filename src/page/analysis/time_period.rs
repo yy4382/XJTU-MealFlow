@@ -4,7 +4,7 @@ use ratatui::{
     style::{Style, Stylize as _, palette::tailwind},
     symbols,
     text::Line,
-    widgets::{Bar, BarChart, BarGroup, Block, Padding},
+    widgets::{Bar, BarChart, BarGroup, Block, Padding, Paragraph},
 };
 
 use crate::libs::transactions::Transaction;
@@ -45,6 +45,9 @@ impl TimePeriodData {
         }
         false
     }
+    fn all_zero(&self) -> bool {
+        self.breakfast == 0 && self.lunch == 0 && self.dinner == 0 && self.unknown == 0
+    }
 }
 impl IntoIterator for &TimePeriodData {
     type Item = (&'static str, u32);
@@ -67,6 +70,19 @@ impl TimePeriodData {
         frame: &mut Frame,
         color: tailwind::Palette,
     ) {
+        let block = Block::bordered()
+            .border_set(symbols::border::PROPORTIONAL_TALL)
+            .border_style(color.c600)
+            .padding(Padding::horizontal(1));
+
+        if self.all_zero() {
+            frame.render_widget(
+                Paragraph::new("No data available yet").block(block.clone()),
+                area,
+            );
+            return;
+        }
+
         let style = Style::default().fg(color.c300);
         let bars: Vec<Bar> = self
             .into_iter()
@@ -79,16 +95,29 @@ impl TimePeriodData {
             })
             .collect();
         let bar_chart = BarChart::default()
-            .block(
-                Block::bordered()
-                    .border_set(symbols::border::PROPORTIONAL_TALL)
-                    .padding(Padding::horizontal(1))
-                    .border_style(color.c600),
-            )
+            .block(block)
             .data(BarGroup::default().bars(&bars))
             .bar_width(1)
             .bar_gap(1)
             .direction(ratatui::layout::Direction::Horizontal);
         frame.render_widget(bar_chart, area);
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use insta::assert_snapshot;
+    use ratatui::backend::TestBackend;
+
+    use super::*;
+
+    #[test]
+    fn test_empty_render() {
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let data = TimePeriodData::default();
+        terminal
+            .draw(|f| data.render(f.area(), f, tailwind::BLUE))
+            .unwrap();
+        assert_snapshot!(terminal.backend())
     }
 }
