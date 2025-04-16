@@ -251,7 +251,7 @@ mod test {
         let (tx, _) = mpsc::unbounded_channel();
         let mut page = CookieInput::new(tx.clone().into(), manager);
         page.init();
-        assert_eq!(page.cookie_input.get_text(), "hallticket=abc");
+        assert_eq!(page.cookie_input.get_text(), "abc");
     }
 
     #[test]
