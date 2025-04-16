@@ -2,7 +2,7 @@
 source: src/page/analysis.rs
 expression: terminal.backend()
 ---
-" Time Period   Time Series   Merchant                                           "
+" Time Period   Time Series   Merchant   MerchantCategory                        "
 "█▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀█"
 "█ 寿司             100.34████████████████████████████████████████████████████ ▲█" Hidden by multi-width symbols: [(3, " "), (5, " ")]
 "█                                                                             ██"
