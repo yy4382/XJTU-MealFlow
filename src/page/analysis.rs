@@ -221,6 +221,12 @@ mod test {
 
         // Test wrapping around
         page.handle_event_with_status_check(&'h'.into());
+        assert!(matches!(
+            page.analysis_type,
+            AnalysisType::MerchantCategory(_)
+        ));
+        // Test wrapping around
+        page.handle_event_with_status_check(&'h'.into());
         assert!(matches!(page.analysis_type, AnalysisType::Merchant(_)));
     }
 
@@ -237,6 +243,7 @@ mod test {
         let (_, mut page) = get_test_objs();
 
         // First switch to Merchant tab
+        page.handle_event_with_status_check(&'h'.into());
         page.handle_event_with_status_check(&'h'.into());
 
         let initial_offset = get_merchant_data(&page.analysis_type)
@@ -279,10 +286,24 @@ mod test {
         assert_snapshot!(terminal.backend());
     }
     #[test]
+    fn test_render_merchant_category() {
+        let (_, mut page) = get_test_objs();
+        let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
+        page.handle_event_with_status_check(&'h'.into());
+        terminal
+            .draw(|f| {
+                page.render(f, f.area());
+            })
+            .unwrap();
+
+        assert_snapshot!(terminal.backend());
+    }
+    #[test]
     fn test_render_merchant() {
         let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
         // Switch to Merchant tab and render again
+        page.handle_event_with_status_check(&'h'.into());
         page.handle_event_with_status_check(&'h'.into());
 
         terminal
