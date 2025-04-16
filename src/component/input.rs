@@ -227,6 +227,12 @@ impl WidgetExt for InputComp {
         }
     }
 }
+#[cfg(test)]
+impl InputComp {
+    pub fn get_text(&self) -> String {
+        self.input.value().to_string()
+    }
+}
 
 #[cfg(test)]
 pub mod test {

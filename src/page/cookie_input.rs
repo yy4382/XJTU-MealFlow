@@ -245,6 +245,16 @@ mod test {
     }
 
     #[test]
+    fn test_cookie_get_strip() {
+        let manager = TransactionManager::new(None).unwrap();
+        manager.update_cookie("hallticket=abc").unwrap();
+        let (tx, _) = mpsc::unbounded_channel();
+        let mut page = CookieInput::new(tx.clone().into(), manager);
+        page.init();
+        assert_eq!(page.cookie_input.get_text(), "hallticket=abc");
+    }
+
+    #[test]
     fn test_cookie_input_render() {
         let (_, mut page) = get_test_objs();
         let mut terminal = ratatui::Terminal::new(TestBackend::new(80, 20)).unwrap();
