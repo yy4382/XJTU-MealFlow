@@ -4,3 +4,4 @@ pub(crate) mod help_msg;
 pub(crate) mod key_events;
 #[cfg(not(tarpaulin_include))]
 pub(crate) mod logging;
+pub(crate) mod merchant_class;
