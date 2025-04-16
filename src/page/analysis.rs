@@ -1,5 +1,6 @@
 use crossterm::event::KeyCode;
 use merchant::MerchantData;
+use merchant_type::MerchantCategoryData;
 use ratatui::{
     layout::{Constraint, Layout},
     style::{Stylize, palette::tailwind},
@@ -22,6 +23,7 @@ use super::{EventLoopParticipant, Layer, WidgetExt};
 mod merchant;
 mod time_period;
 mod time_series;
+mod merchant_type;
 
 pub(crate) struct Analysis {
     manager: crate::libs::transactions::TransactionManager,
@@ -39,7 +41,8 @@ enum AnalysisType {
     TimeSeries(TimeSeriesData),
     #[strum(to_string = "Merchant")]
     Merchant(MerchantData),
-    // MerchantCategory,
+    #[strum(to_string = "MerchantCategory")]
+    MerchantCategory(MerchantCategoryData),
 }
 
 impl AnalysisType {
@@ -47,12 +50,14 @@ impl AnalysisType {
         match self {
             Self::TimePeriod(_) => Self::TimeSeries(TimeSeriesData::new(data)),
             Self::TimeSeries(_) => Self::Merchant(MerchantData::new(data)),
-            Self::Merchant(_) => Self::TimePeriod(TimePeriodData::new(data)),
+            Self::Merchant(_) => Self::MerchantCategory(MerchantCategoryData::new(data)),
+            Self::MerchantCategory(_) => Self::TimePeriod(TimePeriodData::new(data)),
         }
     }
     fn previous(&self, data: &[Transaction]) -> Self {
         match self {
-            Self::TimePeriod(_) => Self::Merchant(MerchantData::new(data)),
+            Self::TimePeriod(_) => Self::MerchantCategory(MerchantCategoryData::new(data)),
+            Self::MerchantCategory(_) => Self::Merchant(MerchantData::new(data)),
             Self::TimeSeries(_) => Self::TimePeriod(TimePeriodData::new(data)),
             Self::Merchant(_) => Self::TimeSeries(TimeSeriesData::new(data)),
         }
@@ -62,6 +67,7 @@ impl AnalysisType {
             AnalysisType::TimePeriod(_) => 0,
             AnalysisType::TimeSeries(_) => 1,
             AnalysisType::Merchant(_) => 2,
+            AnalysisType::MerchantCategory(_) => 3,
         }
     }
     fn get_palette(&self) -> tailwind::Palette {
@@ -69,6 +75,7 @@ impl AnalysisType {
             AnalysisType::TimePeriod(_) => tailwind::BLUE,
             AnalysisType::TimeSeries(_) => tailwind::GREEN,
             AnalysisType::Merchant(_) => tailwind::INDIGO,
+            AnalysisType::MerchantCategory(_) => tailwind::YELLOW,
         }
     }
 }
@@ -157,6 +164,7 @@ impl WidgetExt for Analysis {
             AnalysisType::TimePeriod(data) => data.render(main_area, frame, palette),
             AnalysisType::TimeSeries(data) => data.render(main_area, frame, palette),
             AnalysisType::Merchant(data) => data.render(main_area, frame, palette),
+            AnalysisType::MerchantCategory(data) => data.render(main_area, frame, palette),
         };
 
         self.get_help_message().render(frame, help_area);
