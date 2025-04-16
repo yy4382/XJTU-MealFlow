@@ -238,7 +238,10 @@ mod test {
         page.handle_event_with_status_check(&'a'.into());
         page.handle_event_with_status_check(&'j'.into());
         page.handle_event_with_status_check(&KeyCode::Enter.into());
-        assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().1, "hallticket=aj");
+        assert_eq!(
+            page.manager.get_account_cookie_may_empty().unwrap().1,
+            "hallticket=aj"
+        );
     }
 
     #[test]
