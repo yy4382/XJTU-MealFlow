@@ -46,9 +46,9 @@ impl Default for Home {
 impl WidgetExt for Home {
     fn render(&mut self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let ascii_art = if area.width >= 100 {
-            include_str!("../../ascii-arts/xjtu-mealflow.txt")
+            include_str!("../../data/xjtu-mealflow.txt")
         } else if area.width >= 60 {
-            include_str!("../../ascii-arts/mealflow.txt")
+            include_str!("../../data/mealflow.txt")
         } else {
             "XJTU MealFlow"
         };
