@@ -87,7 +87,10 @@ mod tests {
     #[test]
     fn test_merchant_type_lookup() {
         assert_eq!(MerchantType::from_str("炸吧"), MerchantType::CanteenFood);
-        assert_eq!(MerchantType::from_str("时光水吧"), MerchantType::CanteenDrink);
+        assert_eq!(
+            MerchantType::from_str("时光水吧"),
+            MerchantType::CanteenDrink
+        );
         assert_eq!(
             MerchantType::from_str("鲜享优果水果店"),
             MerchantType::Supermarket
@@ -105,8 +108,17 @@ mod tests {
 
     #[test]
     fn test_type_str_conversion() {
-        assert_eq!(MerchantType::from_type_str("食堂食物"), MerchantType::CanteenFood);
-        assert_eq!(MerchantType::from_type_str("超市"), MerchantType::Supermarket);
-        assert_eq!(MerchantType::from_type_str("InvalidType"), MerchantType::Unknown);
+        assert_eq!(
+            MerchantType::from_type_str("食堂食物"),
+            MerchantType::CanteenFood
+        );
+        assert_eq!(
+            MerchantType::from_type_str("超市"),
+            MerchantType::Supermarket
+        );
+        assert_eq!(
+            MerchantType::from_type_str("InvalidType"),
+            MerchantType::Unknown
+        );
     }
 }

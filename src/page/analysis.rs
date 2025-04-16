@@ -21,9 +21,9 @@ use crate::{
 use super::{EventLoopParticipant, Layer, WidgetExt};
 
 mod merchant;
+mod merchant_type;
 mod time_period;
 mod time_series;
-mod merchant_type;
 
 pub(crate) struct Analysis {
     manager: crate::libs::transactions::TransactionManager,

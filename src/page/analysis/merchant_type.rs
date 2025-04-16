@@ -36,11 +36,11 @@ impl MerchantCategoryData {
     }
 
     fn all_zero(&self) -> bool {
-        self.canteen_food == 0 
-            && self.canteen_drink == 0 
-            && self.supermarket == 0 
-            && self.bathhouse == 0 
-            && self.other == 0 
+        self.canteen_food == 0
+            && self.canteen_drink == 0
+            && self.supermarket == 0
+            && self.bathhouse == 0
+            && self.other == 0
             && self.unknown == 0
     }
 }
@@ -75,10 +75,7 @@ impl MerchantCategoryData {
             .padding(Padding::horizontal(1));
 
         if self.all_zero() {
-            frame.render_widget(
-                Paragraph::new("暂无数据").block(block.clone()),
-                area,
-            );
+            frame.render_widget(Paragraph::new("暂无数据").block(block.clone()), area);
             return;
         }
 
