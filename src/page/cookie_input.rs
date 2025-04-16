@@ -26,11 +26,14 @@ pub struct CookieInput {
 
 impl CookieInput {
     pub fn new(action_tx: ActionSender, manager: TransactionManager) -> Self {
-        let (account, cookie) = manager.get_account_cookie_may_empty().unwrap_or_default();
+        let (account, mut cookie) = manager.get_account_cookie_may_empty().unwrap_or_default();
+        if cookie.starts_with("hallticket=") {
+            cookie.replace_range(..11, "");
+        }
         Self {
             state: Default::default(),
             manager,
-            cookie_input: InputComp::new().init_text(cookie).title("Cookie"),
+            cookie_input: InputComp::new().init_text(cookie).title("Hallticket"),
             account_input: InputComp::new().init_text(account).title("Account"),
             tx: action_tx,
         }
@@ -104,7 +107,15 @@ impl EventLoopParticipant for CookieInput {
 
         let (cookie_state, cookie_result) = self.cookie_input.handle_events(event);
         if let Some(result) = cookie_result {
-            self.manager.update_cookie(&result).unwrap();
+            if !result.is_empty() {
+                if result.starts_with("hallticket=") {
+                    self.manager.update_cookie(&result).unwrap();
+                } else {
+                    self.manager
+                        .update_cookie(&format!("hallticket={}", result))
+                        .unwrap();
+                }
+            }
         }
         if matches!(cookie_state, EventHandlingStatus::Consumed) {
             return cookie_state;
@@ -227,7 +238,7 @@ mod test {
         page.handle_event_with_status_check(&'a'.into());
         page.handle_event_with_status_check(&'j'.into());
         page.handle_event_with_status_check(&KeyCode::Enter.into());
-        assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().1, "aj");
+        assert_eq!(page.manager.get_account_cookie_may_empty().unwrap().1, "hallticket=aj");
     }
 
     #[test]
