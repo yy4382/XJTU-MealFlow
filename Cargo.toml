@@ -53,4 +53,4 @@ tui-scrollview = "0.5.1"
 serde_yaml = "0.9.34"
 
 [dev-dependencies]
-insta = "1.42.2"
+insta = "1.43.0"
