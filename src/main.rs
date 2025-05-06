@@ -10,7 +10,7 @@ mod server;
 mod tui;
 mod utils;
 
-use actix_web::{HttpServer, web, middleware::Logger};
+use actix_web::{HttpServer, middleware::Logger, web};
 use app::{App, RootState};
 use clap::Parser;
 use color_eyre::eyre::Result;

@@ -302,7 +302,8 @@ impl TransactionManager {
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)] // Added Serialize, Deserialize, made pub
-pub struct FilterOptions { // Made pub
+pub struct FilterOptions {
+    // Made pub
     /// Time range, closed on left, open on right
     pub time: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>, // Made pub
     /// Merchant name
@@ -313,7 +314,8 @@ pub struct FilterOptions { // Made pub
 
 impl FilterOptions {
     #[allow(dead_code)]
-    pub fn start(mut self, start: DateTime<FixedOffset>) -> Self { // Made pub
+    pub fn start(mut self, start: DateTime<FixedOffset>) -> Self {
+        // Made pub
         self.time = Some(match self.time {
             Some((_, end)) => (start, end),
             None => (
@@ -326,7 +328,8 @@ impl FilterOptions {
         self
     }
     #[allow(dead_code)]
-    pub fn end(mut self, end: DateTime<FixedOffset>) -> Self { // Made pub
+    pub fn end(mut self, end: DateTime<FixedOffset>) -> Self {
+        // Made pub
         self.time = Some(match self.time {
             Some((start, _)) => (start, end),
             None => (
@@ -338,12 +341,14 @@ impl FilterOptions {
         });
         self
     }
-    pub fn merchant<T: Into<String>>(mut self, merchant: T) -> Self { // Made pub
+    pub fn merchant<T: Into<String>>(mut self, merchant: T) -> Self {
+        // Made pub
         self.merchant = Some(merchant.into());
         self
     }
     #[allow(dead_code)]
-    pub fn min(mut self, amount: f64) -> Self { // Made pub
+    pub fn min(mut self, amount: f64) -> Self {
+        // Made pub
         self.amount = Some(match self.amount {
             Some((_, max)) => (amount, max),
             None => (amount, f64::INFINITY), // Use a safe default for the maximum value
@@ -351,7 +356,8 @@ impl FilterOptions {
         self
     }
     #[allow(dead_code)]
-    pub fn max(mut self, amount: f64) -> Self { // Made pub
+    pub fn max(mut self, amount: f64) -> Self {
+        // Made pub
         self.amount = Some(match self.amount {
             Some((min, _)) => (min, amount),
             None => (f64::NEG_INFINITY, amount), // Use a safe default for the minimum value
