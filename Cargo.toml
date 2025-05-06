@@ -51,6 +51,7 @@ downcast-rs = "2.0.1"
 strum = { version = "0.27.1", features = ["derive"] }
 tui-scrollview = "0.5.1"
 serde_yaml = "0.9.34"
+openssl = { version = "0.10", features = ["vendored"] }
 
 [dev-dependencies]
 insta = "1.43.0"
