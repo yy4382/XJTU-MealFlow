@@ -6,8 +6,9 @@ use std::{
 use chrono::{DateTime, FixedOffset, TimeZone};
 use color_eyre::eyre::{Context, ContextCompat, Result, bail};
 use rusqlite::{Connection, params};
+use serde::{Deserialize, Serialize}; // Added import
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)] // Added Serialize, Deserialize
 pub struct Transaction {
     pub id: i64,
     /// Time of the transaction in UTC+8
@@ -300,19 +301,19 @@ impl TransactionManager {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
-pub(crate) struct FilterOptions {
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)] // Added Serialize, Deserialize, made pub
+pub struct FilterOptions { // Made pub
     /// Time range, closed on left, open on right
-    time: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>,
+    pub time: Option<(DateTime<FixedOffset>, DateTime<FixedOffset>)>, // Made pub
     /// Merchant name
-    merchant: Option<String>,
+    pub merchant: Option<String>, // Made pub
     /// Amount range, closed on left, open on right
-    amount: Option<(f64, f64)>,
+    pub amount: Option<(f64, f64)>, // Made pub
 }
 
 impl FilterOptions {
     #[allow(dead_code)]
-    pub(crate) fn start(mut self, start: DateTime<FixedOffset>) -> Self {
+    pub fn start(mut self, start: DateTime<FixedOffset>) -> Self { // Made pub
         self.time = Some(match self.time {
             Some((_, end)) => (start, end),
             None => (
@@ -325,7 +326,7 @@ impl FilterOptions {
         self
     }
     #[allow(dead_code)]
-    pub(crate) fn end(mut self, end: DateTime<FixedOffset>) -> Self {
+    pub fn end(mut self, end: DateTime<FixedOffset>) -> Self { // Made pub
         self.time = Some(match self.time {
             Some((start, _)) => (start, end),
             None => (
@@ -337,12 +338,12 @@ impl FilterOptions {
         });
         self
     }
-    pub(crate) fn merchant<T: Into<String>>(mut self, merchant: T) -> Self {
+    pub fn merchant<T: Into<String>>(mut self, merchant: T) -> Self { // Made pub
         self.merchant = Some(merchant.into());
         self
     }
     #[allow(dead_code)]
-    pub(crate) fn min(mut self, amount: f64) -> Self {
+    pub fn min(mut self, amount: f64) -> Self { // Made pub
         self.amount = Some(match self.amount {
             Some((_, max)) => (amount, max),
             None => (amount, f64::INFINITY), // Use a safe default for the maximum value
@@ -350,7 +351,7 @@ impl FilterOptions {
         self
     }
     #[allow(dead_code)]
-    pub(crate) fn max(mut self, amount: f64) -> Self {
+    pub fn max(mut self, amount: f64) -> Self { // Made pub
         self.amount = Some(match self.amount {
             Some((min, _)) => (min, amount),
             None => (f64::NEG_INFINITY, amount), // Use a safe default for the minimum value

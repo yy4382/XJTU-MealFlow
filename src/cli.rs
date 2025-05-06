@@ -57,6 +57,7 @@ pub enum Commands {
     /// This command is helpful when you switches between different accounts or
     /// using mock data.
     ClearDb,
+    Web,
 }
 
 const VERSION_MESSAGE: &str = concat!(env!("CARGO_PKG_VERSION"));

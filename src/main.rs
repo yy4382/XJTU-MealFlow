@@ -5,14 +5,17 @@ mod component;
 mod config;
 mod libs;
 mod page;
+mod server;
 #[cfg(not(tarpaulin_include))]
 mod tui;
 mod utils;
 
+use actix_web::{HttpServer, web, middleware::Logger};
 use app::{App, RootState};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use dotenv::dotenv;
+use libs::transactions::TransactionManager;
 
 #[cfg(not(tarpaulin_include))]
 async fn run() -> Result<()> {
@@ -35,6 +38,12 @@ async fn run() -> Result<()> {
             println!("Database cleared");
             Ok(())
         }
+        Some(Commands::Web) => {
+            let manager = TransactionManager::new(config.config.db_path())
+                .context("Error when connecting to Database")?;
+            web_main(manager).await?;
+            Ok(())
+        }
         None => {
             let state = RootState::new(config);
             let mut app = App::new(
@@ -49,6 +58,20 @@ async fn run() -> Result<()> {
             Ok(())
         }
     }
+}
+
+async fn web_main(manager: TransactionManager) -> std::io::Result<()> {
+    let transaction_manager = web::Data::new(manager);
+
+    HttpServer::new(move || {
+        actix_web::App::new()
+            .wrap(Logger::default()) // Add Logger middleware
+            .app_data(transaction_manager.clone()) // Add TransactionManager to app data
+            .configure(server::config_routes) // Configure routes from server.rs
+    })
+    .bind("127.0.0.1:8080")?
+    .run()
+    .await
 }
 
 #[tokio::main]
