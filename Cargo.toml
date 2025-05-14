@@ -36,7 +36,7 @@ tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "serde"] }
 human-panic = "2.0.2"
 temp-env = "0.3.6"
-rand = "0.9.0"
+rand = "0.9.1"
 mockito = "1.7.0"
 clap = { version = "4.5.36", features = [
     "derive",
