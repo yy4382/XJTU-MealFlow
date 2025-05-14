@@ -5,18 +5,22 @@ import type {
   HeaderContext,
   CellContext,
   Row,
+  ColumnFiltersState,
 } from '@tanstack/react-table'
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   getPaginationRowModel,
+  getFilteredRowModel,
 } from '@tanstack/react-table'
 import { ArrowUpDown } from 'lucide-react'
+import * as React from 'react'
 
 import { fetchAllTransactions } from '../lib/api'
 import type { Transaction } from '../lib/types'
 import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
 import {
   Table,
   TableBody,
@@ -25,7 +29,12 @@ import {
   TableHeader,
   TableRow,
 } from '../components/ui/table'
-import { Card, CardContent, CardHeader } from '../components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '../components/ui/card'
 
 export const Route = createFileRoute('/transactions')({
   component: TransactionsPage,
@@ -90,11 +99,18 @@ function TransactionsPage() {
     queryFn: fetchAllTransactions,
   })
 
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
   const table = useReactTable<Transaction>({
     data: transactions ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    onColumnFiltersChange: setColumnFilters,
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      columnFilters,
+    },
     initialState: {
       pagination: {
         pageSize: 15,
@@ -121,6 +137,26 @@ function TransactionsPage() {
       <Card>
         <CardHeader>{/* <CardTitle>Transactions</CardTitle> */}</CardHeader>
         <CardContent>
+          <div className="flex items-center py-4 space-x-2">
+            <Input
+              placeholder="Filter by date..."
+              value={table.getColumn('time')?.getFilterValue() as string}
+              onChange={(event) =>
+                table.getColumn('time')?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+            <Input
+              placeholder="Filter by merchant..."
+              value={
+                table.getColumn('merchant')?.getFilterValue() as string
+              }
+              onChange={(event) =>
+                table.getColumn('merchant')?.setFilterValue(event.target.value)
+              }
+              className="max-w-sm"
+            />
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -179,7 +215,9 @@ function TransactionsPage() {
               </TableBody>
             </Table>
           </div>
-          <div className="flex items-center justify-end space-x-2 py-4">
+        </CardContent>
+        <CardFooter>
+          <div className="flex items-center justify-end w-full space-x-2 py-4">
             <Button
               variant="outline"
               size="sm"
@@ -197,7 +235,7 @@ function TransactionsPage() {
               Next
             </Button>
           </div>
-        </CardContent>
+        </CardFooter>
       </Card>
     </div>
   )
