@@ -83,6 +83,9 @@ jobs:
         with:
           node-version: 22
 
+      - name: ensure pnpm install
+        run: pnpm --version
+
       - name: Cargo build
         uses: actions-rs/cargo@v1
         with:

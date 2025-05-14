@@ -116,7 +116,7 @@ jobs:
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
-      - uses: Swatinem/rust-cache@v2
+
       - name: cargo test --locked
         run: cargo test --locked --all-features --all-targets
       - name: Cache Cargo dependencies
@@ -144,10 +144,10 @@ jobs:
       - name: Install cargo-tarpaulin
         run: cargo install cargo-tarpaulin
 
-      - uses: Swatinem/rust-cache@v2
-
       - name: Generate code coverage
         run: cargo tarpaulin -o Lcov --engine llvm
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
