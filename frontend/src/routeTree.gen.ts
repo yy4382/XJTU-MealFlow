@@ -11,10 +11,34 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TransactionsImport } from './routes/transactions'
+import { Route as SettingsImport } from './routes/settings'
+import { Route as AnalysisImport } from './routes/analysis'
 import { Route as IndexImport } from './routes/index'
-import { Route as DemoTanstackQueryImport } from './routes/demo.tanstack-query'
+import { Route as AnalysisIndexImport } from './routes/analysis/index'
+import { Route as AnalysisTimeSeriesImport } from './routes/analysis/time-series'
+import { Route as AnalysisTimePeriodImport } from './routes/analysis/time-period'
+import { Route as AnalysisMerchantImport } from './routes/analysis/merchant'
 
 // Create/Update Routes
+
+const TransactionsRoute = TransactionsImport.update({
+  id: '/transactions',
+  path: '/transactions',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SettingsRoute = SettingsImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AnalysisRoute = AnalysisImport.update({
+  id: '/analysis',
+  path: '/analysis',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -22,10 +46,28 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const DemoTanstackQueryRoute = DemoTanstackQueryImport.update({
-  id: '/demo/tanstack-query',
-  path: '/demo/tanstack-query',
-  getParentRoute: () => rootRoute,
+const AnalysisIndexRoute = AnalysisIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AnalysisRoute,
+} as any)
+
+const AnalysisTimeSeriesRoute = AnalysisTimeSeriesImport.update({
+  id: '/time-series',
+  path: '/time-series',
+  getParentRoute: () => AnalysisRoute,
+} as any)
+
+const AnalysisTimePeriodRoute = AnalysisTimePeriodImport.update({
+  id: '/time-period',
+  path: '/time-period',
+  getParentRoute: () => AnalysisRoute,
+} as any)
+
+const AnalysisMerchantRoute = AnalysisMerchantImport.update({
+  id: '/merchant',
+  path: '/merchant',
+  getParentRoute: () => AnalysisRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -39,51 +81,156 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/demo/tanstack-query': {
-      id: '/demo/tanstack-query'
-      path: '/demo/tanstack-query'
-      fullPath: '/demo/tanstack-query'
-      preLoaderRoute: typeof DemoTanstackQueryImport
+    '/analysis': {
+      id: '/analysis'
+      path: '/analysis'
+      fullPath: '/analysis'
+      preLoaderRoute: typeof AnalysisImport
       parentRoute: typeof rootRoute
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/transactions': {
+      id: '/transactions'
+      path: '/transactions'
+      fullPath: '/transactions'
+      preLoaderRoute: typeof TransactionsImport
+      parentRoute: typeof rootRoute
+    }
+    '/analysis/merchant': {
+      id: '/analysis/merchant'
+      path: '/merchant'
+      fullPath: '/analysis/merchant'
+      preLoaderRoute: typeof AnalysisMerchantImport
+      parentRoute: typeof AnalysisImport
+    }
+    '/analysis/time-period': {
+      id: '/analysis/time-period'
+      path: '/time-period'
+      fullPath: '/analysis/time-period'
+      preLoaderRoute: typeof AnalysisTimePeriodImport
+      parentRoute: typeof AnalysisImport
+    }
+    '/analysis/time-series': {
+      id: '/analysis/time-series'
+      path: '/time-series'
+      fullPath: '/analysis/time-series'
+      preLoaderRoute: typeof AnalysisTimeSeriesImport
+      parentRoute: typeof AnalysisImport
+    }
+    '/analysis/': {
+      id: '/analysis/'
+      path: '/'
+      fullPath: '/analysis/'
+      preLoaderRoute: typeof AnalysisIndexImport
+      parentRoute: typeof AnalysisImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface AnalysisRouteChildren {
+  AnalysisMerchantRoute: typeof AnalysisMerchantRoute
+  AnalysisTimePeriodRoute: typeof AnalysisTimePeriodRoute
+  AnalysisTimeSeriesRoute: typeof AnalysisTimeSeriesRoute
+  AnalysisIndexRoute: typeof AnalysisIndexRoute
+}
+
+const AnalysisRouteChildren: AnalysisRouteChildren = {
+  AnalysisMerchantRoute: AnalysisMerchantRoute,
+  AnalysisTimePeriodRoute: AnalysisTimePeriodRoute,
+  AnalysisTimeSeriesRoute: AnalysisTimeSeriesRoute,
+  AnalysisIndexRoute: AnalysisIndexRoute,
+}
+
+const AnalysisRouteWithChildren = AnalysisRoute._addFileChildren(
+  AnalysisRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/analysis': typeof AnalysisRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/transactions': typeof TransactionsRoute
+  '/analysis/merchant': typeof AnalysisMerchantRoute
+  '/analysis/time-period': typeof AnalysisTimePeriodRoute
+  '/analysis/time-series': typeof AnalysisTimeSeriesRoute
+  '/analysis/': typeof AnalysisIndexRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/settings': typeof SettingsRoute
+  '/transactions': typeof TransactionsRoute
+  '/analysis/merchant': typeof AnalysisMerchantRoute
+  '/analysis/time-period': typeof AnalysisTimePeriodRoute
+  '/analysis/time-series': typeof AnalysisTimeSeriesRoute
+  '/analysis': typeof AnalysisIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/analysis': typeof AnalysisRouteWithChildren
+  '/settings': typeof SettingsRoute
+  '/transactions': typeof TransactionsRoute
+  '/analysis/merchant': typeof AnalysisMerchantRoute
+  '/analysis/time-period': typeof AnalysisTimePeriodRoute
+  '/analysis/time-series': typeof AnalysisTimeSeriesRoute
+  '/analysis/': typeof AnalysisIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/demo/tanstack-query'
+  fullPaths:
+    | '/'
+    | '/analysis'
+    | '/settings'
+    | '/transactions'
+    | '/analysis/merchant'
+    | '/analysis/time-period'
+    | '/analysis/time-series'
+    | '/analysis/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/demo/tanstack-query'
-  id: '__root__' | '/' | '/demo/tanstack-query'
+  to:
+    | '/'
+    | '/settings'
+    | '/transactions'
+    | '/analysis/merchant'
+    | '/analysis/time-period'
+    | '/analysis/time-series'
+    | '/analysis'
+  id:
+    | '__root__'
+    | '/'
+    | '/analysis'
+    | '/settings'
+    | '/transactions'
+    | '/analysis/merchant'
+    | '/analysis/time-period'
+    | '/analysis/time-series'
+    | '/analysis/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
+  AnalysisRoute: typeof AnalysisRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
+  TransactionsRoute: typeof TransactionsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DemoTanstackQueryRoute: DemoTanstackQueryRoute,
+  AnalysisRoute: AnalysisRouteWithChildren,
+  SettingsRoute: SettingsRoute,
+  TransactionsRoute: TransactionsRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,14 +244,44 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/demo/tanstack-query"
+        "/analysis",
+        "/settings",
+        "/transactions"
       ]
     },
     "/": {
       "filePath": "index.tsx"
     },
-    "/demo/tanstack-query": {
-      "filePath": "demo.tanstack-query.tsx"
+    "/analysis": {
+      "filePath": "analysis.tsx",
+      "children": [
+        "/analysis/merchant",
+        "/analysis/time-period",
+        "/analysis/time-series",
+        "/analysis/"
+      ]
+    },
+    "/settings": {
+      "filePath": "settings.tsx"
+    },
+    "/transactions": {
+      "filePath": "transactions.tsx"
+    },
+    "/analysis/merchant": {
+      "filePath": "analysis/merchant.tsx",
+      "parent": "/analysis"
+    },
+    "/analysis/time-period": {
+      "filePath": "analysis/time-period.tsx",
+      "parent": "/analysis"
+    },
+    "/analysis/time-series": {
+      "filePath": "analysis/time-series.tsx",
+      "parent": "/analysis"
+    },
+    "/analysis/": {
+      "filePath": "analysis/index.tsx",
+      "parent": "/analysis"
     }
   }
 }

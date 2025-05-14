@@ -1,0 +1,161 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef, HeaderContext, CellContext, Row } from '@tanstack/react-table';
+import { flexRender, getCoreRowModel, useReactTable, getPaginationRowModel } from '@tanstack/react-table';
+import { ArrowUpDown } from 'lucide-react';
+
+import { fetchAllTransactions } from '../lib/api';
+import type { Transaction } from '../lib/types';
+import { Button } from '../components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+
+export const Route = createFileRoute('/transactions')({
+  component: TransactionsPage,
+});
+
+const columns: ColumnDef<Transaction>[] = [
+  {
+    accessorKey: 'time',
+    header: ({ column }: HeaderContext<Transaction, unknown>) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }: CellContext<Transaction, unknown>) => {
+      const timeValue = row.getValue('time');
+      const date = new Date(String(timeValue));
+      return <div className="font-medium">{date.toLocaleString()}</div>;
+    },
+  },
+  {
+    accessorKey: 'merchant',
+    header: 'Merchant',
+    cell: ({ row }: CellContext<Transaction, unknown>) => <div>{row.getValue('merchant')}</div>,
+  },
+  {
+    accessorKey: 'amount',
+    header: ({ column }: HeaderContext<Transaction, unknown>) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          className="text-right w-full justify-end"
+        >
+          Amount
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }: CellContext<Transaction, unknown>) => {
+      const amount = row.getValue('amount');
+      const formatted = amount as number;
+      return <div className="text-right font-medium">{formatted}</div>;
+    },
+  },
+];
+
+function TransactionsPage() {
+  const { data: transactions, isLoading, error } = useQuery<Transaction[], Error>({
+    queryKey: ['transactions'],
+    queryFn: fetchAllTransactions,
+  });
+
+  const table = useReactTable<Transaction>({
+    data: transactions ?? [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 15,
+      }
+    }
+  });
+
+  if (isLoading) return <div className="p-4">Loading transactions...</div>;
+  if (error) return <div className="p-4 text-red-500">Error loading transactions: {error.message}</div>;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Transactions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className={header.column.id === 'amount' ? 'text-right' : ''}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row: Row<Transaction>) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && 'selected'}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className={cell.column.id === 'amount' ? 'text-right' : ''}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2 py-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+} 
