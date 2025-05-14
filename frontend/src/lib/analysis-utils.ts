@@ -1,4 +1,4 @@
-import type { Transaction, ChartData } from './types'
+import type { Transaction, ChartData, ProcessedTimeSeriesData } from './types'
 
 export interface ProcessedTimePeriodData {
   breakfast: number
@@ -82,14 +82,67 @@ export function processTimePeriodData(
 }
 
 // Placeholder for other analysis functions
-export function processTimeSeriesData(transactions: Transaction[]) {
-  // TODO: Implement logic based on src/page/analysis/time_series.rs
-  console.log(
-    'Processing time series data for:',
-    transactions.length,
-    'transactions',
-  )
-  return { chartData: [] }
+export function processTimeSeriesData(
+  transactions: Transaction[],
+): ProcessedTimeSeriesData {
+  if (transactions.length === 0) {
+    return { chartData: [] }
+  }
+
+  const monthlySpending: Map<string, number> = new Map()
+
+  transactions.forEach((transaction) => {
+    const date = new Date(transaction.time)
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1 // JavaScript months are 0-indexed
+    const yearMonthKey = `${year}-${month.toString().padStart(2, '0')}`
+
+    const currentAmount = monthlySpending.get(yearMonthKey) || 0
+    // Assuming amount is negative for spending, take absolute for total spending volume if that's the desired metric.
+    // Or sum them up if you want net (e.g. income vs spending if amounts can be positive).
+    // The Rust code uses .abs(), so we'll do that here for consistency for now.
+    monthlySpending.set(
+      yearMonthKey,
+      currentAmount + Math.abs(transaction.amount),
+    )
+  })
+
+  const sortedKeys = Array.from(monthlySpending.keys()).sort()
+
+  if (sortedKeys.length === 0) {
+    return { chartData: [] }
+  }
+
+  const filledChartData: ChartData[] = []
+  // Parse the first and last YYYY-MM string to get date boundaries
+  const firstYearMonthParts = sortedKeys[0].split('-').map(Number)
+  const lastYearMonthParts = sortedKeys[sortedKeys.length - 1]
+    .split('-')
+    .map(Number)
+
+  let currentYear = firstYearMonthParts[0]
+  let currentMonth = firstYearMonthParts[1]
+  const endYear = lastYearMonthParts[0]
+  const endMonth = lastYearMonthParts[1]
+
+  while (
+    currentYear < endYear ||
+    (currentYear === endYear && currentMonth <= endMonth)
+  ) {
+    const yearMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
+    filledChartData.push({
+      name: yearMonthKey, // "YYYY-MM"
+      value: monthlySpending.get(yearMonthKey) || 0,
+      // fill attribute can be added here if needed, or handled by the chart component
+    })
+
+    currentMonth++
+    if (currentMonth > 12) {
+      currentMonth = 1
+      currentYear++
+    }
+  }
+  return { chartData: filledChartData }
 }
 
 export function processMerchantData(

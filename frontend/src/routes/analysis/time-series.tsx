@@ -1,22 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Line,
-  LineChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from 'recharts'
+import { Line, LineChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
 import { fetchAllTransactions } from '../../lib/api'
 import type { Transaction } from '../../lib/types'
 import { processTimeSeriesData } from '../../lib/analysis-utils'
 import {
   ChartContainer,
+  ChartTooltip,
   ChartTooltipContent,
-  ChartLegend,
+  // ChartLegend,
 } from '../../components/ui/chart'
 import {
   Card,
@@ -33,7 +26,7 @@ export const Route = createFileRoute('/analysis/time-series')({
 const chartConfig = {
   value: {
     label: 'Spending',
-    color: 'hsl(var(--chart-1))',
+    color: 'var(--chart-3)',
   },
 } satisfies Record<string, { label: string; color: string }>
 
@@ -51,6 +44,8 @@ function TimeSeriesAnalysisPage() {
   const analysisResult = transactions
     ? processTimeSeriesData(transactions)
     : { chartData: [] }
+
+  console.log('TimeSeries Chart Data:', analysisResult.chartData) // Log chart data
 
   if (isLoading) return <div className="p-4">Loading chart data...</div>
   if (error)
@@ -101,17 +96,17 @@ function TimeSeriesAnalysisPage() {
               // tickFormatter={(value) => value.slice(-2)} // Optionally format to show only month
             />
             <YAxis tickLine={false} axisLine={false} tickMargin={8} />
-            <Tooltip
+            <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator="line" hideLabel />}
             />
-            <Legend content={<ChartLegend />} />
+            {/* <Legend content={<ChartLegend />} /> */}
             <Line
               dataKey="value"
               type="monotone"
+              stroke={chartConfig.value.color}
               strokeWidth={2}
               dot={true}
-              stroke={chartConfig.value.color}
             />
           </LineChart>
         </ChartContainer>
