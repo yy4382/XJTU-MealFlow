@@ -43,7 +43,7 @@ export function Sidebar() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="p-4 border-t">
-        <p className="text-xs">© 2024 MealFlow</p>
+        <p className="text-xs">© 2025 MealFlow</p>
       </SidebarFooter>
     </ShadcnSidebar>
   )
