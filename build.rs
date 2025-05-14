@@ -22,16 +22,19 @@ fn main() {
         frontend_dir.display()
     ); // or yarn.lock
 
+    let pnpm_build_cmd = if cfg!(windows) { "pnpm.cmd" } else { "pnpm" };
+
     // 4. 安装前端依赖 (可选，但推荐在 CI 或初次构建时)
     // 注意：在本地开发时，你可能更倾向于手动管理 node_modules
     // 如果 package-lock.json 或 yarn.lock 有变化，或者 node_modules 不存在，则运行 install
     // 为简单起见，这里可以先跳过自动 npm install，假设开发者会手动运行
     if !frontend_dir.join("node_modules").exists() {
         println!(
-            "cargo:warning=Running 'pnpm install' in {}...",
+            "cargo:warning=Running '{} install' in {}...",
+            pnpm_build_cmd,
             frontend_dir.display()
         );
-        let install_status = Command::new("pnpm") // 或者 "yarn"
+        let install_status = Command::new(pnpm_build_cmd) // 或者 "yarn"
             .current_dir(&frontend_dir)
             .arg("install")
             .status()
@@ -47,8 +50,6 @@ fn main() {
         "cargo:warning=Building frontend app in {}...",
         frontend_dir.display()
     );
-
-    let pnpm_build_cmd = if cfg!(windows) { "pnpm.cmd" } else { "pnpm" };
 
     let build_status = Command::new(pnpm_build_cmd)
         .current_dir(&frontend_dir)
