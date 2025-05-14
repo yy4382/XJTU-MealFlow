@@ -48,7 +48,7 @@ fn main() {
         frontend_dir.display()
     );
 
-    let pnpm_build_cmd = "pnpm";
+    let pnpm_build_cmd = if cfg!(windows) { "pnpm.cmd" } else { "pnpm" };
 
     let build_status = Command::new(pnpm_build_cmd)
         .current_dir(&frontend_dir)
