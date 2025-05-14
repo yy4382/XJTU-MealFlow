@@ -45,20 +45,6 @@ jobs:
             binary-postfix: ".exe"
             use-cross: false
             binary-name: xjtu_mealflow
-          - os: ubuntu-latest
-            os-name: linux
-            target: aarch64-unknown-linux-gnu
-            architecture: arm64
-            binary-postfix: ""
-            use-cross: true
-            binary-name: xjtu_mealflow
-          - os: ubuntu-latest
-            os-name: linux
-            target: i686-unknown-linux-gnu
-            architecture: i686
-            binary-postfix: ""
-            use-cross: true
-            binary-name: xjtu_mealflow
 
     steps:
       - name: Checkout repository
@@ -72,6 +58,7 @@ jobs:
 
           profile: minimal
           override: true
+
       - uses: Swatinem/rust-cache@v2
 
       - name: Install pnpm
@@ -84,7 +71,8 @@ jobs:
           node-version: 22
 
       - name: ensure pnpm install
-        run: pnpm --version
+        run: |
+          pnpm --version
 
       - name: Cargo build
         uses: actions-rs/cargo@v1
