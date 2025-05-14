@@ -39,6 +39,7 @@ async fn run() -> Result<()> {
             Ok(())
         }
         Some(Commands::Web) => {
+            println!("Visit http://localhost:8080 to view the web interface");
             let manager = TransactionManager::new(config.config.db_path())
                 .context("Error when connecting to Database")?;
             web_main(manager).await?;
