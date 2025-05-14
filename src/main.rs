@@ -67,7 +67,8 @@ async fn web_main(manager: TransactionManager) -> std::io::Result<()> {
         actix_web::App::new()
             .wrap(Logger::default()) // Add Logger middleware
             .app_data(transaction_manager.clone()) // Add TransactionManager to app data
-            .configure(server::config_routes) // Configure routes from server.rs
+            .configure(server::api::config_routes) // Configure routes from server.rs
+            .default_service(web::route().to(server::serve_frontend)) // Serve frontend
     })
     .bind("127.0.0.1:8080")?
     .run()
