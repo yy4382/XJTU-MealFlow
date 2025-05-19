@@ -10,3 +10,5 @@
 .config/
 lcov.info
 build_rs_cov.profraw
+
+*.csv
