@@ -62,17 +62,17 @@ pub enum Commands {
         /// Path to the output CSV file
         #[arg(short, long, value_name = "FILE_PATH")]
         output: Option<String>,
-        
+
         /// Filter by merchant name
         #[arg(short, long, value_name = "MERCHANT_NAME")]
         merchant: Option<String>,
-        
+
         /// Filter by transaction min cost (positive value)
         /// Will be converted to negative for database query
         #[arg(long, value_name = "FLOAT")]
         min_amount: Option<f64>,
-        
-        /// Filter by transaction max cost (positive value) 
+
+        /// Filter by transaction max cost (positive value)
         /// Will be converted to negative for database query
         #[arg(long, value_name = "FLOAT")]
         max_amount: Option<f64>,
@@ -80,7 +80,7 @@ pub enum Commands {
         /// Filter by start date (inclusive) in format YYYY-MM-DD
         #[arg(long, value_name = "DATE")]
         time_start: Option<String>,
-        
+
         /// Filter by end date (exclusive) in format YYYY-MM-DD
         #[arg(long, value_name = "DATE")]
         time_end: Option<String>,

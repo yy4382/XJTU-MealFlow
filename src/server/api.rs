@@ -83,7 +83,7 @@ async fn handle_fetch_transactions(
     let client = RealMealFetcher::default().account(account).cookie(cookie);
     let results = tokio::task::spawn_blocking(move || {
         fetch(
-            (&req.start_date).clone(),
+            req.start_date,
             crate::libs::fetcher::MealFetcher::Real(client),
             |_t| Ok(()),
         )
