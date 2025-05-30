@@ -15,8 +15,8 @@ use app::{App, RootState};
 use clap::Parser;
 use color_eyre::eyre::Result;
 use dotenv::dotenv;
-use libs::transactions::TransactionManager;
 use libs::export_csv::CsvExporter;
+use libs::transactions::TransactionManager;
 
 #[cfg(not(tarpaulin_include))]
 async fn run() -> Result<()> {
@@ -45,10 +45,17 @@ async fn run() -> Result<()> {
             web_main(manager).await?;
             Ok(())
         }
-        Some(Commands::ExportCsv { output, merchant, min_amount, max_amount, time_start, time_end }) => {
+        Some(Commands::ExportCsv {
+            output,
+            merchant,
+            min_amount,
+            max_amount,
+            time_start,
+            time_end,
+        }) => {
             let manager = TransactionManager::new(config.config.db_path())
                 .context("Error when connecting to Database")?;
-            
+
             let export_options = libs::export_csv::ExportOptions {
                 output: output.clone(),
                 merchant: merchant.clone(),
@@ -57,7 +64,7 @@ async fn run() -> Result<()> {
                 time_start: time_start.clone(),
                 time_end: time_end.clone(),
             };
-            
+
             CsvExporter::execute_export(&manager, &export_options)
                 .context("Error when exporting transactions to CSV")?;
             Ok(())
