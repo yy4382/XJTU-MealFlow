@@ -16,29 +16,13 @@ use clap::Parser;
 use color_eyre::eyre::Result;
 use dotenv::dotenv;
 use libs::transactions::TransactionManager;
-use chrono::{DateTime, FixedOffset, NaiveDate};
+use libs::export_csv::CsvExporter;
 
 #[cfg(not(tarpaulin_include))]
 async fn run() -> Result<()> {
     use cli::{ClapSource, Commands};
     use color_eyre::eyre::Context;
     use libs::transactions::TransactionManager;
-
-    // Helper function to parse date string with time set to beginning of day
-    fn parse_date(date_str: &str) -> Result<DateTime<FixedOffset>> {
-        let date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-            .context(format!("Failed to parse date: {}", date_str))?;
-        
-        // Create datetime with 00:00:00 time
-        let naive_datetime = date.and_hms_opt(0, 0, 0).unwrap();
-        
-        // Add UTC+8 timezone
-        let tz_offset = FixedOffset::east_opt(8 * 3600).unwrap(); // UTC+8
-        let datetime = DateTime::<FixedOffset>::from_naive_utc_and_offset(naive_datetime, tz_offset);
-        
-        Ok(datetime)
-    }
-
     let args = cli::Cli::parse();
 
     // application state
@@ -55,7 +39,7 @@ async fn run() -> Result<()> {
             Ok(())
         }
         Some(Commands::Web) => {
-            println!("Visit http://localhost:8086 to view the web interface");
+            println!("Visit http://localhost:8080 to view the web interface");
             let manager = TransactionManager::new(config.config.db_path())
                 .context("Error when connecting to Database")?;
             web_main(manager).await?;
@@ -105,7 +89,7 @@ async fn run() -> Result<()> {
             // - Format: [Start Date, End Date)
             // start date
             if let Some(start_str) = time_start {
-                match parse_date(&start_str) {
+                match CsvExporter::parse_date(&start_str) {
                     Ok(start_date) => {
                         // 2022-12-09 0:00:00
                         println!("Setting start date to: {}", start_date);
@@ -120,14 +104,14 @@ async fn run() -> Result<()> {
 
             // end date
             if let Some(end_str) = time_end {
-                match parse_date(&end_str) {
+                match CsvExporter::parse_end_date(&end_str) {
                     Ok(end_date) => {
                         // 2022-12-25 0:00:00
-                        println!("Setting start date to: {}", end_date);
+                        println!("Setting end date to: {}", end_date);
                         filter_opt = filter_opt.end(end_date);
                     },
                     Err(e) => {
-                        println!("Warning: Invalid start date format '{}': {}", end_str, e);
+                        println!("Warning: Invalid end date format '{}': {}", end_str, e);
                         println!("Date format should be YYYY-MM-DD");
                     }
                 }
@@ -135,15 +119,17 @@ async fn run() -> Result<()> {
 
             let output_path = output.clone().unwrap_or_else(|| "transactions_export.csv".to_string());
             
-            if merchant.is_some() || min_amount.is_some() || max_amount.is_some() || time_start.is_some() || time_end.is_some() {
-                manager.export_filtered_to_csv(&output_path, &filter_opt)
-                    .context("Error when exporting filtered transactions to CSV")?;
-            } else {
-                manager.export_to_csv(&output_path)
-                    .context("Error when exporting all transactions to CSV")?;
-            }
-
-            println!("Successfully export csv into {}", output_path);
+            if merchant.is_some() || min_amount.is_some() || max_amount.is_some() || 
+                time_start.is_some() || time_end.is_some() {
+                    let count = CsvExporter::export_filtered_transactions(&manager, &output_path, &filter_opt)
+                        .context("Error when exporting filtered transactions to CSV")?;
+                    println!("Successfully exported {} transactions to {}", count, output_path);
+                } else {
+                    let count = CsvExporter::export_all_transactions(&manager, &output_path)
+                        .context("Error when exporting all transactions to CSV")?;
+                    println!("Successfully exported {} transactions to {}", count, output_path);
+                }
+        
             Ok(())
         }
         None => {
@@ -172,7 +158,7 @@ async fn web_main(manager: TransactionManager) -> std::io::Result<()> {
             .configure(server::api::config_routes) // Configure routes from server.rs
             .default_service(web::route().to(server::serve_frontend)) // Serve frontend
     })
-    .bind("127.0.0.1:8086")?
+    .bind("127.0.0.1:8080")?
     .run()
     .await
 }
