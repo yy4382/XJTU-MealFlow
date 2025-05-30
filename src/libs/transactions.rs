@@ -3,10 +3,6 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
-
 use chrono::{DateTime, FixedOffset, TimeZone};
 use color_eyre::eyre::{Context, ContextCompat, Result, bail};
 use rusqlite::{Connection, params};
@@ -303,70 +299,6 @@ impl TransactionManager {
             None => bail!("No account and cookie found"),
         }
     }
-
-    /// export all transactions to a CSV file without filtering
-    /// # Args
-    /// * `file_path` - where to store the CSV file
-    /// 
-    /// # Return Value
-    /// * `Result<()>`
-    pub fn export_to_csv<P: AsRef<Path>>(&self, file_path: P) -> Result<()> {
-        // fetch all transactions from db
-        let transactions = self.fetch_all()?;
-        
-        // create and open the CSV file
-        let mut file = File::create(file_path)?;
-        
-        // init
-        writeln!(file, "ID,Time,Amount,Merchant")?;
-        
-        // for-loop to write each item transaction
-        for transaction in transactions {
-            writeln!(
-                file, 
-                "{},{},{},\"{}\"", 
-                transaction.id, 
-                transaction.time.format("%Y-%m-%d %H:%M:%S %z"), 
-                transaction.amount, 
-                transaction.merchant.replace("\"", "\"\"")
-            )?;
-        }
-        
-        Ok(())
-    }
-
-    /// export filtered transactions to a CSV file
-    /// # Args
-    /// * `file_path` - where to store the CSV file
-    /// * `filter_opt` - filter
-    /// 
-    /// # Return Value
-    /// * `Result<()>`
-    pub fn export_filtered_to_csv<P: AsRef<Path>>(&self, file_path: P, filter_opt: &FilterOptions) -> Result<()> {
-        // fetch filtered transactions from db
-        let transactions = self.fetch_filtered(filter_opt)?;
-        
-        // create and open the CSV file
-        let mut file = File::create(file_path)?;
-        
-        // init
-        writeln!(file, "ID,Time,Amount,Merchant")?;
-        
-        // for-loop to write each item transaction
-        for transaction in transactions {
-            writeln!(
-                file, 
-                "{},{},{},\"{}\"", 
-                transaction.id, 
-                transaction.time.format("%Y-%m-%d %H:%M:%S %z"), 
-                transaction.amount, 
-                transaction.merchant.replace("\"", "\"\"")
-            )?;
-        }
-        
-        Ok(())
-    }
-
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)] // Added Serialize, Deserialize, made pub
