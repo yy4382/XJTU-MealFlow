@@ -1,12 +1,10 @@
 use actix_web::{
-    dev::ServiceRequest, // For test setup, if needed elsewhere
-    error::{ErrorInternalServerError, ErrorNotFound},
-    http::header::{ContentDisposition, DispositionParam, DispositionType, HeaderName, HeaderValue}, // Added for typed headers
-    web,
-    App, // For test setup
     HttpResponse,
     Responder,
     Result as ActixResult,
+    error::{ErrorInternalServerError, ErrorNotFound},
+    http::header::{ContentDisposition, DispositionParam, DispositionType}, // Added for typed headers
+    web,
 };
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -16,7 +14,7 @@ use serde::{Deserialize, Serialize};
 // Also, Transaction should be public for tests.
 use crate::libs::{
     export_csv::{CsvExporter, ExportOptions},
-    fetcher::{fetch, RealMealFetcher},
+    fetcher::{RealMealFetcher, fetch},
     transactions::{FilterOptions, TransactionManager}, // Assuming Transaction is also in here or imported separately for tests
 };
 
@@ -103,7 +101,8 @@ async fn handle_fetch_transactions(
 
     tracing::debug!("Fetched transactions: {:?}", results);
     match results {
-        Ok(r) => { // Assuming r is Vec<Transaction> or compatible with manager.insert()
+        Ok(r) => {
+            // Assuming r is Vec<Transaction> or compatible with manager.insert()
             manager.insert(&r).map_err(|e| {
                 tracing::error!("Failed to insert transactions: {:?}", e);
                 ErrorInternalServerError(format!("Failed to insert transactions: {}", e))
@@ -134,7 +133,8 @@ async fn handle_update_account(
 }
 
 #[derive(Deserialize, Serialize)] // Added Serialize for test usage
-struct CookieUpdateRequest { // This struct seems unused by any route
+struct CookieUpdateRequest {
+    // This struct seems unused by any route
     cookie: String,
 }
 
@@ -275,7 +275,7 @@ fn generate_csv_filename(options: &ExportOptions) -> String {
 
     if options.min_amount.is_some() || options.max_amount.is_some() {
         let min = options.min_amount.unwrap_or(0.0);
-        let max = options.max_amount.unwrap_or(std::f64::INFINITY); // Use f64::INFINITY for a more logical upper bound
+        let max = options.max_amount.unwrap_or(f64::INFINITY); // Use f64::INFINITY for a more logical upper bound
         parts.push(format!("amount_{:.2}_{:.2}", min, max)); // Format floats
     }
 
@@ -316,10 +316,10 @@ mod tests {
     use super::*;
     // Assuming Transaction is accessible for deserialization, e.g. from crate::libs::transactions::Transaction
     use crate::libs::{
-        fetcher, /* typically you'd mock fetcher or have test_utils for it */
+        fetcher,                   /* typically you'd mock fetcher or have test_utils for it */
         transactions::Transaction, // Ensure this is public and derives Deserialize/Serialize
     };
-    use actix_web::{http::StatusCode, test, web::Data};
+    use actix_web::{App, http::StatusCode, test, web::Data};
     // Note: `actix_http::Request` and `actix_web::dev::ServiceResponse/Service` might be needed if you directly use the service type
     // For `test::init_service` and `call_service` these are usually inferred or handled by Actix.
 
@@ -482,7 +482,6 @@ mod tests {
         assert!(disposition_str.contains("attachment"));
         // Expected filename based on generate_csv_filename and params: transactions_amount_10.00_50.00.csv
         assert!(disposition_str.contains("filename=\"transactions_amount_10.00_50.00.csv\""));
-
 
         let body = test::read_body(resp).await;
         let csv_content = String::from_utf8(body.to_vec()).unwrap();
