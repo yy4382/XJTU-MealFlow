@@ -329,12 +329,14 @@ impl CsvExporter {
     ///     time_start: None,
     ///     time_end: None,
     /// };
-    /// 
+    ///
     /// let (csv_content, count) = CsvExporter::export_to_string(&manager, &options)?;
     /// println!("Generated CSV with {} records", count);
     /// ```
-    
-    pub fn export_to_string(manager: &TransactionManager, options: &ExportOptions) -> Result<(String, usize)> {
+    pub fn export_to_string(
+        manager: &TransactionManager,
+        options: &ExportOptions,
+    ) -> Result<(String, usize)> {
         // 复用现有的筛选条件构建逻辑
         let filter_opt = Self::build_filter_options(options)?;
 
@@ -347,7 +349,7 @@ impl CsvExporter {
 
         // 生成 CSV 字符串
         let csv_content = Self::transactions_to_csv_string(&transactions)?;
-        
+
         Ok((csv_content, transactions.len()))
     }
 
@@ -364,10 +366,10 @@ impl CsvExporter {
     /// CSV 格式的字符串
     fn transactions_to_csv_string(transactions: &[Transaction]) -> Result<String> {
         let mut csv_content = String::new();
-        
+
         // 写入表头（与文件版本格式一致）
         csv_content.push_str("ID,Time,Amount,Merchant\n");
-        
+
         // 写入数据行（与文件版本格式一致）
         for transaction in transactions {
             csv_content.push_str(&format!(
@@ -378,7 +380,7 @@ impl CsvExporter {
                 transaction.merchant.replace("\"", "\"\"")
             ));
         }
-        
+
         Ok(csv_content)
     }
 }
