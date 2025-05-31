@@ -47,7 +47,7 @@ impl MerchantData {
             .border_style(color.c600)
             .padding(Padding::horizontal(1));
 
-        if self.data.len() == 0 {
+        if self.data.is_empty() {
             frame.render_widget(
                 Paragraph::new("No data available yet").block(block.clone()),
                 main_area,

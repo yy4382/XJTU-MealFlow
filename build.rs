@@ -35,7 +35,7 @@ fn main() {
             frontend_dir.display()
         );
         let install_status = Command::new(pnpm_build_cmd) // 或者 "yarn"
-            .current_dir(&frontend_dir)
+            .current_dir(frontend_dir)
             .arg("install")
             .status()
             .expect("Failed to execute pnpm install. Is Node.js/pnpm installed and in PATH?");
@@ -52,7 +52,7 @@ fn main() {
     );
 
     let build_status = Command::new(pnpm_build_cmd)
-        .current_dir(&frontend_dir)
+        .current_dir(frontend_dir)
         .args(["run", "build"]) 
         .status()
         .expect("Failed to execute pnpm build. Is Node.js/pnpm installed and in PATH, and is there a 'build' script in package.json?");

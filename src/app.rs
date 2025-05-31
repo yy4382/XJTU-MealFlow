@@ -70,11 +70,14 @@ impl RootState {
 
     /// Update the state based on the action
     pub(crate) fn update(&mut self, action: &Action) {
-        match action {
-            Action::Quit => {
-                self.should_quit = true;
-            }
-            _ => {}
+        // match action {
+        //     Action::Quit => {
+        //         self.should_quit = true;
+        //     }
+        //     _ => {}
+        // }
+        if let Action::Quit = action {
+            self.should_quit = true;
         }
     }
 }
