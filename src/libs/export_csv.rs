@@ -300,7 +300,85 @@ impl CsvExporter {
                 transaction.merchant.replace("\"", "\"\"")
             )?;
         }
-
         Ok(())
+    }
+
+    /// 导出交易记录为 CSV 字符串（用于 Web API）
+    ///
+    /// 这个方法专门为 Web API 设计，返回 CSV 内容字符串而不是写入文件。
+    /// 保留了与命令行版本相同的筛选逻辑。
+    ///
+    /// # 参数
+    ///
+    /// * `manager` - 交易管理器实例
+    /// * `options` - 导出选项的引用
+    ///
+    /// # 返回值
+    ///
+    /// 成功时返回 (CSV字符串内容, 记录数量)
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// let manager = TransactionManager::new()?;
+    /// let options = ExportOptions {
+    ///     output: None, // Web API 不需要文件输出
+    ///     merchant: Some("超市".to_string()),
+    ///     min_amount: Some(10.0),
+    ///     max_amount: Some(50.0),
+    ///     time_start: None,
+    ///     time_end: None,
+    /// };
+    /// 
+    /// let (csv_content, count) = CsvExporter::export_to_string(&manager, &options)?;
+    /// println!("Generated CSV with {} records", count);
+    /// ```
+    
+    pub fn export_to_string(manager: &TransactionManager, options: &ExportOptions) -> Result<(String, usize)> {
+        // 复用现有的筛选条件构建逻辑
+        let filter_opt = Self::build_filter_options(options)?;
+
+        // 获取交易记录（复用现有逻辑）
+        let transactions = if Self::has_any_filter(options) {
+            manager.fetch_filtered(&filter_opt)?
+        } else {
+            manager.fetch_all()?
+        };
+
+        // 生成 CSV 字符串
+        let csv_content = Self::transactions_to_csv_string(&transactions)?;
+        
+        Ok((csv_content, transactions.len()))
+    }
+
+    /// 将交易记录转换为 CSV 字符串
+    ///
+    /// 与 write_transactions_to_csv 保持相同的格式，但输出到字符串而不是文件
+    ///
+    /// # 参数
+    ///
+    /// * `transactions` - 交易记录数组
+    ///
+    /// # 返回值
+    ///
+    /// CSV 格式的字符串
+    fn transactions_to_csv_string(transactions: &[Transaction]) -> Result<String> {
+        let mut csv_content = String::new();
+        
+        // 写入表头（与文件版本格式一致）
+        csv_content.push_str("ID,Time,Amount,Merchant\n");
+        
+        // 写入数据行（与文件版本格式一致）
+        for transaction in transactions {
+            csv_content.push_str(&format!(
+                "{},{},{},\"{}\"\n",
+                transaction.id,
+                transaction.time.format("%Y-%m-%d %H:%M:%S %z"),
+                transaction.amount,
+                transaction.merchant.replace("\"", "\"\"")
+            ));
+        }
+        
+        Ok(csv_content)
     }
 }
