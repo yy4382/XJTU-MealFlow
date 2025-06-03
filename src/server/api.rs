@@ -452,7 +452,7 @@ mod tests {
         let app = setup_test_app().await;
 
         let req = test::TestRequest::get()
-            .uri("/api/export/csv?format=json&merchant=西14西15东12浴室")
+            .uri("/api/export/csv?format=json&merchant=%E8%A5%BF14%E8%A5%BF15%E4%B8%9C12%E6%B5%B4%E5%AE%A4")
             .to_request();
         let resp = test::call_service(&app, req).await;
         assert_eq!(resp.status(), StatusCode::OK);
