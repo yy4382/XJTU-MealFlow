@@ -14,10 +14,10 @@ import {
   getPaginationRowModel,
   getFilteredRowModel,
 } from '@tanstack/react-table'
-import { ArrowUpDown } from 'lucide-react'
+import { ArrowUpDown, Download } from 'lucide-react'
 import * as React from 'react'
 
-import { fetchAllTransactions } from '../lib/api'
+import { fetchAllTransactions, exportCsv } from '../lib/api'
 import type { Transaction } from '../lib/types'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -99,7 +99,10 @@ function TransactionsPage() {
     queryFn: fetchAllTransactions,
   })
 
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  )
+  const [isExporting, setIsExporting] = React.useState(false)
 
   const table = useReactTable<Transaction>({
     data: transactions ?? [],
@@ -117,6 +120,43 @@ function TransactionsPage() {
       },
     },
   })
+
+  const handleExportCsv = async () => {
+    try {
+      setIsExporting(true)
+
+      // Extract current filters to apply to export
+      const merchantFilter = table
+        .getColumn('merchant')
+        ?.getFilterValue() as string
+      // const timeFilter = table.getColumn('time')?.getFilterValue() as string
+
+      const exportParams: any = {}
+      if (merchantFilter) {
+        exportParams.merchant = merchantFilter
+      }
+
+      // For time filter, we might need to parse it depending on how the user enters it
+      // For now, we'll export all data matching the merchant filter
+
+      const blob = await exportCsv(exportParams)
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `transactions_export_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch {
+      console.error('Export failed:', error)
+      alert('Export failed. Please try again.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   if (isLoading) return <div className="p-4">Loading transactions...</div>
   if (error)
@@ -137,25 +177,36 @@ function TransactionsPage() {
       <Card>
         <CardHeader>{/* <CardTitle>Transactions</CardTitle> */}</CardHeader>
         <CardContent>
-          <div className="flex items-center py-4 space-x-2">
-            <Input
-              placeholder="Filter by date..."
-              value={table.getColumn('time')?.getFilterValue() as string}
-              onChange={(event) =>
-                table.getColumn('time')?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
-            <Input
-              placeholder="Filter by merchant..."
-              value={
-                table.getColumn('merchant')?.getFilterValue() as string
-              }
-              onChange={(event) =>
-                table.getColumn('merchant')?.setFilterValue(event.target.value)
-              }
-              className="max-w-sm"
-            />
+          <div className="flex items-center justify-between py-4">
+            <div className="flex items-center space-x-2">
+              <Input
+                placeholder="Filter by date..."
+                value={table.getColumn('time')?.getFilterValue() as string}
+                onChange={(event) =>
+                  table.getColumn('time')?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+              />
+              <Input
+                placeholder="Filter by merchant..."
+                value={table.getColumn('merchant')?.getFilterValue() as string}
+                onChange={(event) =>
+                  table
+                    .getColumn('merchant')
+                    ?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+              />
+            </div>
+            <Button
+              onClick={handleExportCsv}
+              disabled={isExporting}
+              variant="outline"
+              size="sm"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              {isExporting ? 'Exporting...' : 'Export CSV'}
+            </Button>
           </div>
           <div className="rounded-md border">
             <Table>

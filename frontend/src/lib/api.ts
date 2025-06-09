@@ -96,4 +96,34 @@ export const getAccountCookie = async (): Promise<AccountCookieResponse> => {
   const response = await fetch(`${API_BASE_URL}/config/account-cookie`);
   // This endpoint might return 404 which handleResponse will throw as error, this is fine.
   return handleResponse<AccountCookieResponse>(response);
+};
+
+// CSV Export API
+export interface CsvExportParams {
+  merchant?: string;
+  min_amount?: number;
+  max_amount?: number;
+  time_start?: string; // YYYY-MM-DD format
+  time_end?: string; // YYYY-MM-DD format
+  format?: 'csv' | 'json';
+}
+
+export const exportCsv = async (params: CsvExportParams = {}): Promise<Blob> => {
+  const searchParams = new URLSearchParams();
+  
+  if (params.merchant) searchParams.append('merchant', params.merchant);
+  if (params.min_amount !== undefined) searchParams.append('min_amount', params.min_amount.toString());
+  if (params.max_amount !== undefined) searchParams.append('max_amount', params.max_amount.toString());
+  if (params.time_start) searchParams.append('time_start', params.time_start);
+  if (params.time_end) searchParams.append('time_end', params.time_end);
+  if (params.format) searchParams.append('format', params.format);
+
+  const response = await fetch(`${API_BASE_URL}/export/csv?${searchParams.toString()}`);
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.blob();
 }; 
