@@ -13,6 +13,7 @@ import {
   useReactTable,
   getPaginationRowModel,
   getFilteredRowModel,
+  getSortedRowModel,
 } from '@tanstack/react-table'
 import { ArrowUpDown, Download } from 'lucide-react'
 import * as React from 'react'
@@ -57,7 +58,13 @@ const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }: CellContext<Transaction, unknown>) => {
       const timeValue = row.getValue('time')
       const date = new Date(String(timeValue))
-      return <div className="font-medium">{date.toLocaleString()}</div>
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}`
+      return <div className="font-medium">{formattedDate}</div>
     },
   },
   {
@@ -111,6 +118,7 @@ function TransactionsPage() {
     getPaginationRowModel: getPaginationRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     state: {
       columnFilters,
     },
@@ -118,6 +126,12 @@ function TransactionsPage() {
       pagination: {
         pageSize: 15,
       },
+      sorting: [
+        {
+          id: 'time',
+          desc: true,
+        },
+      ],
     },
   })
 
