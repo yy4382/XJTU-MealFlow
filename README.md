@@ -38,6 +38,90 @@
 .\xjtu-mealflow.exe
 ```
 
+### 打开 Web 界面
+
+```bash
+# macOS, Linux
+./xjtu-mealflow web
+```
+
+```powershell
+# Windows
+.\xjtu-mealflow.exe web
+```
+
+### 导出 CSV
+
+```bash
+./xjtu-mealflow export-csv
+```
+
+详细参数：
+
+```bash
+Options:
+  -o, --output <FILE_PATH>        Path to the output CSV file
+  -m, --merchant <MERCHANT_NAME>  Filter by merchant name
+      --min-amount <FLOAT>        Filter by transaction min cost (positive value) Will be converted to negative for database query
+      --max-amount <FLOAT>        Filter by transaction max cost (positive value) Will be converted to negative for database query
+      --time-start <DATE>         Filter by start date (inclusive) in format YYYY-MM-DD
+      --time-end <DATE>           Filter by end date (exclusive) in format YYYY-MM-DD
+  -h, --help                      Print help
+```
+
+### 完整命令行参数
+
+```bash
+How much did you eat at XJTU?
+
+Usage: xjtu_mealflow [OPTIONS] [COMMAND]
+
+Commands:
+  clear-db    Clean the local database
+  web
+  export-csv
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -t, --tick-rate <FLOAT>
+          Tick rate, i.e. number of ticks per second
+
+          [default: 2]
+
+  -f, --frame-rate <FLOAT>
+          Frame rate, i.e. number of frames per second
+
+          [default: 30]
+
+  -d, --data-dir <PATH>
+          Path to the data directory
+
+      --db-in-mem
+          Use an in-memory database, which means all data will lost when the program exits [default: false]
+
+      --account <STRING>
+          Account for fetching transactions
+
+          Get it on https://card.xjtu.edu.cn
+
+      --hallticket <STRING>
+          hallticket for fetching transactions
+
+          Get it on https://card.xjtu.edu.cn
+
+      --use-mock-data
+          Use mock data when fetching transactions
+
+          Note that you still need to set account or hallticket, but they can be fake placeholders
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+  -V, --version
+          Print version
+```
+
+
 ## License
 
 Copyright (c) Chris Yang <yy4382@outlook.com>
