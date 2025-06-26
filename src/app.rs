@@ -1,3 +1,34 @@
+//! # 应用程序核心模块
+//!
+//! 该模块包含应用程序的核心逻辑，包括：
+//! - 应用程序状态管理 (`RootState`)
+//! - 主应用程序结构 (`App`)
+//! - 事件循环和动作处理
+//! - 层级管理系统
+//!
+//! ## 架构概述
+//!
+//! 应用程序采用分层架构：
+//! ```text
+//! ┌─────────────────┐
+//! │      App        │  <- 主应用程序，处理事件循环
+//! ├─────────────────┤
+//! │  LayerManager   │  <- 管理页面堆栈
+//! ├─────────────────┤
+//! │   RootState     │  <- 全局状态和配置
+//! ├─────────────────┤
+//! │      TUI        │  <- 终端用户界面
+//! └─────────────────┘
+//! ```
+//!
+//! ## 事件流程
+//!
+//! 1. TUI接收用户输入事件
+//! 2. App将事件转换为动作并发送
+//! 3. LayerManager处理层级管理动作
+//! 4. 各个页面处理特定的业务动作
+//! 5. 状态更新触发界面重新渲染
+
 use crate::{
     actions::Action,
     config::Config,
@@ -12,22 +43,44 @@ use tracing::warn;
 
 pub(crate) mod layer_manager;
 
+/// 应用程序的根状态
+///
+/// 包含应用程序运行所需的所有全局状态和资源：
+/// - 应用程序生命周期标志
+/// - 动作通信通道
+/// - 数据库管理器
+/// - 配置信息
+///
+/// 这个结构体在应用程序启动时创建，并在整个生命周期中保持。
 pub(crate) struct RootState {
-    /// Flag to indicate if the application should quit
+    /// 应用程序是否应该退出的标志
     should_quit: bool,
-    /// Channel for sending actions
+    /// 发送动作的通道端
     action_tx: tokio::sync::mpsc::UnboundedSender<Action>,
-    /// Channel for receiving actions
+    /// 接收动作的通道端
     action_rx: tokio::sync::mpsc::UnboundedReceiver<Action>,
 
-    /// Transaction manager for interacting with the database
+    /// 交易管理器，用于与数据库交互
     manager: crate::libs::transactions::TransactionManager,
 
-    /// Configuration for the application
+    /// 应用程序配置
     config: Config,
 }
 
 impl RootState {
+    /// 创建新的根状态实例
+    ///
+    /// # 参数
+    ///
+    /// * `config` - 应用程序配置
+    ///
+    /// # 返回值
+    ///
+    /// 返回初始化完成的 `RootState` 实例
+    ///
+    /// # Panics
+    ///
+    /// 如果数据库连接失败将会 panic
     pub fn new(config: Config) -> Self {
         let (action_tx, action_rx) = mpsc::unbounded_channel();
 
@@ -61,6 +114,11 @@ impl RootState {
         }
     }
 
+    /// 发送动作到动作处理系统
+    ///
+    /// # 参数
+    ///
+    /// * `action` - 要发送的动作
     pub fn send_action<T: Into<Action>>(&self, action: T) {
         let result = self.action_tx.send(action.into());
         if let Err(e) = result {
@@ -68,7 +126,11 @@ impl RootState {
         }
     }
 
-    /// Update the state based on the action
+    /// 根据动作更新应用程序状态
+    ///
+    /// # 参数
+    ///
+    /// * `action` - 要处理的动作
     pub(crate) fn update(&mut self, action: &Action) {
         // match action {
         //     Action::Quit => {
@@ -82,13 +144,38 @@ impl RootState {
     }
 }
 
+/// 主应用程序结构
+///
+/// 这是应用程序的核心，负责：
+/// - 管理页面层级堆栈
+/// - 处理事件循环
+/// - 协调TUI和业务逻辑
+///
+/// # 生命周期
+///
+/// 1. 创建时初始化所有子系统
+/// 2. `run()` 方法启动主事件循环
+/// 3. 处理用户输入直到退出条件满足
 pub(super) struct App {
+    /// 页面层级管理器
     layer_manager: LayerManager,
+    /// 应用程序根状态
     state: RootState,
+    /// 终端用户界面
     tui: tui::TuiEnum,
 }
 
 impl App {
+    /// 创建新的应用程序实例
+    ///
+    /// # 参数
+    ///
+    /// * `state` - 根状态实例
+    /// * `tui` - TUI实例
+    ///
+    /// # 返回值
+    ///
+    /// 返回配置好的 `App` 实例，默认显示主页
     pub fn new(state: RootState, tui: TuiEnum) -> Self {
         Self {
             layer_manager: LayerManager::new(Box::new(Home {
@@ -101,8 +188,17 @@ impl App {
 }
 
 impl App {
+    /// 应用程序主事件循环
+    ///
+    /// 这是应用程序的核心运行方法，包含：
+    /// 1. 初始化TUI
+    /// 2. 持续处理事件直到退出
+    /// 3. 清理TUI资源
+    ///
+    /// # 返回值
+    ///
+    /// 成功时返回 `Ok(())`，失败时返回相应错误
     #[cfg(not(tarpaulin_include))]
-    /// The main event loop for the application
     pub async fn run(&mut self) -> Result<()> {
         self.tui.enter()?;
 
@@ -121,9 +217,17 @@ impl App {
         Ok(())
     }
 
-    /// The event loop for the application
+    /// 单次事件循环处理
     ///
-    /// Takes in a [`tui::Event`] and handles it, updating the application state
+    /// 处理一个事件并执行所有待处理的动作，直到动作队列为空。
+    ///
+    /// # 参数
+    ///
+    /// * `e` - 要处理的事件
+    ///
+    /// # 返回值
+    ///
+    /// 成功时返回 `Ok(())`，失败时返回相应错误
     fn event_loop(&mut self, e: tui::Event) -> Result<()> {
         self.handle_event(e);
 
@@ -136,18 +240,24 @@ impl App {
         Ok(())
     }
 
+    /// 发送动作到动作处理系统
+    ///
+    /// # 参数
+    ///
+    /// * `action` - 要发送的动作
     pub fn send_action<T: Into<Action>>(&self, action: T) {
         self.state.send_action(action);
     }
 
-    /// Convert a [`tui::Event`] to an Action and send to channel
+    /// 将TUI事件转换为动作并发送
     ///
-    /// This function is responsible for converting a [`tui::Event`] to an Action.
+    /// 这个函数负责：
+    /// - 处理应用程序级别的事件（如退出、调整大小等）
+    /// - 将其他事件委托给当前页面处理
     ///
-    /// It handles some application-wide events like quitting the application
-    /// and switching between input modes,
-    /// and delegates the handling of page-specific events (remaining events, currently only key events)
-    /// to the current page.
+    /// # 参数
+    ///
+    /// * `event` - 要处理的TUI事件
     fn handle_event(&mut self, event: tui::Event) {
         match event {
             tui::Event::Render => self.send_action(Action::Render),
@@ -163,15 +273,14 @@ impl App {
         };
     }
 
-    /// Perform an action
+    /// 执行动作
     ///
-    /// This function is responsible for performing an action (Changing the state of the application).
+    /// 这是应用程序状态改变的唯一入口点。
+    /// 负责处理所有类型的动作并更新相应的状态。
     ///
-    /// This SHOULD be the only place where the state of the application is changed.
+    /// # 参数
     ///
-    /// It handles some application-wide actions like quitting the application
-    /// and switching between pages,
-    /// and delegates the handling of page-specific actions to the current page.
+    /// * `action` - 要执行的动作
     fn perform_action(&mut self, action: Action) {
         match &action {
             Action::Render => self.tui.draw(|f| self.layer_manager.render(f)).unwrap(),

@@ -1,3 +1,188 @@
+//! # 输入组件模块
+//!
+//! 提供可重用的文本输入组件，支持多种输入模式、按键配置和状态管理。
+//! 组件集成了 TUI 渲染、事件处理和帮助系统。
+//!
+//! ## 核心特性
+//!
+//! - **状态驱动**: 基于状态机的输入模式管理
+//! - **可配置按键**: 支持自定义进入、提交和退出按键
+//! - **自动提交**: 可配置实时提交或手动提交模式
+//! - **帮助集成**: 自动生成上下文相关的帮助信息
+//! - **事件处理**: 完整的键盘和粘贴事件支持
+//!
+//! ## 输入状态机
+//!
+//! ```text
+//! ┌─────────┐    Focus     ┌─────────┐    Enter     ┌─────────────┐
+//! │  Idle   │─────────────→│ Focused │─────────────→│ Inputting   │
+//! └─────────┘              └─────────┘              └─────────────┘
+//!                               ↑                          │
+//!                               │           Exit           │
+//!                               │         ←─────────────── │
+//!                               │           Submit         │
+//!                               └─────────────────────────────┘
+//! ```
+//!
+//! ### 状态说明
+//!
+//! - **Idle**: 初始状态，组件不响应输入
+//! - **Focused**: 获得焦点，显示边框高亮，等待用户按 Enter 开始输入
+//! - **Inputting**: 输入模式，接收文本输入和控制命令
+//!
+//! ## 输入模式
+//!
+//! ### 手动提交模式（默认）
+//! ```rust
+//! let input = InputComp::new()
+//!     .title("Enter your name")
+//!     .auto_submit(false);  // 手动提交模式
+//! ```
+//!
+//! 行为特点：
+//! - 用户输入文本后需要按 Enter 确认提交
+//! - 支持 Esc 键取消输入，恢复原始值
+//! - 适用于重要输入，需要用户明确确认
+//!
+//! ### 自动提交模式
+//! ```rust
+//! let input = InputComp::new()
+//!     .title("Search")
+//!     .auto_submit(true);   // 自动提交模式
+//! ```
+//!
+//! 行为特点：
+//! - 每次按键都会触发提交事件
+//! - 适用于搜索框、实时筛选等场景
+//! - 只有 Enter 键可以退出输入模式
+//!
+//! ## 按键配置
+//!
+//! 支持自定义按键绑定：
+//!
+//! ```rust
+//! use crossterm::event::KeyCode;
+//! use crate::utils::key_events::KeyEvent;
+//!
+//! let input = InputComp::new()
+//!     .enter_keys(vec![KeyCode::Enter.into(), KeyCode::Tab.into()])
+//!     .submit_keys(vec![KeyCode::Enter.into()])
+//!     .exit_keys(vec![KeyCode::Esc.into(), KeyCode::F10.into()]);
+//! ```
+//!
+//! ### 默认按键绑定
+//!
+//! | 功能 | 按键 | 说明 |
+//! |------|------|------|
+//! | 进入输入 | Enter | 从 Focused 进入 Inputting |
+//! | 提交输入 | Enter | 完成输入并返回结果 |
+//! | 取消输入 | Esc | 放弃输入并恢复原值 |
+//!
+//! ## 事件处理
+//!
+//! 组件返回二元组 `(EventHandlingStatus, Option<String>)`：
+//!
+//! ```rust
+//! let (status, result) = input.handle_events(&event);
+//!
+//! match status {
+//!     EventHandlingStatus::Consumed => {
+//!         // 事件被组件消费，停止传播
+//!     }
+//!     EventHandlingStatus::Propagate => {
+//!         // 事件未被处理，继续传播
+//!     }
+//! }
+//!
+//! if let Some(text) = result {
+//!     // 用户完成了输入，处理结果
+//!     println!("User input: {}", text);
+//! }
+//! ```
+//!
+//! ## 渲染样式
+//!
+//! 组件根据当前状态自动调整视觉样式：
+//!
+//! ```text
+//! Idle:       ┌─ Title ─────────────┐
+//!             │                     │
+//!             └─────────────────────┘
+//!
+//! Focused:    ┌─ Title ─────────────┐  (青色边框)
+//!             │ [cursor]            │
+//!             └─────────────────────┘
+//!
+//! Inputting:  ┌─ Title ─────────────┐  (绿色边框)
+//!             │ Hello World[cursor] │
+//!             └─────────────────────┘
+//! ```
+//!
+//! ## 使用示例
+//!
+//! ### 基本输入框
+//! ```rust
+//! use crate::component::input::{InputComp, InputMode};
+//!
+//! // 创建输入组件
+//! let mut input = InputComp::new()
+//!     .title("Enter username")
+//!     .init_text("default_value");
+//!
+//! // 设置焦点
+//! input.set_mode(InputMode::Focused);
+//!
+//! // 在事件循环中处理输入
+//! let (status, result) = input.handle_events(&event);
+//! if let Some(username) = result {
+//!     println!("Username: {}", username);
+//! }
+//! ```
+//!
+//! ### 搜索框组件
+//! ```rust
+//! let mut search_box = InputComp::new()
+//!     .title("Search transactions")
+//!     .auto_submit(true)
+//!     .init_text("");
+//!
+//! // 每次按键都会触发搜索
+//! let (_, query) = search_box.handle_events(&event);
+//! if let Some(search_term) = query {
+//!     perform_search(&search_term);
+//! }
+//! ```
+//!
+//! ## 集成帮助系统
+//!
+//! 组件自动生成上下文相关的帮助信息：
+//!
+//! ```rust
+//! // 根据当前状态获取帮助信息
+//! let help = input.get_help_msg();
+//!
+//! // 与页面帮助信息合并
+//! let mut page_help = get_page_help();
+//! page_help.extend(&help);
+//! ```
+//!
+//! ## 高级特性
+//!
+//! ### 粘贴支持
+//! 组件支持文本粘贴事件，在自动提交模式下会立即触发提交。
+//!
+//! ### 状态查询
+//! ```rust
+//! if input.is_inputting() {
+//!     // 当前正在输入状态
+//! }
+//!
+//! let current_text = input.get_text();
+//! ```
+//!
+//! ### 文本重置
+//! 在取消输入时，组件会自动恢复到初始文本值。
+
 use crossterm::event::KeyCode;
 use ratatui::{
     Frame,
@@ -18,10 +203,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 /// A input Component
-///
-/// Set the focus state: send a [`InputComp::get_switch_mode_action()`] Action
-///
-/// Get value: parse an action with [`InputComp::parse_submit_action`]
+
 pub(crate) struct InputComp {
     input: Input,
     pub mode: InputMode,

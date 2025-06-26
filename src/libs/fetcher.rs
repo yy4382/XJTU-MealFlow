@@ -1,3 +1,100 @@
+//! # 数据获取模块
+//!
+//! 提供从 XJTU 校园卡系统获取交易记录的功能。支持真实网络请求和模拟数据获取两种模式。
+//!
+//! ## 架构设计
+//!
+//! ```text
+//! MealFetcher (Enum)
+//! ├── Real(RealMealFetcher)    - 生产环境：真实网络请求
+//! └── Mock(MockMealFetcher)    - 测试环境：模拟数据生成
+//! ```
+//!
+//! ## API 交互流程
+//!
+//! ```text
+//! 1. 配置认证信息 (Cookie + Account)
+//!    ↓
+//! 2. 构建 HTTP 请求
+//!    ↓
+//! 3. 发送分页请求到 XJTU 服务器
+//!    ↓
+//! 4. 解析 JSON 响应
+//!    ↓
+//! 5. 转换为标准 Transaction 对象
+//! ```
+//!
+//! ## 网络请求规格
+//!
+//! - **请求 URL**: `http://card.xjtu.edu.cn/Report/GetPersonTrjn`
+//! - **请求方法**: POST
+//! - **内容类型**: `application/x-www-form-urlencoded`
+//! - **认证方式**: Cookie-based session authentication
+//! - **分页机制**: 通过 `page` 和 `rows` 参数控制
+//!
+//! ## 基本用法
+//!
+//! ### 生产环境（真实数据获取）
+//!
+//! ```rust
+//! use chrono::{DateTime, FixedOffset};
+//! use crate::libs::fetcher::{MealFetcher, RealMealFetcher, fetch};
+//! use crate::page::fetch::FetchProgress;
+//!
+//! // 配置获取器
+//! let fetcher = MealFetcher::Real(
+//!     RealMealFetcher::default()
+//!         .cookie("your_session_cookie")
+//!         .account("your_student_id")
+//! );
+//!
+//! // 获取交易记录
+//! let end_time = chrono::Utc::now().with_timezone(&FixedOffset::east(8 * 3600));
+//! let transactions = fetch(end_time, fetcher, |progress| {
+//!     println!("Progress: {:?}", progress);
+//!     Ok(())
+//! })?;
+//! ```
+//!
+//! ### 测试环境（模拟数据）
+//!
+//! ```rust
+//! use std::time::Duration;
+//! use crate::libs::fetcher::{MealFetcher, MockMealFetcher};
+//!
+//! // 配置模拟获取器
+//! let fetcher = MealFetcher::Mock(
+//!     MockMealFetcher::default()
+//!         .set_sim_delay(Duration::from_millis(100))  // 模拟网络延迟
+//!         .per_page(50)                               // 每页记录数
+//! );
+//! ```
+//!
+//! ## 错误处理
+//!
+//! - **认证失败**: Cookie 过期或无效时会返回解析错误，建议重新登录
+//! - **网络错误**: 自动重试机制（最多3次），每次间隔1秒
+//! - **数据解析**: 严格的 JSON 格式验证，字段缺失时提供详细错误信息
+//!
+//! ## 进度回调
+//!
+//! 获取过程支持进度回调，用于 UI 更新：
+//!
+//! ```rust
+//! let progress_callback = |progress: FetchProgress| -> Result<()> {
+//!     match progress {
+//!         FetchProgress::Started => println!("开始获取..."),
+//!         FetchProgress::Fetching { current_page, total_estimated } => {
+//!             println!("获取第 {} 页，预计总共 {} 页", current_page, total_estimated);
+//!         }
+//!         FetchProgress::Finished { total_count } => {
+//!             println!("获取完成，共 {} 条记录", total_count);
+//!         }
+//!     }
+//!     Ok(())
+//! };
+//! ```
+
 use chrono::{DateTime, FixedOffset};
 use color_eyre::{
     Result, Section, SectionExt,
@@ -13,27 +110,68 @@ use std::{
 
 use crate::{libs::transactions::Transaction, page::fetch::FetchProgress};
 
+/// XJTU 校园卡系统 API 基础地址
 pub const API_ORIGIN: &str = "http://card.xjtu.edu.cn";
+
+/// 获取个人交易记录的 API 路径
 pub const API_PATH: &str = "/Report/GetPersonTrjn";
 
+/// XJTU 校园卡 API 响应数据结构
+///
+/// 包含交易记录列表的 JSON 响应格式
 #[derive(Deserialize, Debug, Clone, Serialize)]
 struct ApiResponse {
+    /// 交易记录数组
     rows: Vec<TransactionRow>,
 }
 
+/// 单条交易记录的原始数据结构
+///
+/// 直接映射 XJTU 校园卡 API 返回的字段格式
 #[derive(Deserialize, Debug, Clone, Serialize)]
 struct TransactionRow {
+    /// 交易发生时间（字符串格式）
+    /// 
+    /// API 字段名: `OCCTIME`
+    /// 格式: "YYYY-MM-DD HH:MM:SS"
     #[serde(rename = "OCCTIME")]
     time: String,
+    
+    /// 交易金额（浮点数）
+    ///
+    /// API 字段名: `TRANAMT`
+    /// 负数表示消费，正数表示充值
     #[serde(rename = "TRANAMT")]
     amount: f64,
+    
+    /// 商家名称
+    ///
+    /// API 字段名: `MERCNAME`
+    /// 例如: "梧桐苑餐厅", "文治书院超市"
     #[serde(rename = "MERCNAME")]
     merchant: String,
 }
 
+/// 校园卡数据获取器的统一接口
+///
+/// 提供生产环境和测试环境两种数据获取模式：
+/// - `Real`: 从 XJTU 校园卡系统获取真实数据
+/// - `Mock`: 生成模拟数据用于测试和开发
+///
+/// ## 设计模式
+///
+/// 使用枚举包装不同的获取器实现，便于在运行时切换数据源，
+/// 同时保持相同的 API 接口。
 #[derive(Debug, Clone)]
 pub enum MealFetcher {
+    /// 真实数据获取器
+    ///
+    /// 连接到 XJTU 校园卡系统，获取用户的实际交易记录
     Real(RealMealFetcher),
+    
+    /// 模拟数据获取器
+    ///
+    /// 生成随机的模拟交易数据，用于测试和演示
     Mock(MockMealFetcher),
 }
 
@@ -54,11 +192,45 @@ impl Default for MealFetcher {
     }
 }
 
+/// 真实数据获取器
+///
+/// 负责与 XJTU 校园卡系统进行 HTTP 通信，获取用户的真实交易记录。
+/// 
+/// ## 认证机制
+///
+/// 使用基于 Cookie 的会话认证：
+/// 1. 用户需要先在浏览器中登录 XJTU 校园卡系统
+/// 2. 提取登录后的 Cookie 和学号
+/// 3. 配置到 `RealMealFetcher` 中进行 API 调用
+///
+/// ## 分页策略
+///
+/// - 默认每页获取 50 条记录
+/// - 自动处理分页，直到获取所有数据
+/// - 支持自定义每页记录数（测试用）
 #[derive(Debug, Clone)]
 pub struct RealMealFetcher {
+    /// 用户会话 Cookie
+    ///
+    /// 从浏览器中提取的完整 Cookie 字符串，
+    /// 用于维护登录状态
     cookie: Option<String>,
+    
+    /// 用户学号/账号
+    ///
+    /// 用于 API 请求中的 account 参数
     account: Option<String>,
+    
+    /// API 服务器地址
+    ///
+    /// 默认为 XJTU 校园卡系统地址，
+    /// 测试时可以指向 Mock 服务器
     origin: String,
+    
+    /// 每页记录数
+    ///
+    /// 控制单次 API 请求获取的交易记录数量，
+    /// 影响请求频率和内存使用
     per_page: u32,
 }
 
@@ -74,12 +246,45 @@ impl Default for RealMealFetcher {
 }
 
 impl RealMealFetcher {
+    /// 设置用户会话 Cookie
+    ///
+    /// # 参数
+    ///
+    /// * `cookie` - 完整的 Cookie 字符串，从浏览器的开发者工具中获取
+    ///
+    /// # 返回值
+    ///
+    /// 返回配置了 Cookie 的新实例（Builder 模式）
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// let fetcher = RealMealFetcher::default()
+    ///     .cookie("JSESSIONID=ABCD1234; Path=/; HttpOnly");
+    /// ```
     pub fn cookie<T: Into<String>>(self, cookie: T) -> Self {
         Self {
             cookie: Some(cookie.into()),
             ..self
         }
     }
+    
+    /// 设置用户学号/账号
+    ///
+    /// # 参数
+    ///
+    /// * `account` - 用户的学号或账号，通常是数字字符串
+    ///
+    /// # 返回值
+    ///
+    /// 返回配置了账号的新实例（Builder 模式）
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// let fetcher = RealMealFetcher::default()
+    ///     .account("2021123456");
+    /// ```
     pub fn account<T: Into<String>>(self, account: T) -> Self {
         Self {
             account: Some(account.into()),
@@ -87,6 +292,13 @@ impl RealMealFetcher {
         }
     }
 
+    /// 设置 API 服务器地址（仅测试用）
+    ///
+    /// 允许在测试环境中指向 Mock 服务器
+    ///
+    /// # 参数
+    ///
+    /// * `origin` - 服务器地址，如 "http://localhost:3000"
     #[cfg(test)]
     pub fn origin<T: Into<String>>(self, origin: T) -> Self {
         Self {
@@ -95,6 +307,18 @@ impl RealMealFetcher {
         }
     }
 
+    /// 设置每页记录数
+    ///
+    /// 控制单次 API 请求获取的交易记录数量。
+    /// 较大的值可以减少请求次数，但会增加单次请求的响应时间。
+    ///
+    /// # 参数
+    ///
+    /// * `size` - 每页记录数，建议范围：10-100
+    ///
+    /// # 返回值
+    ///
+    /// 返回配置了页面大小的新实例
     #[allow(dead_code)]
     pub fn per_page(self, size: u32) -> Self {
         Self {

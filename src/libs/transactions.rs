@@ -1,3 +1,115 @@
+//! # 交易记录管理模块
+//!
+//! 提供交易记录的数据模型、数据库存储和查询功能。支持 SQLite 数据库的本地缓存和内存数据库两种模式。
+//!
+//! ## 核心功能
+//!
+//! - **数据模型**: `Transaction` 结构体定义交易记录的标准格式
+//! - **数据库管理**: `TransactionManager` 提供数据的增删改查操作
+//! - **数据筛选**: `FilterOptions` 支持按时间、商家、金额范围筛选
+//! - **账户管理**: Cookie 和账户信息的持久化存储
+//!
+//! ## 数据库架构
+//!
+//! ```sql
+//! -- 交易记录表
+//! CREATE TABLE transactions (
+//!     id INTEGER PRIMARY KEY,           -- 交易唯一标识（基于内容哈希）
+//!     time TEXT NOT NULL,              -- 交易时间（ISO 8601 格式）
+//!     amount REAL NOT NULL,            -- 交易金额（负数=消费，正数=充值）
+//!     merchant TEXT NOT NULL           -- 商家名称
+//! );
+//!
+//! -- 账户信息表
+//! CREATE TABLE cookies (
+//!     account TEXT PRIMARY KEY,        -- 学号/账号
+//!     cookie TEXT NOT NULL            -- 会话 Cookie
+//! );
+//! ```
+//!
+//! ## 冲突处理机制
+//!
+//! 使用触发器防止重复插入：
+//! - **相同记录**: 静默跳过（IGNORE）
+//! - **ID 冲突但数据不同**: 抛出错误（ABORT）
+//!
+//! ## 时区处理
+//!
+//! 所有时间均使用 UTC+8 (中国标准时间)：
+//! ```rust
+//! use crate::libs::transactions::OFFSET_UTC_PLUS8;
+//! let local_time = naive_datetime.and_local_timezone(OFFSET_UTC_PLUS8);
+//! ```
+//!
+//! ## 基本用法
+//!
+//! ### 创建管理器
+//!
+//! ```rust
+//! use std::path::PathBuf;
+//! use crate::libs::transactions::TransactionManager;
+//!
+//! // 使用文件数据库
+//! let db_path = PathBuf::from("./data/transactions.db");
+//! let manager = TransactionManager::new(Some(db_path))?;
+//!
+//! // 使用内存数据库（测试用）
+//! let manager = TransactionManager::new(None)?;
+//! ```
+//!
+//! ### 插入交易记录
+//!
+//! ```rust
+//! use chrono::{DateTime, FixedOffset};
+//! use crate::libs::transactions::{Transaction, OFFSET_UTC_PLUS8};
+//!
+//! // 创建交易记录
+//! let time = DateTime::parse_from_str("2024-01-15 12:30:00 +0800", "%Y-%m-%d %H:%M:%S %z")?;
+//! let transaction = Transaction::new(-15.50, "梧桐苑餐厅".to_string(), time);
+//!
+//! // 批量插入
+//! let transactions = vec![transaction];
+//! manager.insert(&transactions)?;
+//! ```
+//!
+//! ### 查询与筛选
+//!
+//! ```rust
+//! use crate::libs::transactions::FilterOptions;
+//!
+//! // 获取所有记录
+//! let all_transactions = manager.fetch_all()?;
+//!
+//! // 按条件筛选
+//! let filter = FilterOptions::default()
+//!     .merchant("梧桐苑餐厅")
+//!     .min(-50.0)  // 消费金额大于 50 元
+//!     .max(-10.0); // 消费金额小于 10 元
+//!
+//! let filtered = manager.fetch_filtered(&filter)?;
+//! ```
+//!
+//! ## 筛选条件详解
+//!
+//! ### 时间范围筛选
+//!
+//! ```rust
+//! // [start_time, end_time) 左闭右开区间
+//! let filter = FilterOptions::default()
+//!     .start(start_time)
+//!     .end(end_time);
+//! ```
+//!
+//! ### 金额范围筛选
+//!
+//! ```rust
+//! // [min_amount, max_amount) 左闭右开区间
+//! // 注意：消费金额为负数
+//! let filter = FilterOptions::default()
+//!     .min(-100.0)  // 消费金额 >= 100 元
+//!     .max(-10.0);  // 消费金额 < 10 元
+//! ```
+
 use std::{
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -8,19 +120,82 @@ use color_eyre::eyre::{Context, ContextCompat, Result, bail};
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize}; // Added import
 
-#[derive(Debug, Clone, Serialize, Deserialize)] // Added Serialize, Deserialize
+/// 交易记录数据结构
+///
+/// 表示校园卡的单笔交易信息，包含唯一标识、时间、金额和商家。
+/// 支持序列化和反序列化，便于存储和网络传输。
+///
+/// ## 字段说明
+///
+/// - `id`: 基于交易内容计算的哈希值，用作唯一标识
+/// - `time`: 交易发生时间，统一使用 UTC+8 时区
+/// - `amount`: 交易金额，负数表示消费，正数表示充值
+/// - `merchant`: 商家名称，如"梧桐苑餐厅"、"文治书院超市"
+///
+/// ## ID 生成策略
+///
+/// 交易 ID 通过对 `时间戳 + 金额 + 商家名称` 进行哈希计算生成，
+/// 确保相同内容的交易具有相同的 ID，便于去重和冲突检测。
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Transaction {
+    /// 交易唯一标识符
+    ///
+    /// 基于交易内容（时间戳 + 金额 + 商家）的哈希值
     pub id: i64,
-    /// Time of the transaction in UTC+8
+    
+    /// 交易发生时间
+    ///
+    /// 统一使用 UTC+8 时区（中国标准时间）
     pub time: DateTime<FixedOffset>,
+    
+    /// 交易金额
+    ///
+    /// - 负数: 消费（如 -15.50 表示消费 15.50 元）
+    /// - 正数: 充值（如 100.00 表示充值 100 元）
     pub amount: f64,
+    
+    /// 商家名称
+    ///
+    /// 消费场所的名称，如"梧桐苑餐厅"、"文治书院超市"
     pub merchant: String,
 }
 
+/// 中国标准时间偏移量（UTC+8）
+///
+/// 所有交易时间统一使用此时区，确保时间的一致性
 pub const OFFSET_UTC_PLUS8: FixedOffset =
     FixedOffset::east_opt(8 * 3600).expect("Failed to create FixedOffset +8");
 
 impl Transaction {
+    /// 创建新的交易记录
+    ///
+    /// 根据提供的金额、商家和时间信息创建交易记录，
+    /// 自动计算基于内容的唯一 ID。
+    ///
+    /// # 参数
+    ///
+    /// * `amount` - 交易金额（负数表示消费，正数表示充值）
+    /// * `merchant` - 商家名称
+    /// * `time` - 交易时间（带时区信息）
+    ///
+    /// # 返回值
+    ///
+    /// 返回新创建的 `Transaction` 实例
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// use chrono::{DateTime, FixedOffset};
+    /// use crate::libs::transactions::{Transaction, OFFSET_UTC_PLUS8};
+    ///
+    /// let time = DateTime::parse_from_str("2024-01-15 12:30:00 +0800", 
+    ///                                     "%Y-%m-%d %H:%M:%S %z")?;
+    /// let transaction = Transaction::new(
+    ///     -15.50,
+    ///     "梧桐苑餐厅".to_string(),
+    ///     time
+    /// );
+    /// ```
     pub fn new(amount: f64, merchant: String, time: DateTime<FixedOffset>) -> Self {
         Transaction {
             id: Transaction::hash(&format!("{}&{}&{}", time.timestamp(), amount, &merchant)),
@@ -30,7 +205,36 @@ impl Transaction {
         }
     }
 
-    /// Parse a date string in UTC+8 timezone
+    /// 解析日期字符串为 UTC+8 时区的 DateTime
+    ///
+    /// 将字符串格式的日期时间解析为带有 UTC+8 时区信息的 DateTime 对象。
+    /// 主要用于处理从 XJTU 校园卡 API 获取的时间数据。
+    ///
+    /// # 参数
+    ///
+    /// * `s` - 日期时间字符串
+    /// * `format` - 解析格式，使用 chrono 的格式化语法
+    ///
+    /// # 返回值
+    ///
+    /// 成功时返回 `DateTime<FixedOffset>`，失败时返回解析错误
+    ///
+    /// # 示例
+    ///
+    /// ```rust
+    /// use crate::libs::transactions::Transaction;
+    ///
+    /// // 解析 XJTU API 格式的时间
+    /// let datetime = Transaction::parse_to_fixed_utc_plus8(
+    ///     "2024-01-15 12:30:00",
+    ///     "%Y-%m-%d %H:%M:%S"
+    /// )?;
+    /// ```
+    ///
+    /// # 错误
+    ///
+    /// - 当日期字符串格式不匹配时返回解析错误
+    /// - 当时区转换模糊时返回时区错误
     pub fn parse_to_fixed_utc_plus8(s: &str, format: &str) -> Result<DateTime<FixedOffset>> {
         let naive_dt = chrono::NaiveDateTime::parse_from_str(s, format).with_context(|| {
             format!("Failed to parse date string: {} with format: {}", s, format)
@@ -42,6 +246,18 @@ impl Transaction {
             .with_context(|| format!("Ambiguous result when adding TZ info to {}", naive_dt))
     }
 
+    /// 计算字符串的哈希值
+    ///
+    /// 使用 Rust 默认的哈希算法计算字符串的 64 位哈希值，
+    /// 用于生成交易的唯一标识符。
+    ///
+    /// # 参数
+    ///
+    /// * `s` - 待哈希的字符串
+    ///
+    /// # 返回值
+    ///
+    /// 返回 64 位有符号整数哈希值
     fn hash(s: &str) -> i64 {
         use std::hash::{DefaultHasher, Hash, Hasher};
         let mut hasher = DefaultHasher::new();
