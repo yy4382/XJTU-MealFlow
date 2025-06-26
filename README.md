@@ -122,6 +122,42 @@ Options:
 ```
 
 
+## 开发者指南
+
+### 构建
+
+使用 Cargo 构建项目：
+
+```bash
+cargo build
+```
+
+**注意**：构建前端部分需要安装 pnpm。请参考 [pnpm 安装文档](https://pnpm.io/installation) 进行安装。
+
+### 生成文档
+
+生成项目文档：
+
+```bash
+cargo doc --no-deps
+```
+
+### 测试
+
+运行测试：
+
+```bash
+cargo test
+```
+
+### 代码覆盖率
+
+使用 cargo-tarpaulin 生成代码覆盖率报告：
+
+```bash
+cargo tarpaulin
+```
+
 ## License
 
 Copyright (c) Chris Yang <yy4382@outlook.com>
