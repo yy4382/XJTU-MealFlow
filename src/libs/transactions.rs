@@ -142,18 +142,18 @@ pub struct Transaction {
     ///
     /// 基于交易内容（时间戳 + 金额 + 商家）的哈希值
     pub id: i64,
-    
+
     /// 交易发生时间
     ///
     /// 统一使用 UTC+8 时区（中国标准时间）
     pub time: DateTime<FixedOffset>,
-    
+
     /// 交易金额
     ///
     /// - 负数: 消费（如 -15.50 表示消费 15.50 元）
     /// - 正数: 充值（如 100.00 表示充值 100 元）
     pub amount: f64,
-    
+
     /// 商家名称
     ///
     /// 消费场所的名称，如"梧桐苑餐厅"、"文治书院超市"
@@ -188,7 +188,7 @@ impl Transaction {
     /// use chrono::{DateTime, FixedOffset};
     /// use crate::libs::transactions::{Transaction, OFFSET_UTC_PLUS8};
     ///
-    /// let time = DateTime::parse_from_str("2024-01-15 12:30:00 +0800", 
+    /// let time = DateTime::parse_from_str("2024-01-15 12:30:00 +0800",
     ///                                     "%Y-%m-%d %H:%M:%S %z")?;
     /// let transaction = Transaction::new(
     ///     -15.50,

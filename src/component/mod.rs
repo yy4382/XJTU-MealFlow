@@ -18,15 +18,15 @@
 //!
 //! ```rust
 //! use crate::component::input::{InputComp, InputMode};
-//! 
+//!
 //! // 创建输入组件
 //! let mut input = InputComp::new()
 //!     .title("请输入内容")
 //!     .auto_submit(true);
-//! 
+//!
 //! // 设置焦点
 //! input.set_mode(InputMode::Focused);
-//! 
+//!
 //! // 处理事件
 //! let (status, output) = input.handle_events(&event);
 //! ```

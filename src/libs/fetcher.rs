@@ -131,19 +131,19 @@ struct ApiResponse {
 #[derive(Deserialize, Debug, Clone, Serialize)]
 struct TransactionRow {
     /// 交易发生时间（字符串格式）
-    /// 
+    ///
     /// API 字段名: `OCCTIME`
     /// 格式: "YYYY-MM-DD HH:MM:SS"
     #[serde(rename = "OCCTIME")]
     time: String,
-    
+
     /// 交易金额（浮点数）
     ///
     /// API 字段名: `TRANAMT`
     /// 负数表示消费，正数表示充值
     #[serde(rename = "TRANAMT")]
     amount: f64,
-    
+
     /// 商家名称
     ///
     /// API 字段名: `MERCNAME`
@@ -168,7 +168,7 @@ pub enum MealFetcher {
     ///
     /// 连接到 XJTU 校园卡系统，获取用户的实际交易记录
     Real(RealMealFetcher),
-    
+
     /// 模拟数据获取器
     ///
     /// 生成随机的模拟交易数据，用于测试和演示
@@ -195,7 +195,7 @@ impl Default for MealFetcher {
 /// 真实数据获取器
 ///
 /// 负责与 XJTU 校园卡系统进行 HTTP 通信，获取用户的真实交易记录。
-/// 
+///
 /// ## 认证机制
 ///
 /// 使用基于 Cookie 的会话认证：
@@ -215,18 +215,18 @@ pub struct RealMealFetcher {
     /// 从浏览器中提取的完整 Cookie 字符串，
     /// 用于维护登录状态
     cookie: Option<String>,
-    
+
     /// 用户学号/账号
     ///
     /// 用于 API 请求中的 account 参数
     account: Option<String>,
-    
+
     /// API 服务器地址
     ///
     /// 默认为 XJTU 校园卡系统地址，
     /// 测试时可以指向 Mock 服务器
     origin: String,
-    
+
     /// 每页记录数
     ///
     /// 控制单次 API 请求获取的交易记录数量，
@@ -268,7 +268,7 @@ impl RealMealFetcher {
             ..self
         }
     }
-    
+
     /// 设置用户学号/账号
     ///
     /// # 参数

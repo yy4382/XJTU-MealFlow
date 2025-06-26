@@ -46,13 +46,13 @@ use crate::config::get_data_dir;
 /// ```bash
 /// # 启动TUI模式
 /// xjtu_mealflow
-/// 
+///
 /// # 启动Web服务器
 /// xjtu_mealflow web
-/// 
+///
 /// # 导出CSV文件
 /// xjtu_mealflow export-csv --output my_data.csv
-/// 
+///
 /// # 使用自定义配置
 /// xjtu_mealflow --account 123456 --hallticket abc123
 /// ```
@@ -123,13 +123,13 @@ pub enum Commands {
     /// - 在模拟数据和真实数据之间切换时
     /// - 数据库损坏需要重建时
     ClearDb,
-    
+
     /// 启动Web服务器模式
     ///
     /// 启动HTTP服务器，提供Web界面和REST API。
     /// 默认监听在 http://localhost:8080
     Web,
-    
+
     /// 导出交易记录为CSV文件
     ///
     /// 支持多种筛选条件和输出格式。

@@ -1,6 +1,6 @@
 //! # 终端用户界面模块
 //!
-//! 该模块提供基于终端的用户界面功能，使用 [ratatui](https://ratatui.rs/) 
+//! 该模块提供基于终端的用户界面功能，使用 [ratatui](https://ratatui.rs/)
 //! 和 [crossterm](https://crates.io/crates/crossterm) 库构建富文本终端界面。
 //!
 //! ## 主要功能
@@ -36,10 +36,10 @@
 //!
 //! ```rust
 //! use crate::tui::{Tui, Event};
-//! 
+//!
 //! let mut tui = Tui::new()?;
 //! tui.enter()?;
-//! 
+//!
 //! loop {
 //!     let event = tui.next().await?;
 //!     match event {
@@ -52,7 +52,7 @@
 //!         _ => {}
 //!     }
 //! }
-//! 
+//!
 //! tui.exit()?;
 //! ```
 
@@ -93,48 +93,48 @@ pub enum Event {
     ///
     /// 在TUI启动时发送，用于触发初始化逻辑
     Init,
-    
+
     /// 错误事件
     ///
     /// 当系统发生错误时发送，通常导致应用程序退出
     Error,
-    
+
     /// Tick事件
     ///
     /// 定时发送的事件，用于驱动动画和定期更新
     Tick,
-    
+
     /// 渲染事件
     ///
     /// 触发界面重新渲染
     Render,
-    
+
     /// 焦点获得事件
     ///
     /// 当终端窗口获得焦点时发送
     FocusGained,
-    
+
     /// 焦点失去事件
     ///
     /// 当终端窗口失去焦点时发送
     FocusLost,
-    
+
     /// 文本粘贴事件
     ///
     /// 当用户粘贴文本时发送，包含粘贴的文本内容
     Paste(String),
-    
+
     /// 键盘按键事件
     ///
     /// 当用户按下键盘按键时发送
     Key(KeyEvent),
-    
+
     /// 鼠标事件
     ///
     /// 当用户进行鼠标操作时发送（当前未使用）
     #[allow(dead_code)]
     Mouse(MouseEvent),
-    
+
     /// 终端大小调整事件
     ///
     /// 当终端窗口大小变化时发送，包含新的宽度和高度
@@ -162,7 +162,7 @@ pub enum TuiEnum {
     ///
     /// 使用真实的终端进行交互，支持完整的TUI功能
     Crossterm(Tui),
-    
+
     /// 测试后端（测试环境）
     ///
     /// 使用内存中的虚拟终端，用于单元测试和集成测试
@@ -189,7 +189,7 @@ impl TuiEnum {
             TuiEnum::Test(_) => Ok(()),
         }
     }
-    
+
     /// 退出TUI模式
     ///
     /// 恢复终端设置，切换回主屏幕缓冲区
@@ -199,7 +199,7 @@ impl TuiEnum {
             TuiEnum::Test(_) => Ok(()),
         }
     }
-    
+
     /// 获取下一个事件
     ///
     /// 异步等待下一个事件的到达
@@ -209,7 +209,7 @@ impl TuiEnum {
             TuiEnum::Test(_) => Ok(Event::Tick),
         }
     }
-    
+
     /// 绘制界面
     ///
     /// 使用提供的闭包绘制当前帧

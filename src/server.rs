@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use actix_web::{web, App, HttpServer};
-//! 
+//!
 //! #[actix_web::main]
 //! async fn main() -> std::io::Result<()> {
 //!     HttpServer::new(|| {
@@ -52,7 +52,7 @@ struct FrontendAssets;
 /// 前端静态资源服务处理器
 ///
 /// 这是一个通用的请求处理器，用于服务前端静态文件并支持SPA路由。
-/// 
+///
 /// ## 处理逻辑
 ///
 /// 1. 从请求路径中提取文件路径
@@ -80,12 +80,12 @@ struct FrontendAssets;
 ///
 /// # 示例
 ///
-/// 
+///
 /// - 请求 / -> 返回 index.html
 /// - 请求 /app.js -> 返回 app.js文件
 /// - 请求 /user/profile -> 返回 index.html（SPA路由）
 /// - 请求 /api/data -> 由API路由处理（不会到达这里）
-/// 
+///
 pub async fn serve_frontend(req: HttpRequest) -> impl Responder {
     let mut path = req.path().trim_start_matches('/').to_string();
 

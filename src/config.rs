@@ -49,7 +49,7 @@ pub struct AppConfig {
     /// 存储数据库文件和其他持久化数据的目录
     #[serde(default)]
     pub data_dir: PathBuf,
-    
+
     /// 数据库文件路径（相对于data_dir）
     ///
     /// 默认为 "transactions.db"
@@ -93,7 +93,7 @@ impl AppConfig {
 /// 数据获取配置
 ///
 /// 包含从XJTU服务器获取交易数据所需的配置。
-/// 
+///
 /// **重要提示**: 这不应该是获取操作的数据来源，仅用于初始化数据库中的相关配置。
 /// 获取操作的真实数据来源应该来自数据库。
 #[derive(Clone, Debug, Deserialize, Default)]
@@ -102,12 +102,12 @@ pub struct FetchConfig {
     ///
     /// 用于登录XJTU校园卡系统获取交易记录
     pub account: Option<String>,
-    
+
     /// 校园卡认证票据
     ///
     /// 从浏览器Cookie中获取的hallticket值
     pub hallticket: Option<String>,
-    
+
     /// 是否使用模拟数据
     ///
     /// 启用后将使用预设的测试数据而不是真实服务器数据
@@ -122,7 +122,7 @@ pub struct Config {
     /// 应用程序基础配置
     #[serde(default, flatten)]
     pub config: AppConfig,
-    
+
     /// 数据获取配置
     #[serde(default)]
     pub fetch: FetchConfig,
@@ -159,10 +159,10 @@ impl Config {
     ///
     /// ```rust
     /// use crate::cli::ClapSource;
-    /// 
+    ///
     /// // 使用默认配置
     /// let config = Config::new(None)?;
-    /// 
+    ///
     /// // 使用CLI参数配置
     /// let cli_source = ClapSource::new(&cli_args);
     /// let config = Config::new(Some(cli_source))?;
